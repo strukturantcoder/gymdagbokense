@@ -8,11 +8,6 @@ const Footer = () => {
       { label: "Så fungerar det", href: "#how-it-works" },
       { label: "Priser", href: "#pricing" },
     ],
-    company: [
-      { label: "Om oss", href: "#" },
-      { label: "Blogg", href: "#" },
-      { label: "Kontakt", href: "#" },
-    ],
     legal: [
       { label: "Integritetspolicy", href: "/privacy" },
       { label: "Användarvillkor", href: "/terms" },
@@ -23,7 +18,7 @@ const Footer = () => {
   return (
     <footer className="bg-gym-charcoal border-t border-border">
       <div className="container px-4 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
@@ -49,23 +44,6 @@ const Footer = () => {
             <h4 className="font-display font-semibold mb-4">PRODUKT</h4>
             <ul className="space-y-2">
               {links.product.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company links */}
-          <div>
-            <h4 className="font-display font-semibold mb-4">FÖRETAG</h4>
-            <ul className="space-y-2">
-              {links.company.map((link) => (
                 <li key={link.label}>
                   <a
                     href={link.href}
