@@ -1,12 +1,44 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Header from "@/components/Header";
+import Hero from "@/components/Hero";
+import AdBanner from "@/components/AdBanner";
+import Features from "@/components/Features";
+import AppPreview from "@/components/AppPreview";
+import Pricing from "@/components/Pricing";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main>
+        <Hero />
+        
+        {/* Ad banner after hero */}
+        <div className="container px-4 py-8">
+          <AdBanner size="horizontal" />
+        </div>
+        
+        <Features />
+        
+        {/* Ad banner in middle */}
+        <div className="container px-4 py-8">
+          <AdBanner size="horizontal" />
+        </div>
+        
+        <AppPreview />
+        
+        <section id="pricing">
+          <Pricing />
+        </section>
+        
+        {/* Final ad before footer */}
+        <div className="container px-4 py-8">
+          <AdBanner size="horizontal" />
+        </div>
+      </main>
+      
+      <Footer />
     </div>
   );
 };
