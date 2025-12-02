@@ -1,23 +1,22 @@
 import { Dumbbell, Instagram, Twitter, Youtube } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const links = {
     product: [
-      { label: "Funktioner", href: "#" },
-      { label: "Priser", href: "#" },
-      { label: "Mobilapp", href: "#" },
-      { label: "API", href: "#" },
+      { label: "Funktioner", href: "#features" },
+      { label: "Så fungerar det", href: "#how-it-works" },
+      { label: "Priser", href: "#pricing" },
     ],
     company: [
       { label: "Om oss", href: "#" },
       { label: "Blogg", href: "#" },
-      { label: "Karriär", href: "#" },
       { label: "Kontakt", href: "#" },
     ],
     legal: [
-      { label: "Integritetspolicy", href: "#" },
-      { label: "Användarvillkor", href: "#" },
-      { label: "Cookies", href: "#" },
+      { label: "Integritetspolicy", href: "/privacy" },
+      { label: "Användarvillkor", href: "/terms" },
+      { label: "Cookies", href: "/cookies" },
     ],
   };
 
@@ -91,12 +90,12 @@ const Footer = () => {
             <ul className="space-y-2">
               {links.legal.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.href}
                     className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

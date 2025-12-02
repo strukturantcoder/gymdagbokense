@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import AdBanner from "@/components/AdBanner";
 import Features from "@/components/Features";
+import HowItWorks from "@/components/HowItWorks";
 import AppPreview from "@/components/AppPreview";
 import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
@@ -20,6 +21,8 @@ const Index = () => {
         </div>
         
         <Features />
+        
+        <HowItWorks />
         
         {/* Ad banner in middle */}
         <div className="container px-4 py-8">
