@@ -12,7 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  checkSubscription: () => Promise<void>;
+  checkSubscription: (accessToken?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,8 +25,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [checkingSubscription, setCheckingSubscription] = useState(false);
 
-  const checkSubscription = useCallback(async () => {
-    if (!session?.access_token) {
+  const checkSubscription = useCallback(async (accessToken?: string) => {
+    const token = accessToken || session?.access_token;
+    if (!token) {
       setIsPremium(false);
       setSubscriptionEnd(null);
       return;
@@ -36,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -78,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check subscription when session changes
   useEffect(() => {
     if (session?.access_token) {
-      checkSubscription();
+      checkSubscription(session.access_token);
     } else {
       setIsPremium(false);
       setSubscriptionEnd(null);
