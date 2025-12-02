@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight, Timer } from 'lucide-react';
+import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles } from 'lucide-react';
 import RestTimer from '@/components/RestTimer';
 import ExerciseInfo from '@/components/ExerciseInfo';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import confetti from 'canvas-confetti';
 
 interface Exercise {
   name: string;
@@ -62,6 +65,19 @@ interface WorkoutLogEntry {
   }[];
 }
 
+interface PersonalBest {
+  exercise_name: string;
+  best_weight_kg: number;
+  best_reps: number | null;
+  achieved_at: string;
+}
+
+interface ExerciseGoal {
+  exercise_name: string;
+  target_weight_kg: number | null;
+  target_reps: number | null;
+}
+
 export default function WorkoutLog() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -78,6 +94,13 @@ export default function WorkoutLog() {
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLogEntry[]>([]);
   const [showTimer, setShowTimer] = useState(false);
+  
+  // Personal bests and goals
+  const [personalBests, setPersonalBests] = useState<Map<string, PersonalBest>>(new Map());
+  const [exerciseGoals, setExerciseGoals] = useState<Map<string, ExerciseGoal>>(new Map());
+  const [editingGoal, setEditingGoal] = useState<string | null>(null);
+  const [goalWeight, setGoalWeight] = useState('');
+  const [newPBs, setNewPBs] = useState<string[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -89,6 +112,8 @@ export default function WorkoutLog() {
     if (user) {
       fetchPrograms();
       fetchRecentLogs();
+      fetchPersonalBests();
+      fetchExerciseGoals();
     }
   }, [user]);
 
@@ -129,6 +154,49 @@ export default function WorkoutLog() {
     if (!error && data) {
       setRecentLogs(data as WorkoutLogEntry[]);
     }
+  };
+
+  const fetchPersonalBests = async () => {
+    const { data } = await supabase
+      .from('personal_bests')
+      .select('*');
+    
+    if (data) {
+      const pbMap = new Map<string, PersonalBest>();
+      data.forEach(pb => pbMap.set(pb.exercise_name, pb as PersonalBest));
+      setPersonalBests(pbMap);
+    }
+  };
+
+  const fetchExerciseGoals = async () => {
+    const { data } = await supabase
+      .from('exercise_goals')
+      .select('*');
+    
+    if (data) {
+      const goalMap = new Map<string, ExerciseGoal>();
+      data.forEach(g => goalMap.set(g.exercise_name, g as ExerciseGoal));
+      setExerciseGoals(goalMap);
+    }
+  };
+
+  const saveExerciseGoal = async (exerciseName: string, targetWeight: number) => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from('exercise_goals')
+      .upsert({
+        user_id: user.id,
+        exercise_name: exerciseName,
+        target_weight_kg: targetWeight
+      }, { onConflict: 'user_id,exercise_name' });
+    
+    if (!error) {
+      toast.success(`Mål satt: ${targetWeight} kg för ${exerciseName}`);
+      fetchExerciseGoals();
+    }
+    setEditingGoal(null);
+    setGoalWeight('');
   };
 
   const handleProgramChange = (programId: string) => {
@@ -227,10 +295,74 @@ export default function WorkoutLog() {
 
       if (exerciseError) throw exerciseError;
 
+      // Check for new personal bests and goal achievements
+      const newPBsList: string[] = [];
+      const goalsAchieved: string[] = [];
+      
+      for (const log of exerciseLogs) {
+        if (!log.weight_kg) continue;
+        const weight = parseFloat(log.weight_kg);
+        const currentPB = personalBests.get(log.exercise_name);
+        const goal = exerciseGoals.get(log.exercise_name);
+        
+        // Check if new PB
+        if (!currentPB || weight > currentPB.best_weight_kg) {
+          newPBsList.push(log.exercise_name);
+          
+          // Update or insert PB
+          await supabase
+            .from('personal_bests')
+            .upsert({
+              user_id: user!.id,
+              exercise_name: log.exercise_name,
+              best_weight_kg: weight,
+              best_reps: parseInt(log.reps_completed) || null,
+              achieved_at: new Date().toISOString()
+            }, { onConflict: 'user_id,exercise_name' });
+        }
+        
+        // Check if goal achieved
+        if (goal?.target_weight_kg && weight >= goal.target_weight_kg) {
+          goalsAchieved.push(log.exercise_name);
+        }
+      }
+      
+      // Show celebrations
+      if (newPBsList.length > 0) {
+        setNewPBs(newPBsList);
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        
+        toast.success(
+          `🎉 NYTT PERSONBÄSTA! ${newPBsList.join(', ')}`,
+          { duration: 5000 }
+        );
+      }
+      
+      if (goalsAchieved.length > 0) {
+        setTimeout(() => {
+          confetti({
+            particleCount: 150,
+            spread: 100,
+            origin: { y: 0.5 },
+            colors: ['#FFD700', '#FFA500', '#FF6347']
+          });
+        }, 500);
+        
+        toast.success(
+          `🏆 MÅL UPPNÅTT! ${goalsAchieved.join(', ')}`,
+          { duration: 5000 }
+        );
+      }
+
       toast.success('Träningspass sparat!');
       setIsLogging(false);
       resetForm();
       fetchRecentLogs();
+      fetchPersonalBests();
     } catch (error) {
       console.error('Error saving workout:', error);
       toast.error('Kunde inte spara träningspasset');
@@ -245,6 +377,7 @@ export default function WorkoutLog() {
     setDuration('');
     setWorkoutNotes('');
     setExerciseLogs([]);
+    setNewPBs([]);
   };
 
   const currentProgram = programs.find(p => p.id === selectedProgram);
@@ -376,45 +509,131 @@ export default function WorkoutLog() {
                 {exerciseLogs.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="font-display font-bold">Övningar</h3>
-                    {exerciseLogs.map((log, index) => (
-                      <div key={index} className="bg-secondary/50 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <ExerciseInfo exerciseName={log.exercise_name}>
-                            <h4 className="font-medium">{log.exercise_name}</h4>
-                          </ExerciseInfo>
-                          <span className="text-sm text-muted-foreground">
-                            Mål: {log.sets_completed} x {log.reps_completed}
-                          </span>
+                    {exerciseLogs.map((log, index) => {
+                      const pb = personalBests.get(log.exercise_name);
+                      const goal = exerciseGoals.get(log.exercise_name);
+                      const currentWeight = log.weight_kg ? parseFloat(log.weight_kg) : 0;
+                      const isNewPB = pb && currentWeight > pb.best_weight_kg;
+                      const isGoalReached = goal?.target_weight_kg && currentWeight >= goal.target_weight_kg;
+                      
+                      return (
+                        <div 
+                          key={index} 
+                          className={`rounded-lg p-4 transition-all ${
+                            isNewPB ? 'bg-gym-orange/20 border-2 border-gym-orange' : 
+                            isGoalReached ? 'bg-green-500/20 border-2 border-green-500' : 
+                            'bg-secondary/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <ExerciseInfo exerciseName={log.exercise_name}>
+                                <h4 className="font-medium">{log.exercise_name}</h4>
+                              </ExerciseInfo>
+                              {isNewPB && (
+                                <Badge className="bg-gym-orange text-white animate-pulse">
+                                  <Sparkles className="w-3 h-3 mr-1" />
+                                  Nytt PB!
+                                </Badge>
+                              )}
+                              {isGoalReached && !isNewPB && (
+                                <Badge className="bg-green-500 text-white">
+                                  <Trophy className="w-3 h-3 mr-1" />
+                                  Mål!
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {pb && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Trophy className="w-3 h-3 text-gym-orange" />
+                                  PB: {pb.best_weight_kg} kg
+                                </span>
+                              )}
+                              {goal?.target_weight_kg && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Target className="w-3 h-3 text-green-500" />
+                                  Mål: {goal.target_weight_kg} kg
+                                </span>
+                              )}
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingGoal(log.exercise_name);
+                                      setGoalWeight(goal?.target_weight_kg?.toString() || '');
+                                    }}
+                                  >
+                                    <Target className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Sätt mål för {log.exercise_name}</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4 pt-4">
+                                    {pb && (
+                                      <p className="text-sm text-muted-foreground">
+                                        Ditt nuvarande PB: <span className="font-bold text-gym-orange">{pb.best_weight_kg} kg</span>
+                                      </p>
+                                    )}
+                                    <div className="space-y-2">
+                                      <Label>Målvikt (kg)</Label>
+                                      <Input
+                                        type="number"
+                                        step="0.5"
+                                        value={goalWeight}
+                                        onChange={(e) => setGoalWeight(e.target.value)}
+                                        placeholder={pb ? `${pb.best_weight_kg + 2.5}` : '50'}
+                                      />
+                                    </div>
+                                    <Button 
+                                      variant="hero" 
+                                      className="w-full"
+                                      onClick={() => saveExerciseGoal(log.exercise_name, parseFloat(goalWeight))}
+                                      disabled={!goalWeight}
+                                    >
+                                      <Target className="w-4 h-4 mr-2" />
+                                      Spara mål
+                                    </Button>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Sets</Label>
+                              <Input
+                                type="number"
+                                value={log.sets_completed}
+                                onChange={(e) => updateExerciseLog(index, 'sets_completed', parseInt(e.target.value) || 0)}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Reps</Label>
+                              <Input
+                                value={log.reps_completed}
+                                onChange={(e) => updateExerciseLog(index, 'reps_completed', e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Vikt (kg)</Label>
+                              <Input
+                                type="number"
+                                step="0.5"
+                                placeholder="0"
+                                value={log.weight_kg}
+                                onChange={(e) => updateExerciseLog(index, 'weight_kg', e.target.value)}
+                                className={isNewPB ? 'border-gym-orange' : isGoalReached ? 'border-green-500' : ''}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          <div className="space-y-1">
-                            <Label className="text-xs">Sets</Label>
-                            <Input
-                              type="number"
-                              value={log.sets_completed}
-                              onChange={(e) => updateExerciseLog(index, 'sets_completed', parseInt(e.target.value) || 0)}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Reps</Label>
-                            <Input
-                              value={log.reps_completed}
-                              onChange={(e) => updateExerciseLog(index, 'reps_completed', e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Vikt (kg)</Label>
-                            <Input
-                              type="number"
-                              step="0.5"
-                              placeholder="0"
-                              value={log.weight_kg}
-                              onChange={(e) => updateExerciseLog(index, 'weight_kg', e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
