@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints } from 'lucide-react';
+import { InstallAppButton } from '@/components/InstallPrompt';
 import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
 import ExerciseInfo from '@/components/ExerciseInfo';
@@ -286,6 +287,7 @@ export default function Dashboard() {
             <span className="font-display text-xl font-bold">GYMDAGBOKEN</span>
           </div>
           <div className="flex items-center gap-2">
+            <InstallAppButton />
             <SubscriptionButton variant="compact" />
             <Button variant="outline" onClick={() => navigate('/log')}>
               <ClipboardList className="w-4 h-4 mr-2" />
