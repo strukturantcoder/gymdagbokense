@@ -137,7 +137,7 @@ export default function CardioLog() {
   };
 
   const updateUserStats = async (duration: number, distance: number | null) => {
-    if (!user) return;
+    if (!user) return { xpEarned: 0, newStats: null };
 
     const xpEarned = calculateXP(duration, distance);
 
@@ -148,29 +148,109 @@ export default function CardioLog() {
       .eq('user_id', user.id)
       .maybeSingle();
 
+    let newStats;
     if (currentStats) {
+      newStats = {
+        total_cardio_sessions: currentStats.total_cardio_sessions + 1,
+        total_cardio_minutes: currentStats.total_cardio_minutes + duration,
+        total_cardio_distance_km: Number(currentStats.total_cardio_distance_km) + (distance || 0)
+      };
       await supabase
         .from('user_stats')
         .update({
           total_xp: currentStats.total_xp + xpEarned,
-          total_cardio_sessions: currentStats.total_cardio_sessions + 1,
-          total_cardio_minutes: currentStats.total_cardio_minutes + duration,
-          total_cardio_distance_km: Number(currentStats.total_cardio_distance_km) + (distance || 0)
+          ...newStats
         })
         .eq('user_id', user.id);
     } else {
+      newStats = {
+        total_cardio_sessions: 1,
+        total_cardio_minutes: duration,
+        total_cardio_distance_km: distance || 0
+      };
       await supabase
         .from('user_stats')
         .insert({
           user_id: user.id,
           total_xp: xpEarned,
-          total_cardio_sessions: 1,
-          total_cardio_minutes: duration,
-          total_cardio_distance_km: distance || 0
+          ...newStats
         });
     }
 
-    return xpEarned;
+    return { xpEarned, newStats };
+  };
+
+  const checkCardioAchievements = async (newStats: { total_cardio_sessions: number; total_cardio_minutes: number; total_cardio_distance_km: number }) => {
+    if (!user) return;
+
+    // Fetch all cardio achievements
+    const { data: achievements } = await supabase
+      .from('achievements')
+      .select('*')
+      .in('requirement_type', ['cardio_sessions', 'cardio_distance', 'cardio_minutes']);
+
+    if (!achievements) return;
+
+    // Fetch user's earned achievements
+    const { data: earnedAchievements } = await supabase
+      .from('user_achievements')
+      .select('achievement_id')
+      .eq('user_id', user.id);
+
+    const earnedIds = new Set(earnedAchievements?.map(e => e.achievement_id) || []);
+
+    // Check each achievement
+    for (const achievement of achievements) {
+      if (earnedIds.has(achievement.id)) continue;
+
+      let currentValue = 0;
+      switch (achievement.requirement_type) {
+        case 'cardio_sessions':
+          currentValue = newStats.total_cardio_sessions;
+          break;
+        case 'cardio_minutes':
+          currentValue = newStats.total_cardio_minutes;
+          break;
+        case 'cardio_distance':
+          currentValue = newStats.total_cardio_distance_km;
+          break;
+      }
+
+      if (currentValue >= achievement.requirement_value) {
+        // Award achievement
+        const { error } = await supabase
+          .from('user_achievements')
+          .insert({ user_id: user.id, achievement_id: achievement.id });
+
+        if (!error) {
+          // Award XP
+          await supabase
+            .from('user_stats')
+            .update({ total_xp: supabase.rpc ? undefined : undefined })
+            .eq('user_id', user.id);
+
+          // Get current XP and update
+          const { data: stats } = await supabase
+            .from('user_stats')
+            .select('total_xp')
+            .eq('user_id', user.id)
+            .single();
+
+          if (stats) {
+            await supabase
+              .from('user_stats')
+              .update({ total_xp: stats.total_xp + achievement.xp_reward })
+              .eq('user_id', user.id);
+          }
+
+          toast.success(`🏆 Achievement: ${achievement.name}! +${achievement.xp_reward} XP`, {
+            duration: 5000,
+            icon: achievement.icon
+          });
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -192,13 +272,18 @@ export default function CardioLog() {
 
       if (error) throw error;
 
-      const xpEarned = await updateUserStats(
+      const { xpEarned, newStats } = await updateUserStats(
         parseInt(durationMinutes),
         distanceKm ? parseFloat(distanceKm) : null
       );
 
       // Check goals
       await checkGoals(activityType, parseInt(durationMinutes), distanceKm ? parseFloat(distanceKm) : null);
+
+      // Check achievements
+      if (newStats) {
+        await checkCardioAchievements(newStats);
+      }
 
       toast.success(`Konditionspass loggat! +${xpEarned} XP`);
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
