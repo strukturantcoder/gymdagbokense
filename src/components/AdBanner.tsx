@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AdBannerProps {
   size?: "horizontal" | "square" | "vertical";
@@ -6,6 +7,13 @@ interface AdBannerProps {
 }
 
 const AdBanner = ({ size = "horizontal", className = "" }: AdBannerProps) => {
+  const { isPremium } = useAuth();
+  
+  // Don't show ads for premium users
+  if (isPremium) {
+    return null;
+  }
+
   const sizeClasses = {
     horizontal: "w-full h-24 md:h-28",
     square: "w-full aspect-square max-w-[300px]",

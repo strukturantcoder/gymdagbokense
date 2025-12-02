@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3 } from 'lucide-react';
+import SubscriptionButton from '@/components/SubscriptionButton';
+import AdBanner from '@/components/AdBanner';
 
 interface Exercise {
   name: string;
@@ -168,6 +170,7 @@ export default function Dashboard() {
             <span className="font-display text-xl font-bold">GYMDAGBOKEN</span>
           </div>
           <div className="flex items-center gap-2">
+            <SubscriptionButton variant="compact" />
             <Button variant="outline" onClick={() => navigate('/log')}>
               <ClipboardList className="w-4 h-4 mr-2" />
               Träningslogg
@@ -185,6 +188,8 @@ export default function Dashboard() {
       </header>
 
       <main className="container px-4 py-8">
+        {/* Ad Banner */}
+        <AdBanner className="mb-6" />
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold">Mina Träningsprogram</h1>
