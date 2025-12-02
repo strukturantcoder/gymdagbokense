@@ -57,27 +57,6 @@ const Hero = () => {
               <a href="#how-it-works">Se hur det fungerar</a>
             </Button>
           </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="grid grid-cols-3 gap-8 mt-16 pt-16 border-t border-border/50"
-          >
-            {[
-              { value: "10K+", label: "Aktiva användare" },
-              { value: "500K+", label: "Loggade pass" },
-              { value: "98%", label: "Nöjda kunder" },
-            ].map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-display font-bold text-gradient">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
-              </div>
-            ))}
-          </motion.div>
         </motion.div>
       </div>
 
