@@ -279,36 +279,65 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card">
-        <div className="container px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
-              <Dumbbell className="w-6 h-6 text-primary-foreground" />
+        <div className="container px-4 py-3">
+          <div className="flex items-center justify-between mb-3 md:mb-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
+                <Dumbbell className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <span className="font-display text-xl font-bold hidden sm:block">GYMDAGBOKEN</span>
             </div>
-            <span className="font-display text-xl font-bold">GYMDAGBOKEN</span>
+            <div className="hidden md:flex items-center gap-2">
+              <InstallAppButton />
+              <SubscriptionButton variant="compact" />
+              <Button variant="outline" onClick={() => navigate('/log')}>
+                <ClipboardList className="w-4 h-4 mr-2" />
+                Träningslogg
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/cardio')}>
+                <Footprints className="w-4 h-4 mr-2" />
+                Kondition
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/stats')}>
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Statistik
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/social')}>
+                <Users className="w-4 h-4 mr-2" />
+                Socialt
+              </Button>
+              <Button variant="ghost" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Logga ut
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <InstallAppButton />
-            <SubscriptionButton variant="compact" />
-            <Button variant="outline" onClick={() => navigate('/log')}>
-              <ClipboardList className="w-4 h-4 mr-2" />
-              Träningslogg
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/cardio')}>
-              <Footprints className="w-4 h-4 mr-2" />
-              Kondition
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/stats')}>
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Statistik
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/social')}>
-              <Users className="w-4 h-4 mr-2" />
-              Socialt
-            </Button>
-            <Button variant="ghost" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Logga ut
-            </Button>
+          
+          {/* Mobile scrollable navigation */}
+          <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
+            <div className="flex items-center gap-2 pb-1 min-w-max">
+              <InstallAppButton />
+              <SubscriptionButton variant="compact" />
+              <Button variant="outline" size="sm" onClick={() => navigate('/log')}>
+                <ClipboardList className="w-4 h-4 mr-1.5" />
+                Logg
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate('/cardio')}>
+                <Footprints className="w-4 h-4 mr-1.5" />
+                Kondition
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate('/stats')}>
+                <BarChart3 className="w-4 h-4 mr-1.5" />
+                Stats
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate('/social')}>
+                <Users className="w-4 h-4 mr-1.5" />
+                Socialt
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
