@@ -393,6 +393,30 @@ export type Database = {
         }
         Relationships: []
       }
+      invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          user_id: string
+          uses_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          user_id: string
+          uses_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          uses_count?: number
+        }
+        Relationships: []
+      }
       personal_bests: {
         Row: {
           achieved_at: string
@@ -444,6 +468,30 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          invite_code: string
+          invited_id: string
+          inviter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invite_code: string
+          invited_id: string
+          inviter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          invited_id?: string
+          inviter_id?: string
         }
         Relationships: []
       }
