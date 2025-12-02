@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      cardio_goals: {
+        Row: {
+          activity_type: string
+          created_at: string
+          id: string
+          period: string
+          target_type: string
+          target_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          id?: string
+          period?: string
+          target_type: string
+          target_value: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          id?: string
+          period?: string
+          target_type?: string
+          target_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cardio_logs: {
         Row: {
           activity_type: string
@@ -337,6 +370,9 @@ export type Database = {
           created_at: string
           id: string
           level: number
+          total_cardio_distance_km: number
+          total_cardio_minutes: number
+          total_cardio_sessions: number
           total_minutes: number
           total_sets: number
           total_workouts: number
@@ -348,6 +384,9 @@ export type Database = {
           created_at?: string
           id?: string
           level?: number
+          total_cardio_distance_km?: number
+          total_cardio_minutes?: number
+          total_cardio_sessions?: number
           total_minutes?: number
           total_sets?: number
           total_workouts?: number
@@ -359,6 +398,9 @@ export type Database = {
           created_at?: string
           id?: string
           level?: number
+          total_cardio_distance_km?: number
+          total_cardio_minutes?: number
+          total_cardio_sessions?: number
           total_minutes?: number
           total_sets?: number
           total_workouts?: number
