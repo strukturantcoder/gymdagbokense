@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import ActiveCardioPlanSession from '@/components/ActiveCardioPlanSession';
 import GenerateCardioPlanDialog from '@/components/GenerateCardioPlanDialog';
+import AdBanner from '@/components/AdBanner';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import confetti from 'canvas-confetti';
@@ -542,6 +543,9 @@ export default function CardioLog() {
       </header>
 
       <main className="container px-4 py-8">
+        {/* Ad Banner */}
+        <AdBanner className="mb-6" />
+        
         {/* Active Plan - Today's Session */}
         <div className="mb-8">
           <ActiveCardioPlanSession 
@@ -829,6 +833,9 @@ export default function CardioLog() {
             </div>
           )}
         </div>
+        
+        {/* Bottom Ad Banner */}
+        <AdBanner className="mt-8" />
       </main>
     </div>
   );

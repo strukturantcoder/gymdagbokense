@@ -650,6 +650,9 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+        
+        {/* Bottom Ad Banner */}
+        <AdBanner className="mt-8" />
       </main>
     </div>
   );

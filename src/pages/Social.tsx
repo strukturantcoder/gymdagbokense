@@ -18,6 +18,7 @@ import CreateChallengeDialog from '@/components/CreateChallengeDialog';
 import XPProgress from '@/components/XPProgress';
 import AchievementsList from '@/components/AchievementsList';
 import InviteFriends from '@/components/InviteFriends';
+import AdBanner from '@/components/AdBanner';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -175,6 +176,9 @@ export default function Social() {
       </motion.header>
 
       <main className="container px-4 py-8 relative z-10">
+        {/* Ad Banner */}
+        <AdBanner className="mb-6" />
+        
         {/* XP Card */}
         <motion.div
           initial={{ opacity: 0, y: -20, scale: 0.95 }}
@@ -680,6 +684,9 @@ export default function Social() {
             </motion.div>
           </TabsContent>
         </Tabs>
+        
+        {/* Bottom Ad Banner */}
+        <AdBanner className="mt-8" />
       </main>
     </div>
   );
