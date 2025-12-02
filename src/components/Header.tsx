@@ -57,13 +57,13 @@ const Header = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            {!loading && (
+          {!loading && (
               <>
                 {user ? (
                   <>
-                    <span className="text-sm text-muted-foreground">
-                      {user.email}
-                    </span>
+                    <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
+                      Min Dashboard
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Logga ut
