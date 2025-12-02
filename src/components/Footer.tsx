@@ -34,7 +34,12 @@ const Footer = () => {
               Din digitala träningskompis. Spåra, analysera och förbättra din träning.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="text-muted-foreground hover:text-gym-orange transition-colors">
+              <a 
+                href="https://www.instagram.com/gymdagboken.se/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-gym-orange transition-colors"
+              >
                 <Instagram className="w-5 h-5" />
               </a>
             </div>
