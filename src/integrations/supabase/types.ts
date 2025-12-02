@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cardio_logs: {
+        Row: {
+          activity_type: string
+          calories_burned: number | null
+          completed_at: string
+          created_at: string
+          distance_km: number | null
+          duration_minutes: number
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          calories_burned?: number | null
+          completed_at?: string
+          created_at?: string
+          distance_km?: number | null
+          duration_minutes: number
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          calories_burned?: number | null
+          completed_at?: string
+          created_at?: string
+          distance_km?: number | null
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenge_progress: {
         Row: {
           challenge_id: string

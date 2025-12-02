@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import WorkoutLog from "./pages/WorkoutLog";
+import CardioLog from "./pages/CardioLog";
 import Statistics from "./pages/Statistics";
 import Social from "./pages/Social";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/log" element={<WorkoutLog />} />
+            <Route path="/cardio" element={<CardioLog />} />
             <Route path="/stats" element={<Statistics />} />
             <Route path="/social" element={<Social />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
