@@ -76,23 +76,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Check subscription when session changes
+  // Check subscription when session changes (only after initial load)
   useEffect(() => {
+    if (loading) return; // Wait for initial auth state to load
+    
     if (session?.access_token) {
       checkSubscription(session.access_token);
     } else {
       setIsPremium(false);
       setSubscriptionEnd(null);
     }
-  }, [session?.access_token, checkSubscription]);
+  }, [session?.access_token, checkSubscription, loading]);
 
   // Periodically check subscription (every 60 seconds)
   useEffect(() => {
-    if (!session?.access_token) return;
+    if (loading || !session?.access_token) return;
     
-    const interval = setInterval(checkSubscription, 60000);
+    const interval = setInterval(() => {
+      if (session?.access_token) {
+        checkSubscription(session.access_token);
+      }
+    }, 60000);
     return () => clearInterval(interval);
-  }, [session?.access_token, checkSubscription]);
+  }, [session?.access_token, checkSubscription, loading]);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
