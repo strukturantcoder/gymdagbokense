@@ -137,19 +137,44 @@ export default function WorkoutLog() {
     setExerciseLogs([]);
   };
 
-  const handleDayChange = (dayIndex: string) => {
+  const handleDayChange = async (dayIndex: string) => {
     setSelectedDay(dayIndex);
     const program = programs.find(p => p.id === selectedProgram);
     if (program) {
       const day = program.program_data.days[parseInt(dayIndex)];
       if (day) {
-        setExerciseLogs(day.exercises.map(ex => ({
-          exercise_name: ex.name,
-          sets_completed: ex.sets,
-          reps_completed: ex.reps,
-          weight_kg: '',
-          notes: ''
-        })));
+        // Fetch last used weights for these exercises
+        const exerciseNames = day.exercises.map(ex => ex.name);
+        const { data: lastWeights } = await supabase
+          .from('exercise_logs')
+          .select('exercise_name, weight_kg, sets_completed, reps_completed')
+          .in('exercise_name', exerciseNames)
+          .order('created_at', { ascending: false });
+        
+        // Create a map of exercise name to last used values
+        const lastValuesMap = new Map<string, { weight: string; sets: number; reps: string }>();
+        if (lastWeights) {
+          for (const log of lastWeights) {
+            if (!lastValuesMap.has(log.exercise_name) && log.weight_kg !== null) {
+              lastValuesMap.set(log.exercise_name, {
+                weight: log.weight_kg.toString(),
+                sets: log.sets_completed,
+                reps: log.reps_completed
+              });
+            }
+          }
+        }
+        
+        setExerciseLogs(day.exercises.map(ex => {
+          const lastValues = lastValuesMap.get(ex.name);
+          return {
+            exercise_name: ex.name,
+            sets_completed: lastValues?.sets ?? ex.sets,
+            reps_completed: lastValues?.reps ?? ex.reps,
+            weight_kg: lastValues?.weight ?? '',
+            notes: ''
+          };
+        }));
       }
     }
   };
