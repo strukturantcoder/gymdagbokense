@@ -113,6 +113,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cardio_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          goal_type: string
+          id: string
+          is_active: boolean
+          name: string
+          plan_data: Json
+          target_value: string | null
+          total_weeks: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          goal_type: string
+          id?: string
+          is_active?: boolean
+          name: string
+          plan_data: Json
+          target_value?: string | null
+          total_weeks: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          goal_type?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          plan_data?: Json
+          target_value?: string | null
+          total_weeks?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenge_progress: {
         Row: {
           challenge_id: string
