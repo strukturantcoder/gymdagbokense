@@ -113,6 +113,51 @@ export type Database = {
         }
         Relationships: []
       }
+      cardio_plan_sessions: {
+        Row: {
+          cardio_log_id: string | null
+          completed_at: string
+          id: string
+          plan_id: string
+          session_day: string
+          user_id: string
+          week_number: number
+        }
+        Insert: {
+          cardio_log_id?: string | null
+          completed_at?: string
+          id?: string
+          plan_id: string
+          session_day: string
+          user_id: string
+          week_number: number
+        }
+        Update: {
+          cardio_log_id?: string | null
+          completed_at?: string
+          id?: string
+          plan_id?: string
+          session_day?: string
+          user_id?: string
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cardio_plan_sessions_cardio_log_id_fkey"
+            columns: ["cardio_log_id"]
+            isOneToOne: false
+            referencedRelation: "cardio_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cardio_plan_sessions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "cardio_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cardio_plans: {
         Row: {
           created_at: string
