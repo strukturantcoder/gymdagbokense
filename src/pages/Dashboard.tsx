@@ -14,6 +14,22 @@ import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarCh
 import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
 import ExerciseInfo from '@/components/ExerciseInfo';
+import SortableExercise from '@/components/SortableExercise';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 interface Exercise {
   name: string;
@@ -217,6 +233,33 @@ export default function Dashboard() {
     setNewExerciseName('');
     setAddingToDay(null);
   };
+
+  const handleDragEnd = (dayIndex: number) => (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!editedProgram || !over || active.id === over.id) return;
+    
+    const exercises = editedProgram.program_data.days[dayIndex].exercises;
+    const oldIndex = exercises.findIndex((_, i) => `${dayIndex}-${i}` === active.id);
+    const newIndex = exercises.findIndex((_, i) => `${dayIndex}-${i}` === over.id);
+    
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newProgram = { ...editedProgram };
+      newProgram.program_data.days[dayIndex].exercises = arrayMove(exercises, oldIndex, newIndex);
+      setEditedProgram(newProgram);
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleSignOut = async () => {
     await signOut();
@@ -471,50 +514,64 @@ export default function Dashboard() {
                       <h3 className="font-display font-bold text-lg mb-1">{day.day}</h3>
                       <p className="text-sm text-gym-orange mb-4">{day.focus}</p>
                       
-                      <div className="space-y-3">
-                        {day.exercises.map((exercise, exIndex) => (
-                          <div
-                            key={exIndex}
-                            className="bg-secondary/50 rounded-lg p-3 flex items-center justify-between"
+                      {isEditing ? (
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={handleDragEnd(dayIndex)}
+                        >
+                          <SortableContext
+                            items={day.exercises.map((_, i) => `${dayIndex}-${i}`)}
+                            strategy={verticalListSortingStrategy}
                           >
-                            <div>
-                              <ExerciseInfo exerciseName={exercise.name}>
-                                <p className="font-medium">{exercise.name}</p>
-                              </ExerciseInfo>
-                              {exercise.notes && (
-                                <p className="text-xs text-muted-foreground">{exercise.notes}</p>
-                              )}
+                            <div className="space-y-3">
+                              {day.exercises.map((exercise, exIndex) => (
+                                <SortableExercise
+                                  key={`${dayIndex}-${exIndex}`}
+                                  id={`${dayIndex}-${exIndex}`}
+                                  exercise={exercise}
+                                  isEditing={true}
+                                  onRemove={() => removeExercise(dayIndex, exIndex)}
+                                />
+                              ))}
                             </div>
-                            <div className="flex items-center gap-3">
+                          </SortableContext>
+                        </DndContext>
+                      ) : (
+                        <div className="space-y-3">
+                          {day.exercises.map((exercise, exIndex) => (
+                            <div
+                              key={exIndex}
+                              className="bg-secondary/50 rounded-lg p-3 flex items-center justify-between"
+                            >
+                              <div>
+                                <ExerciseInfo exerciseName={exercise.name}>
+                                  <p className="font-medium">{exercise.name}</p>
+                                </ExerciseInfo>
+                                {exercise.notes && (
+                                  <p className="text-xs text-muted-foreground">{exercise.notes}</p>
+                                )}
+                              </div>
                               <div className="text-right text-sm">
                                 <p className="text-foreground">{exercise.sets} x {exercise.reps}</p>
                                 <p className="text-muted-foreground">Vila: {exercise.rest}</p>
                               </div>
-                              {isEditing && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                  onClick={() => removeExercise(dayIndex, exIndex)}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              )}
                             </div>
-                          </div>
-                        ))}
-                        
-                        {/* Add exercise */}
-                        {isEditing && (
-                          <div className="pt-2">
-                            {addingToDay === dayIndex ? (
-                              <div className="flex gap-2">
-                                <Input
-                                  placeholder="Övningsnamn"
-                                  value={newExerciseName}
-                                  onChange={(e) => setNewExerciseName(e.target.value)}
-                                  onKeyDown={(e) => e.key === 'Enter' && addExercise(dayIndex)}
-                                />
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Add exercise */}
+                      {isEditing && (
+                        <div className="pt-4">
+                          {addingToDay === dayIndex ? (
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Övningsnamn"
+                                value={newExerciseName}
+                                onChange={(e) => setNewExerciseName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && addExercise(dayIndex)}
+                              />
                                 <Button size="sm" onClick={() => addExercise(dayIndex)}>
                                   <Plus className="w-4 h-4" />
                                 </Button>
@@ -536,8 +593,7 @@ export default function Dashboard() {
                           </div>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </CardContent>
               </Card>
             ) : (
