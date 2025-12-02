@@ -1,9 +1,56 @@
-import { motion } from "framer-motion";
-import { Trophy, Users, Swords, Crown, Medal, Flame, TrendingUp, Target, Clock } from "lucide-react";
+import { motion, useInView } from "framer-motion";
+import { Trophy, Users, Swords, Crown, Medal, Flame, TrendingUp, Target, Clock, PartyPopper } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useRef, useEffect, useState } from "react";
+import confetti from "canvas-confetti";
 
 const SocialShowcase = () => {
+  const winnerRef = useRef<HTMLDivElement>(null);
+  const isWinnerInView = useInView(winnerRef, { once: true, margin: "-100px" });
+  const [confettiTriggered, setConfettiTriggered] = useState(false);
+
+  // Trigger confetti when winner card comes into view
+  useEffect(() => {
+    if (isWinnerInView && !confettiTriggered) {
+      setConfettiTriggered(true);
+      
+      // Delay confetti slightly for better effect
+      const timer = setTimeout(() => {
+        // Fire confetti from the left
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0.2, y: 0.6 },
+          colors: ['#f97316', '#fbbf24', '#ffffff'],
+        });
+        
+        // Fire confetti from the right
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 55,
+          origin: { x: 0.8, y: 0.6 },
+          colors: ['#f97316', '#fbbf24', '#ffffff'],
+        });
+
+        // Fire more confetti after a small delay
+        setTimeout(() => {
+          confetti({
+            particleCount: 30,
+            angle: 90,
+            spread: 100,
+            origin: { x: 0.5, y: 0.5 },
+            colors: ['#f97316', '#fbbf24', '#ffffff'],
+          });
+        }, 200);
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isWinnerInView, confettiTriggered]);
+
   const leaderboard = [
     { rank: 1, name: "Erik S", xp: 4250, level: 18, avatar: "ES", streak: 21 },
     { rank: 2, name: "Anna K", xp: 3890, level: 16, avatar: "AK", streak: 14 },
@@ -244,6 +291,121 @@ const SocialShowcase = () => {
                 </div>
               </motion.div>
             ))}
+
+            {/* Completed Challenge with Winner */}
+            <motion.div
+              ref={winnerRef}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
+              className="bg-gradient-to-br from-yellow-500/10 via-gym-orange/10 to-gym-amber/10 border-2 border-yellow-500/30 rounded-xl p-5 shadow-xl relative overflow-hidden"
+            >
+              {/* Animated background glow */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={isWinnerInView ? { opacity: [0, 0.5, 0.3] } : {}}
+                transition={{ duration: 1 }}
+                className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-transparent to-yellow-500/10"
+              />
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <PartyPopper className="w-5 h-5 text-yellow-500" />
+                    <span className="font-medium">Flest sets på en vecka</span>
+                  </div>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={isWinnerInView ? { scale: 1 } : {}}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
+                    className="flex items-center gap-1 bg-yellow-500/20 text-yellow-500 px-3 py-1 rounded-full text-xs font-semibold"
+                  >
+                    <Trophy className="w-3 h-3" />
+                    <span>AVSLUTAD</span>
+                  </motion.div>
+                </div>
+
+                {/* Winner Display */}
+                <div className="flex items-center gap-4 mb-4">
+                  {/* Winner */}
+                  <div className="flex-1 text-center">
+                    <motion.div
+                      initial={{ scale: 0, rotate: -10 }}
+                      animate={isWinnerInView ? { scale: 1, rotate: 0 } : {}}
+                      transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                      className="relative inline-block"
+                    >
+                      <Avatar className="h-16 w-16 mx-auto mb-2 border-4 border-yellow-500 shadow-lg shadow-yellow-500/30">
+                        <AvatarFallback className="bg-gradient-to-br from-yellow-500 to-gym-amber text-primary-foreground text-lg font-bold">
+                          ES
+                        </AvatarFallback>
+                      </Avatar>
+                      <motion.div
+                        initial={{ scale: 0, y: 10 }}
+                        animate={isWinnerInView ? { scale: 1, y: 0 } : {}}
+                        transition={{ delay: 0.6, type: "spring" }}
+                        className="absolute -top-2 -right-2"
+                      >
+                        <Crown className="w-6 h-6 text-yellow-500 drop-shadow-lg" />
+                      </motion.div>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={isWinnerInView ? { opacity: 1, y: 0 } : {}}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <p className="font-semibold">Erik S</p>
+                      <p className="text-3xl font-display font-bold text-yellow-500">156</p>
+                      <p className="text-xs text-yellow-500/80">VINNARE!</p>
+                    </motion.div>
+                  </div>
+
+                  {/* Trophy */}
+                  <motion.div
+                    initial={{ scale: 0, rotate: 20 }}
+                    animate={isWinnerInView ? { scale: 1, rotate: 0 } : {}}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 150 }}
+                    className="flex flex-col items-center gap-1"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-yellow-500 to-gym-amber flex items-center justify-center shadow-lg">
+                      <Trophy className="w-7 h-7 text-primary-foreground" />
+                    </div>
+                    <span className="text-xs text-muted-foreground">+150 XP</span>
+                  </motion.div>
+
+                  {/* Loser */}
+                  <div className="flex-1 text-center">
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={isWinnerInView ? { opacity: 0.7 } : {}}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <Avatar className="h-14 w-14 mx-auto mb-2 border-2 border-border opacity-70">
+                        <AvatarFallback className="bg-secondary">
+                          ML
+                        </AvatarFallback>
+                      </Avatar>
+                      <p className="font-medium text-muted-foreground">Marcus L</p>
+                      <p className="text-2xl font-display font-bold text-muted-foreground">142</p>
+                      <p className="text-xs text-muted-foreground">Bra kämpat!</p>
+                    </motion.div>
+                  </div>
+                </div>
+
+                {/* Final scores */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={isWinnerInView ? { opacity: 1 } : {}}
+                  transition={{ delay: 0.7 }}
+                  className="bg-background/50 rounded-lg p-3 text-center"
+                >
+                  <p className="text-sm text-muted-foreground">
+                    Erik vann med <span className="font-semibold text-yellow-500">14 sets</span> marginal!
+                  </p>
+                </motion.div>
+              </div>
+            </motion.div>
 
             {/* Create Challenge CTA */}
             <motion.div
