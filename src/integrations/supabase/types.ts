@@ -115,6 +115,36 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_goals: {
+        Row: {
+          created_at: string
+          exercise_name: string
+          id: string
+          target_reps: number | null
+          target_weight_kg: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_name: string
+          id?: string
+          target_reps?: number | null
+          target_weight_kg?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          target_reps?: number | null
+          target_weight_kg?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_logs: {
         Row: {
           created_at: string
@@ -179,6 +209,33 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      personal_bests: {
+        Row: {
+          achieved_at: string
+          best_reps: number | null
+          best_weight_kg: number
+          exercise_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achieved_at?: string
+          best_reps?: number | null
+          best_weight_kg: number
+          exercise_name: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achieved_at?: string
+          best_reps?: number | null
+          best_weight_kg?: number
+          exercise_name?: string
+          id?: string
           user_id?: string
         }
         Relationships: []
