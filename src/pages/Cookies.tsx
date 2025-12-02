@@ -146,7 +146,7 @@ export default function Cookies() {
           <section className="space-y-4">
             <h2 className="text-2xl font-display font-semibold text-foreground">7. Kontakt</h2>
             <p>
-              Har du frågor om vår användning av cookies? Kontakta oss på: <a href="mailto:privacy@gymdagboken.se" className="text-gym-orange hover:underline">privacy@gymdagboken.se</a>
+              Har du frågor om vår användning av cookies? Kontakta oss på: <a href="mailto:info@gymdagboken.se" className="text-gym-orange hover:underline">info@gymdagboken.se</a>
             </p>
           </section>
         </div>

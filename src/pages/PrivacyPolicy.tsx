@@ -90,7 +90,7 @@ export default function PrivacyPolicy() {
             <h2 className="text-2xl font-display font-semibold text-foreground">7. Kontakta oss</h2>
             <p>
               Om du har frågor om denna integritetspolicy eller vill utöva dina rättigheter, 
-              kontakta oss på: <a href="mailto:privacy@gymdagboken.se" className="text-gym-orange hover:underline">privacy@gymdagboken.se</a>
+              kontakta oss på: <a href="mailto:info@gymdagboken.se" className="text-gym-orange hover:underline">info@gymdagboken.se</a>
             </p>
           </section>
         </div>
