@@ -1,16 +1,32 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Dumbbell } from "lucide-react";
+import { Menu, X, Dumbbell, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut, loading } = useAuth();
+  const navigate = useNavigate();
 
   const navItems = [
     { label: "Funktioner", href: "#features" },
     { label: "Priser", href: "#pricing" },
     { label: "Om oss", href: "#about" },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Utloggad!");
+    setIsMenuOpen(false);
+  };
+
+  const handleAuthClick = () => {
+    navigate("/auth");
+    setIsMenuOpen(false);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
@@ -41,12 +57,30 @@ const Header = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="sm">
-              Logga in
-            </Button>
-            <Button variant="hero" size="sm">
-              Kom igång
-            </Button>
+            {!loading && (
+              <>
+                {user ? (
+                  <>
+                    <span className="text-sm text-muted-foreground">
+                      {user.email}
+                    </span>
+                    <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logga ut
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={handleAuthClick}>
+                      Logga in
+                    </Button>
+                    <Button variant="hero" size="sm" onClick={handleAuthClick}>
+                      Kom igång
+                    </Button>
+                  </>
+                )}
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -85,12 +119,30 @@ const Header = () => {
                   </a>
                 ))}
                 <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                  <Button variant="ghost" className="w-full justify-center">
-                    Logga in
-                  </Button>
-                  <Button variant="hero" className="w-full justify-center">
-                    Kom igång
-                  </Button>
+                  {!loading && (
+                    <>
+                      {user ? (
+                        <>
+                          <p className="text-sm text-muted-foreground text-center mb-2">
+                            {user.email}
+                          </p>
+                          <Button variant="ghost" className="w-full justify-center" onClick={handleSignOut}>
+                            <LogOut className="w-4 h-4 mr-2" />
+                            Logga ut
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="ghost" className="w-full justify-center" onClick={handleAuthClick}>
+                            Logga in
+                          </Button>
+                          <Button variant="hero" className="w-full justify-center" onClick={handleAuthClick}>
+                            Kom igång
+                          </Button>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               </nav>
             </div>
