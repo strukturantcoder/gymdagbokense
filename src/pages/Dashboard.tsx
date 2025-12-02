@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList } from 'lucide-react';
 
 interface Exercise {
   name: string;
@@ -167,10 +167,16 @@ export default function Dashboard() {
             </div>
             <span className="font-display text-xl font-bold">GYMDAGBOKEN</span>
           </div>
-          <Button variant="ghost" onClick={handleSignOut}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Logga ut
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate('/log')}>
+              <ClipboardList className="w-4 h-4 mr-2" />
+              Träningslogg
+            </Button>
+            <Button variant="ghost" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logga ut
+            </Button>
+          </div>
         </div>
       </header>
 
