@@ -7,6 +7,7 @@ const Footer = () => {
       { label: "Funktioner", href: "#features" },
       { label: "Så fungerar det", href: "#how-it-works" },
       { label: "Priser", href: "#pricing" },
+      { label: "Kontakt", href: "/contact", isRoute: true },
     ],
     legal: [
       { label: "Integritetspolicy", href: "/privacy" },
@@ -45,12 +46,21 @@ const Footer = () => {
             <ul className="space-y-2">
               {links.product.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                  >
-                    {link.label}
-                  </a>
+                  {link.isRoute ? (
+                    <Link
+                      to={link.href}
+                      className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
