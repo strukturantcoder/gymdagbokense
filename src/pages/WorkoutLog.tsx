@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight } from 'lucide-react';
+import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight, Timer } from 'lucide-react';
+import RestTimer from '@/components/RestTimer';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 
@@ -75,6 +76,7 @@ export default function WorkoutLog() {
   const [duration, setDuration] = useState('');
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLogEntry[]>([]);
+  const [showTimer, setShowTimer] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -254,13 +256,35 @@ export default function WorkoutLog() {
             <h1 className="text-3xl font-display font-bold">Logga träning</h1>
             <p className="text-muted-foreground">Spåra dina pass och vikter</p>
           </div>
-          {!isLogging && (
-            <Button variant="hero" onClick={() => setIsLogging(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nytt Pass
+          <div className="flex gap-2">
+            <Button 
+              variant={showTimer ? "default" : "outline"} 
+              onClick={() => setShowTimer(!showTimer)}
+              className={showTimer ? "bg-gym-orange hover:bg-gym-orange/90" : ""}
+            >
+              <Timer className="w-4 h-4 mr-2" />
+              Vila Timer
             </Button>
-          )}
+            {!isLogging && (
+              <Button variant="hero" onClick={() => setIsLogging(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nytt Pass
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Rest Timer */}
+        {showTimer && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-6 max-w-sm"
+          >
+            <RestTimer onClose={() => setShowTimer(false)} />
+          </motion.div>
+        )}
 
         {/* New Workout Form */}
         {isLogging && (
