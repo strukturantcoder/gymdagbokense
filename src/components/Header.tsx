@@ -14,7 +14,6 @@ const Header = () => {
   const navItems = [
     { label: "Funktioner", href: "#features" },
     { label: "Priser", href: "#pricing" },
-    { label: "Om oss", href: "#about" },
   ];
 
   const handleSignOut = async () => {
