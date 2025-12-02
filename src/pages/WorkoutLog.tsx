@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight, Timer } from 'lucide-react';
 import RestTimer from '@/components/RestTimer';
+import ExerciseInfo from '@/components/ExerciseInfo';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 
@@ -353,7 +354,9 @@ export default function WorkoutLog() {
                     {exerciseLogs.map((log, index) => (
                       <div key={index} className="bg-secondary/50 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-medium">{log.exercise_name}</h4>
+                          <ExerciseInfo exerciseName={log.exercise_name}>
+                            <h4 className="font-medium">{log.exercise_name}</h4>
+                          </ExerciseInfo>
                           <span className="text-sm text-muted-foreground">
                             Mål: {log.sets_completed} x {log.reps_completed}
                           </span>

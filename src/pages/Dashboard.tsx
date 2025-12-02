@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3 } from 'lucide-react';
 import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
+import ExerciseInfo from '@/components/ExerciseInfo';
 
 interface Exercise {
   name: string;
@@ -371,7 +372,9 @@ export default function Dashboard() {
                             className="bg-secondary/50 rounded-lg p-3 flex items-center justify-between"
                           >
                             <div>
-                              <p className="font-medium">{exercise.name}</p>
+                              <ExerciseInfo exerciseName={exercise.name}>
+                                <p className="font-medium">{exercise.name}</p>
+                              </ExerciseInfo>
                               {exercise.notes && (
                                 <p className="text-xs text-muted-foreground">{exercise.notes}</p>
                               )}
