@@ -42,7 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        console.error('Error checking subscription:', error);
+        // Only log non-auth errors - auth errors are expected when session expires
+        if (!error.message?.includes('non-2xx') && !error.message?.includes('Auth')) {
+          console.error('Error checking subscription:', error);
+        }
         setIsPremium(false);
         setSubscriptionEnd(null);
       } else {
@@ -50,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSubscriptionEnd(data?.subscription_end || null);
       }
     } catch (error) {
-      console.error('Error checking subscription:', error);
+      // Silent fail for auth issues - user just isn't subscribed
       setIsPremium(false);
       setSubscriptionEnd(null);
     } finally {
