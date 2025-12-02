@@ -11,9 +11,9 @@ serve(async (req) => {
   }
 
   try {
-    const { goal, experienceLevel, daysPerWeek } = await req.json();
+    const { goal, experienceLevel, daysPerWeek, customDescription } = await req.json();
     
-    console.log("Generating workout for:", { goal, experienceLevel, daysPerWeek });
+    console.log("Generating workout for:", { goal, experienceLevel, daysPerWeek, customDescription });
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -48,6 +48,7 @@ Svara ALLTID i JSON-format med följande struktur:
 - Mål: ${goal}
 - Erfarenhetsnivå: ${experienceLevel}
 - Träningsdagar per vecka: ${daysPerWeek}
+${customDescription ? `- Användarens egna önskemål: ${customDescription}` : ''}
 
 Ge mig ett komplett program med övningar, sets, reps och vila. Svara endast med JSON, ingen annan text.`;
 
