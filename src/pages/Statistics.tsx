@@ -6,7 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dumbbell, ArrowLeft, Loader2, TrendingUp, Calendar, Flame, Weight } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dumbbell, ArrowLeft, Loader2, TrendingUp, Calendar, Flame, Weight, Footprints, MapPin, Timer } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -41,10 +42,25 @@ interface WorkoutLog {
   duration_minutes: number | null;
 }
 
+interface CardioLog {
+  id: string;
+  activity_type: string;
+  duration_minutes: number;
+  distance_km: number | null;
+  completed_at: string;
+}
+
 interface WeeklyData {
   week: string;
   workouts: number;
   totalMinutes: number;
+}
+
+interface CardioWeeklyData {
+  week: string;
+  sessions: number;
+  totalMinutes: number;
+  totalDistance: number;
 }
 
 interface ExerciseProgress {
@@ -59,6 +75,7 @@ export default function Statistics() {
   
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
+  const [cardioLogs, setCardioLogs] = useState<CardioLog[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<string>('');
   const [uniqueExercises, setUniqueExercises] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,6 +131,16 @@ export default function Statistics() {
         setSelectedExercise(names[0]);
       }
     }
+
+    // Fetch cardio logs
+    const { data: cardio } = await supabase
+      .from('cardio_logs')
+      .select('id, activity_type, duration_minutes, distance_km, completed_at')
+      .order('completed_at', { ascending: true });
+    
+    if (cardio) {
+      setCardioLogs(cardio);
+    }
     
     setIsLoading(false);
   };
@@ -143,6 +170,36 @@ export default function Statistics() {
         week: format(weekStart, 'd MMM', { locale: sv }),
         workouts: weekWorkouts.length,
         totalMinutes: weekWorkouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0)
+      };
+    });
+  };
+
+  // Calculate weekly cardio data
+  const getCardioWeeklyData = (): CardioWeeklyData[] => {
+    if (cardioLogs.length === 0) return [];
+    
+    const now = new Date();
+    const twelveWeeksAgo = subDays(now, 84);
+    
+    const weeks = eachWeekOfInterval(
+      { start: twelveWeeksAgo, end: now },
+      { weekStartsOn: 1 }
+    );
+
+    return weeks.map(weekStart => {
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+      
+      const weekCardio = cardioLogs.filter(log => {
+        const logDate = parseISO(log.completed_at);
+        return logDate >= weekStart && logDate < weekEnd;
+      });
+
+      return {
+        week: format(weekStart, 'd MMM', { locale: sv }),
+        sessions: weekCardio.length,
+        totalMinutes: weekCardio.reduce((sum, c) => sum + c.duration_minutes, 0),
+        totalDistance: weekCardio.reduce((sum, c) => sum + (c.distance_km || 0), 0)
       };
     });
   };
@@ -182,7 +239,14 @@ export default function Statistics() {
     ? Math.max(...exerciseLogs.filter(e => e.exercise_name === selectedExercise).map(e => e.weight_kg || 0))
     : 0;
 
+  // Cardio stats
+  const totalCardioSessions = cardioLogs.length;
+  const totalCardioMinutes = cardioLogs.reduce((sum, c) => sum + c.duration_minutes, 0);
+  const totalCardioDistance = cardioLogs.reduce((sum, c) => sum + (c.distance_km || 0), 0);
+  const avgCardioPerWeek = totalCardioSessions > 0 ? (totalCardioSessions / 12).toFixed(1) : '0';
+
   const weeklyData = getWeeklyData();
+  const cardioWeeklyData = getCardioWeeklyData();
   const exerciseProgress = getExerciseProgress();
 
   if (loading || isLoading) {
@@ -216,273 +280,521 @@ export default function Statistics() {
           <p className="text-muted-foreground">Spåra din träningsfrekvens och styrkeökning</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Calendar className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-display font-bold">{totalWorkouts}</p>
-                    <p className="text-xs text-muted-foreground">Totala pass</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+        <Tabs defaultValue="strength" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="strength" className="flex items-center gap-2">
+              <Dumbbell className="w-4 h-4" />
+              Styrka
+            </TabsTrigger>
+            <TabsTrigger value="cardio" className="flex items-center gap-2">
+              <Footprints className="w-4 h-4" />
+              Kondition
+            </TabsTrigger>
+          </TabsList>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gym-orange/10 rounded-lg">
-                    <Flame className="w-5 h-5 text-gym-orange" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-display font-bold">{avgWorkoutsPerWeek}</p>
-                    <p className="text-xs text-muted-foreground">Pass/vecka</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          {/* Strength Tab */}
+          <TabsContent value="strength" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Calendar className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{totalWorkouts}</p>
+                        <p className="text-xs text-muted-foreground">Totala pass</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-500/10 rounded-lg">
-                    <TrendingUp className="w-5 h-5 text-green-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-display font-bold">{Math.round(totalMinutes / 60)}h</p>
-                    <p className="text-xs text-muted-foreground">Total tid</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gym-orange/10 rounded-lg">
+                        <Flame className="w-5 h-5 text-gym-orange" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{avgWorkoutsPerWeek}</p>
+                        <p className="text-xs text-muted-foreground">Pass/vecka</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-500/10 rounded-lg">
-                    <Weight className="w-5 h-5 text-purple-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-display font-bold">{maxWeight}kg</p>
-                    <p className="text-xs text-muted-foreground">Max vikt</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-500/10 rounded-lg">
+                        <TrendingUp className="w-5 h-5 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{Math.round(totalMinutes / 60)}h</p>
+                        <p className="text-xs text-muted-foreground">Total tid</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Training Frequency Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Träningsfrekvens</CardTitle>
-                <CardDescription>Antal pass per vecka de senaste 12 veckorna</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {weeklyData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={weeklyData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis 
-                        dataKey="week" 
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                      />
-                      <YAxis 
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                        allowDecimals={false}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                        labelStyle={{ color: 'hsl(var(--foreground))' }}
-                      />
-                      <Bar 
-                        dataKey="workouts" 
-                        fill="hsl(var(--primary))" 
-                        radius={[4, 4, 0, 0]}
-                        name="Pass"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                    Ingen data att visa ännu
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-500/10 rounded-lg">
+                        <Weight className="w-5 h-5 text-purple-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{maxWeight}kg</p>
+                        <p className="text-xs text-muted-foreground">Max vikt</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
 
-          {/* Training Duration Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Träningstid</CardTitle>
-                <CardDescription>Totala minuter per vecka</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {weeklyData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={weeklyData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis 
-                        dataKey="week" 
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                      />
-                      <YAxis 
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                        labelStyle={{ color: 'hsl(var(--foreground))' }}
-                      />
-                      <defs>
-                        <linearGradient id="colorMinutes" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <Area 
-                        type="monotone" 
-                        dataKey="totalMinutes" 
-                        stroke="hsl(24, 95%, 53%)" 
-                        fill="url(#colorMinutes)"
-                        name="Minuter"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                    Ingen data att visa ännu
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Training Frequency Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Träningsfrekvens</CardTitle>
+                    <CardDescription>Antal pass per vecka de senaste 12 veckorna</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {weeklyData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={weeklyData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis 
+                            dataKey="week" 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <YAxis 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                            allowDecimals={false}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                            labelStyle={{ color: 'hsl(var(--foreground))' }}
+                          />
+                          <Bar 
+                            dataKey="workouts" 
+                            fill="hsl(var(--primary))" 
+                            radius={[4, 4, 0, 0]}
+                            name="Pass"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        Ingen data att visa ännu
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-          {/* Exercise Progression Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="lg:col-span-2"
-          >
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <CardTitle>Styrkeutveckling</CardTitle>
-                    <CardDescription>Följ din viktökning över tid</CardDescription>
-                  </div>
-                  {uniqueExercises.length > 0 && (
-                    <Select value={selectedExercise} onValueChange={setSelectedExercise}>
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Välj övning" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueExercises.map(name => (
-                          <SelectItem key={name} value={name}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {exerciseProgress.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={exerciseProgress}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                      />
-                      <YAxis 
-                        yAxisId="left"
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                      />
-                      <YAxis 
-                        yAxisId="right"
-                        orientation="right"
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                        labelStyle={{ color: 'hsl(var(--foreground))' }}
-                      />
-                      <Legend />
-                      <Line 
-                        yAxisId="left"
-                        type="monotone" 
-                        dataKey="weight" 
-                        stroke="hsl(var(--primary))" 
-                        strokeWidth={2}
-                        dot={{ fill: 'hsl(var(--primary))' }}
-                        name="Vikt (kg)"
-                      />
-                      <Line 
-                        yAxisId="right"
-                        type="monotone" 
-                        dataKey="volume" 
-                        stroke="hsl(24, 95%, 53%)" 
-                        strokeWidth={2}
-                        dot={{ fill: 'hsl(24, 95%, 53%)' }}
-                        name="Volym (kg×sets×reps)"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[350px] flex items-center justify-center text-muted-foreground">
-                    {uniqueExercises.length === 0 
-                      ? 'Logga pass med vikter för att se din utveckling'
-                      : 'Ingen viktdata för denna övning ännu'}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+              {/* Training Duration Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Träningstid</CardTitle>
+                    <CardDescription>Totala minuter per vecka</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {weeklyData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart data={weeklyData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis 
+                            dataKey="week" 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <YAxis 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                            labelStyle={{ color: 'hsl(var(--foreground))' }}
+                          />
+                          <defs>
+                            <linearGradient id="colorMinutes" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <Area 
+                            type="monotone" 
+                            dataKey="totalMinutes" 
+                            stroke="hsl(24, 95%, 53%)" 
+                            fill="url(#colorMinutes)"
+                            name="Minuter"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        Ingen data att visa ännu
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Exercise Progression Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="lg:col-span-2"
+              >
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <CardTitle>Styrkeutveckling</CardTitle>
+                        <CardDescription>Följ din viktökning över tid</CardDescription>
+                      </div>
+                      {uniqueExercises.length > 0 && (
+                        <Select value={selectedExercise} onValueChange={setSelectedExercise}>
+                          <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Välj övning" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {uniqueExercises.map(name => (
+                              <SelectItem key={name} value={name}>
+                                {name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {exerciseProgress.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={350}>
+                        <LineChart data={exerciseProgress}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis 
+                            dataKey="date" 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <YAxis 
+                            yAxisId="left"
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <YAxis 
+                            yAxisId="right"
+                            orientation="right"
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                            labelStyle={{ color: 'hsl(var(--foreground))' }}
+                          />
+                          <Legend />
+                          <Line 
+                            yAxisId="left"
+                            type="monotone" 
+                            dataKey="weight" 
+                            stroke="hsl(var(--primary))" 
+                            strokeWidth={2}
+                            dot={{ fill: 'hsl(var(--primary))' }}
+                            name="Vikt (kg)"
+                          />
+                          <Line 
+                            yAxisId="right"
+                            type="monotone" 
+                            dataKey="volume" 
+                            stroke="hsl(24, 95%, 53%)" 
+                            strokeWidth={2}
+                            dot={{ fill: 'hsl(24, 95%, 53%)' }}
+                            name="Volym (kg×sets×reps)"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+                        {uniqueExercises.length === 0 
+                          ? 'Logga pass med vikter för att se din utveckling'
+                          : 'Ingen viktdata för denna övning ännu'}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </TabsContent>
+
+          {/* Cardio Tab */}
+          <TabsContent value="cardio" className="space-y-6">
+            {/* Cardio Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Footprints className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{totalCardioSessions}</p>
+                        <p className="text-xs text-muted-foreground">Totala pass</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gym-orange/10 rounded-lg">
+                        <Flame className="w-5 h-5 text-gym-orange" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{avgCardioPerWeek}</p>
+                        <p className="text-xs text-muted-foreground">Pass/vecka</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-500/10 rounded-lg">
+                        <Timer className="w-5 h-5 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{Math.round(totalCardioMinutes / 60)}h</p>
+                        <p className="text-xs text-muted-foreground">Total tid</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-500/10 rounded-lg">
+                        <MapPin className="w-5 h-5 text-purple-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{totalCardioDistance.toFixed(1)}km</p>
+                        <p className="text-xs text-muted-foreground">Total distans</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Cardio Distance Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Distans per vecka</CardTitle>
+                    <CardDescription>Totala kilometer de senaste 12 veckorna</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {cardioWeeklyData.length > 0 && cardioWeeklyData.some(d => d.totalDistance > 0) ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart data={cardioWeeklyData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis 
+                            dataKey="week" 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <YAxis 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                            labelStyle={{ color: 'hsl(var(--foreground))' }}
+                            formatter={(value: number) => [`${value.toFixed(1)} km`, 'Distans']}
+                          />
+                          <defs>
+                            <linearGradient id="colorDistance" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <Area 
+                            type="monotone" 
+                            dataKey="totalDistance" 
+                            stroke="hsl(var(--primary))" 
+                            fill="url(#colorDistance)"
+                            name="Kilometer"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        Logga konditionspass med distans för att se din utveckling
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Cardio Time Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tid per vecka</CardTitle>
+                    <CardDescription>Totala minuter konditionsträning</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {cardioWeeklyData.length > 0 && cardioWeeklyData.some(d => d.totalMinutes > 0) ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={cardioWeeklyData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis 
+                            dataKey="week" 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <YAxis 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                            labelStyle={{ color: 'hsl(var(--foreground))' }}
+                          />
+                          <Bar 
+                            dataKey="totalMinutes" 
+                            fill="hsl(24, 95%, 53%)" 
+                            radius={[4, 4, 0, 0]}
+                            name="Minuter"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        Logga konditionspass för att se din utveckling
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Cardio Sessions Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="lg:col-span-2"
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Antal konditionspass</CardTitle>
+                    <CardDescription>Pass per vecka de senaste 12 veckorna</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {cardioWeeklyData.length > 0 && cardioWeeklyData.some(d => d.sessions > 0) ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={cardioWeeklyData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis 
+                            dataKey="week" 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <YAxis 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                            allowDecimals={false}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                            labelStyle={{ color: 'hsl(var(--foreground))' }}
+                          />
+                          <Bar 
+                            dataKey="sessions" 
+                            fill="hsl(var(--primary))" 
+                            radius={[4, 4, 0, 0]}
+                            name="Pass"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        Logga konditionspass för att se din utveckling
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

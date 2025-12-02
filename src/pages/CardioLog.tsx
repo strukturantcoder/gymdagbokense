@@ -9,13 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { 
   Dumbbell, Plus, Trash2, Loader2, ArrowLeft, 
-  Bike, Footprints, Waves, Flag, Timer, Flame, MapPin
+  Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import confetti from 'canvas-confetti';
 
 interface CardioLog {
   id: string;
@@ -25,6 +28,14 @@ interface CardioLog {
   calories_burned: number | null;
   notes: string | null;
   completed_at: string;
+}
+
+interface CardioGoal {
+  id: string;
+  activity_type: string;
+  target_type: string;
+  target_value: number;
+  period: string;
 }
 
 const activityTypes = [
@@ -46,13 +57,19 @@ const getActivityLabel = (type: string) => {
   return activity?.label || type;
 };
 
+// XP calculations for cardio
+const CARDIO_XP_PER_MINUTE = 2;
+const CARDIO_XP_PER_KM = 10;
+
 export default function CardioLog() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [logs, setLogs] = useState<CardioLog[]>([]);
+  const [goals, setGoals] = useState<CardioGoal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showGoalDialog, setShowGoalDialog] = useState(false);
 
   // Form state
   const [activityType, setActivityType] = useState('');
@@ -60,6 +77,12 @@ export default function CardioLog() {
   const [distanceKm, setDistanceKm] = useState('');
   const [caloriesBurned, setCaloriesBurned] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Goal form state
+  const [goalActivityType, setGoalActivityType] = useState('all');
+  const [goalTargetType, setGoalTargetType] = useState('distance_km');
+  const [goalTargetValue, setGoalTargetValue] = useState('');
+  const [goalPeriod, setGoalPeriod] = useState('weekly');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -69,12 +92,17 @@ export default function CardioLog() {
 
   useEffect(() => {
     if (user) {
-      fetchLogs();
+      fetchData();
     }
   }, [user]);
 
-  const fetchLogs = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
+    await Promise.all([fetchLogs(), fetchGoals()]);
+    setIsLoading(false);
+  };
+
+  const fetchLogs = async () => {
     const { data, error } = await supabase
       .from('cardio_logs')
       .select('*')
@@ -83,11 +111,66 @@ export default function CardioLog() {
 
     if (error) {
       console.error('Error fetching cardio logs:', error);
-      toast.error('Kunde inte hämta konditionspass');
     } else {
       setLogs(data || []);
     }
-    setIsLoading(false);
+  };
+
+  const fetchGoals = async () => {
+    const { data, error } = await supabase
+      .from('cardio_goals')
+      .select('*');
+
+    if (error) {
+      console.error('Error fetching cardio goals:', error);
+    } else {
+      setGoals(data || []);
+    }
+  };
+
+  const calculateXP = (duration: number, distance: number | null) => {
+    let xp = duration * CARDIO_XP_PER_MINUTE;
+    if (distance) {
+      xp += distance * CARDIO_XP_PER_KM;
+    }
+    return Math.round(xp);
+  };
+
+  const updateUserStats = async (duration: number, distance: number | null) => {
+    if (!user) return;
+
+    const xpEarned = calculateXP(duration, distance);
+
+    // First get current stats
+    const { data: currentStats } = await supabase
+      .from('user_stats')
+      .select('total_xp, total_cardio_sessions, total_cardio_minutes, total_cardio_distance_km')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (currentStats) {
+      await supabase
+        .from('user_stats')
+        .update({
+          total_xp: currentStats.total_xp + xpEarned,
+          total_cardio_sessions: currentStats.total_cardio_sessions + 1,
+          total_cardio_minutes: currentStats.total_cardio_minutes + duration,
+          total_cardio_distance_km: Number(currentStats.total_cardio_distance_km) + (distance || 0)
+        })
+        .eq('user_id', user.id);
+    } else {
+      await supabase
+        .from('user_stats')
+        .insert({
+          user_id: user.id,
+          total_xp: xpEarned,
+          total_cardio_sessions: 1,
+          total_cardio_minutes: duration,
+          total_cardio_distance_km: distance || 0
+        });
+    }
+
+    return xpEarned;
   };
 
   const handleSave = async () => {
@@ -109,7 +192,17 @@ export default function CardioLog() {
 
       if (error) throw error;
 
-      toast.success('Konditionspass loggat!');
+      const xpEarned = await updateUserStats(
+        parseInt(durationMinutes),
+        distanceKm ? parseFloat(distanceKm) : null
+      );
+
+      // Check goals
+      await checkGoals(activityType, parseInt(durationMinutes), distanceKm ? parseFloat(distanceKm) : null);
+
+      toast.success(`Konditionspass loggat! +${xpEarned} XP`);
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+      
       resetForm();
       fetchLogs();
     } catch (error) {
@@ -117,6 +210,98 @@ export default function CardioLog() {
       toast.error('Kunde inte spara passet');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const checkGoals = async (activity: string, duration: number, distance: number | null) => {
+    const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+
+    for (const goal of goals) {
+      // Check if goal applies to this activity
+      if (goal.activity_type !== 'all' && goal.activity_type !== activity) continue;
+
+      // Get period dates
+      const periodStart = goal.period === 'weekly' ? weekStart : monthStart;
+      const periodEnd = goal.period === 'weekly' ? weekEnd : monthEnd;
+
+      // Get logs for this period
+      const { data: periodLogs } = await supabase
+        .from('cardio_logs')
+        .select('*')
+        .gte('completed_at', periodStart.toISOString())
+        .lte('completed_at', periodEnd.toISOString());
+
+      if (!periodLogs) continue;
+
+      // Filter by activity if needed
+      const relevantLogs = goal.activity_type === 'all' 
+        ? periodLogs 
+        : periodLogs.filter(l => l.activity_type === goal.activity_type);
+
+      // Calculate current progress
+      let currentValue = 0;
+      if (goal.target_type === 'distance_km') {
+        currentValue = relevantLogs.reduce((sum, l) => sum + (l.distance_km || 0), 0);
+      } else if (goal.target_type === 'duration_minutes') {
+        currentValue = relevantLogs.reduce((sum, l) => sum + l.duration_minutes, 0);
+      } else if (goal.target_type === 'sessions') {
+        currentValue = relevantLogs.length;
+      }
+
+      // Check if goal reached
+      if (currentValue >= goal.target_value) {
+        toast.success(`🎯 Mål uppnått! ${getGoalDescription(goal)}`);
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      }
+    }
+  };
+
+  const getGoalDescription = (goal: CardioGoal) => {
+    const activityLabel = goal.activity_type === 'all' ? 'Alla aktiviteter' : getActivityLabel(goal.activity_type);
+    const targetLabel = goal.target_type === 'distance_km' ? 'km' 
+      : goal.target_type === 'duration_minutes' ? 'minuter' : 'pass';
+    const periodLabel = goal.period === 'weekly' ? 'vecka' : 'månad';
+    return `${goal.target_value} ${targetLabel} ${activityLabel.toLowerCase()} per ${periodLabel}`;
+  };
+
+  const handleSaveGoal = async () => {
+    if (!goalTargetValue) {
+      toast.error('Ange ett målvärde');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('cardio_goals').upsert({
+        user_id: user!.id,
+        activity_type: goalActivityType,
+        target_type: goalTargetType,
+        target_value: parseFloat(goalTargetValue),
+        period: goalPeriod,
+      }, { onConflict: 'user_id,activity_type,target_type,period' });
+
+      if (error) throw error;
+
+      toast.success('Mål sparat!');
+      setShowGoalDialog(false);
+      setGoalTargetValue('');
+      fetchGoals();
+    } catch (error) {
+      console.error('Error saving goal:', error);
+      toast.error('Kunde inte spara målet');
+    }
+  };
+
+  const handleDeleteGoal = async (id: string) => {
+    const { error } = await supabase.from('cardio_goals').delete().eq('id', id);
+    if (error) {
+      toast.error('Kunde inte ta bort målet');
+    } else {
+      toast.success('Mål borttaget');
+      fetchGoals();
     }
   };
 
@@ -141,6 +326,31 @@ export default function CardioLog() {
     setCaloriesBurned('');
     setNotes('');
     setShowForm(false);
+  };
+
+  // Calculate goal progress
+  const getGoalProgress = (goal: CardioGoal) => {
+    const now = new Date();
+    const periodStart = goal.period === 'weekly' 
+      ? startOfWeek(now, { weekStartsOn: 1 }) 
+      : startOfMonth(now);
+
+    const relevantLogs = logs.filter(log => {
+      const logDate = new Date(log.completed_at);
+      const activityMatches = goal.activity_type === 'all' || log.activity_type === goal.activity_type;
+      return activityMatches && logDate >= periodStart;
+    });
+
+    let currentValue = 0;
+    if (goal.target_type === 'distance_km') {
+      currentValue = relevantLogs.reduce((sum, l) => sum + (l.distance_km || 0), 0);
+    } else if (goal.target_type === 'duration_minutes') {
+      currentValue = relevantLogs.reduce((sum, l) => sum + l.duration_minutes, 0);
+    } else if (goal.target_type === 'sessions') {
+      currentValue = relevantLogs.length;
+    }
+
+    return { current: currentValue, target: goal.target_value, percentage: Math.min(100, (currentValue / goal.target_value) * 100) };
   };
 
   // Calculate stats
@@ -170,10 +380,76 @@ export default function CardioLog() {
             </div>
             <span className="font-display text-xl font-bold">Konditionspass</span>
           </div>
-          <Button variant="hero" onClick={() => setShowForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Logga pass
-          </Button>
+          <div className="flex gap-2">
+            <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Target className="w-4 h-4 mr-2" />
+                  Sätt mål
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Sätt konditionsmål</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label>Aktivitet</Label>
+                    <Select value={goalActivityType} onValueChange={setGoalActivityType}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Alla aktiviteter</SelectItem>
+                        {activityTypes.map(type => (
+                          <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Måltyp</Label>
+                    <Select value={goalTargetType} onValueChange={setGoalTargetType}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="distance_km">Distans (km)</SelectItem>
+                        <SelectItem value="duration_minutes">Tid (minuter)</SelectItem>
+                        <SelectItem value="sessions">Antal pass</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Målvärde</Label>
+                    <Input
+                      type="number"
+                      placeholder="10"
+                      value={goalTargetValue}
+                      onChange={(e) => setGoalTargetValue(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Period</Label>
+                    <Select value={goalPeriod} onValueChange={setGoalPeriod}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Per vecka</SelectItem>
+                        <SelectItem value="monthly">Per månad</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleSaveGoal} className="w-full">Spara mål</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button variant="hero" onClick={() => setShowForm(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Logga pass
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -221,6 +497,51 @@ export default function CardioLog() {
           </Card>
         </div>
 
+        {/* Goals */}
+        {goals.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-display font-bold mb-4">Dina mål</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {goals.map(goal => {
+                const progress = getGoalProgress(goal);
+                const targetLabel = goal.target_type === 'distance_km' ? 'km' 
+                  : goal.target_type === 'duration_minutes' ? 'min' : 'pass';
+                return (
+                  <Card key={goal.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Target className="w-4 h-4 text-primary" />
+                          <span className="font-medium">
+                            {goal.activity_type === 'all' ? 'Alla aktiviteter' : getActivityLabel(goal.activity_type)}
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleDeleteGoal(goal.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {progress.current.toFixed(1)} / {goal.target_value} {targetLabel} ({goal.period === 'weekly' ? 'vecka' : 'månad'})
+                      </p>
+                      <Progress value={progress.percentage} className="h-2" />
+                      {progress.percentage >= 100 && (
+                        <p className="text-xs text-green-500 mt-1 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> Mål uppnått!
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Form */}
         {showForm && (
           <motion.div
@@ -231,7 +552,9 @@ export default function CardioLog() {
             <Card className="border-primary/50 bg-gradient-to-b from-primary/5 to-card">
               <CardHeader>
                 <CardTitle>Logga konditionspass</CardTitle>
-                <CardDescription>Registrera din träning</CardDescription>
+                <CardDescription>
+                  Du får {CARDIO_XP_PER_MINUTE} XP per minut + {CARDIO_XP_PER_KM} XP per km
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -285,6 +608,15 @@ export default function CardioLog() {
                     />
                   </div>
                 </div>
+
+                {durationMinutes && (
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      Förväntad XP: +{calculateXP(parseInt(durationMinutes) || 0, distanceKm ? parseFloat(distanceKm) : null)}
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label>Anteckningar</Label>
