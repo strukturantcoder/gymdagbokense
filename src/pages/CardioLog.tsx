@@ -16,6 +16,7 @@ import {
   Dumbbell, Plus, Trash2, Loader2, ArrowLeft, 
   Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles
 } from 'lucide-react';
+import GenerateCardioPlanDialog from '@/components/GenerateCardioPlanDialog';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import confetti from 'canvas-confetti';
@@ -530,6 +531,7 @@ export default function CardioLog() {
                 </div>
               </DialogContent>
             </Dialog>
+            <GenerateCardioPlanDialog />
             <Button variant="hero" onClick={() => setShowForm(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Logga pass
