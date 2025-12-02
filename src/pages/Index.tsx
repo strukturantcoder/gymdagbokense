@@ -3,7 +3,7 @@ import Hero from "@/components/Hero";
 import AdBanner from "@/components/AdBanner";
 import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
-import AppPreview from "@/components/AppPreview";
+import StatisticsShowcase from "@/components/StatisticsShowcase";
 import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
 
@@ -29,7 +29,7 @@ const Index = () => {
           <AdBanner size="horizontal" />
         </div>
         
-        <AppPreview />
+        <StatisticsShowcase />
         
         <section id="pricing">
           <Pricing />
