@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import WorkoutLog from "./pages/WorkoutLog";
 import Statistics from "./pages/Statistics";
+import Social from "./pages/Social";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/log" element={<WorkoutLog />} />
             <Route path="/stats" element={<Statistics />} />
+            <Route path="/social" element={<Social />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

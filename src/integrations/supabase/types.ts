@@ -14,6 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          description: string
+          icon: string
+          id: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+          xp_reward: number
+        }
+        Insert: {
+          description: string
+          icon: string
+          id?: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+          xp_reward?: number
+        }
+        Update: {
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          requirement_type?: string
+          requirement_value?: number
+          xp_reward?: number
+        }
+        Relationships: []
+      }
+      challenge_progress: {
+        Row: {
+          challenge_id: string
+          current_value: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          current_value?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          current_value?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          challenge_type: Database["public"]["Enums"]["challenge_type"]
+          challenged_id: string
+          challenger_id: string
+          created_at: string
+          end_date: string
+          id: string
+          start_date: string
+          status: string
+          target_value: number
+          winner_id: string | null
+        }
+        Insert: {
+          challenge_type: Database["public"]["Enums"]["challenge_type"]
+          challenged_id: string
+          challenger_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          start_date: string
+          status?: string
+          target_value: number
+          winner_id?: string | null
+        }
+        Update: {
+          challenge_type?: Database["public"]["Enums"]["challenge_type"]
+          challenged_id?: string
+          challenger_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          start_date?: string
+          status?: string
+          target_value?: number
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
       exercise_logs: {
         Row: {
           created_at: string
@@ -55,6 +156,33 @@ export type Database = {
           },
         ]
       }
+      friendships: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -77,6 +205,71 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_stats: {
+        Row: {
+          created_at: string
+          id: string
+          level: number
+          total_minutes: number
+          total_sets: number
+          total_workouts: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level?: number
+          total_minutes?: number
+          total_sets?: number
+          total_workouts?: number
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: number
+          total_minutes?: number
+          total_sets?: number
+          total_workouts?: number
+          total_xp?: number
           updated_at?: string
           user_id?: string
         }
@@ -164,7 +357,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      challenge_type: "workouts" | "sets" | "minutes"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -291,6 +484,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      challenge_type: ["workouts", "sets", "minutes"],
+    },
   },
 } as const
