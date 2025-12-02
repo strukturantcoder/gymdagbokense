@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Dumbbell, Mail, Lock, User } from 'lucide-react';
+import { Dumbbell, Mail, Lock, User, Gift } from 'lucide-react';
 
 const signUpSchema = z.object({
   displayName: z.string().min(2, 'Namn måste vara minst 2 tecken').max(50, 'Namn får max vara 50 tecken'),
@@ -26,14 +27,90 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [inviterName, setInviterName] = useState<string | null>(null);
   const { user, signUp, signIn } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Check for referral code in URL
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setReferralCode(ref);
+      setIsSignUp(true); // Auto-switch to signup mode
+      
+      // Try to fetch inviter's name
+      const fetchInviter = async () => {
+        const { data: inviteData } = await supabase
+          .from('invite_codes')
+          .select('user_id')
+          .eq('code', ref)
+          .maybeSingle();
+        
+        if (inviteData?.user_id) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('user_id', inviteData.user_id)
+            .maybeSingle();
+          
+          if (profileData?.display_name) {
+            setInviterName(profileData.display_name);
+          }
+        }
+      };
+      fetchInviter();
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user) {
+      // If user just signed up with a referral, save the referral
+      if (referralCode) {
+        saveReferral(user.id, referralCode);
+      }
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, navigate, referralCode]);
+
+  const saveReferral = async (newUserId: string, code: string) => {
+    try {
+      // Get the inviter's user_id from the invite code
+      const { data: inviteData } = await supabase
+        .from('invite_codes')
+        .select('user_id')
+        .eq('code', code)
+        .maybeSingle();
+
+      if (inviteData?.user_id && inviteData.user_id !== newUserId) {
+        // Save the referral
+        await supabase
+          .from('referrals')
+          .insert({
+            inviter_id: inviteData.user_id,
+            invited_id: newUserId,
+            invite_code: code
+          });
+
+        // Update invite code usage count using RPC or direct increment
+        // Note: uses_count will be tracked via referrals count instead
+
+        // Auto-create friendship
+        await supabase
+          .from('friendships')
+          .insert({
+            user_id: inviteData.user_id,
+            friend_id: newUserId,
+            status: 'accepted'
+          });
+
+        toast.success('Du är nu vän med personen som bjöd in dig!');
+      }
+    } catch (error) {
+      console.error('Error saving referral:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +184,29 @@ export default function Auth() {
           <h1 className="text-xl font-semibold text-center text-foreground mb-6">
             {isSignUp ? 'Skapa konto' : 'Logga in'}
           </h1>
+
+          {/* Referral Banner */}
+          {referralCode && isSignUp && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-6 p-4 bg-gradient-to-r from-gym-orange/10 to-gym-amber/10 border border-gym-orange/20 rounded-lg"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-gym-orange to-gym-amber rounded-full flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">
+                    {inviterName ? `${inviterName} bjöd in dig!` : 'Du har blivit inbjuden!'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Skapa konto för att bli vänner automatiskt
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">

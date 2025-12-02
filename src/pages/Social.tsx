@@ -10,13 +10,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   Dumbbell, LogOut, Users, Swords, Trophy, UserPlus, 
-  Check, X, Loader2, ArrowLeft, Bell
+  Check, X, Loader2, ArrowLeft, Bell, Gift
 } from 'lucide-react';
 import UserSearch from '@/components/UserSearch';
 import ChallengeCard from '@/components/ChallengeCard';
 import CreateChallengeDialog from '@/components/CreateChallengeDialog';
 import XPProgress from '@/components/XPProgress';
 import AchievementsList from '@/components/AchievementsList';
+import InviteFriends from '@/components/InviteFriends';
 
 export default function Social() {
   const { user, loading, signOut } = useAuth();
@@ -133,6 +134,9 @@ export default function Social() {
 
           {/* Friends Tab */}
           <TabsContent value="friends" className="space-y-6">
+            {/* Invite Friends Card */}
+            {user && <InviteFriends userId={user.id} />}
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
