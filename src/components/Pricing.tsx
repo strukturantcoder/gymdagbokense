@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Check, X, Crown } from "lucide-react";
 
@@ -106,8 +107,9 @@ const Pricing = () => {
                 variant={plan.popular ? "hero" : "outline"}
                 size="lg"
                 className="w-full"
+                asChild
               >
-                {plan.cta}
+                <Link to="/auth">{plan.cta}</Link>
               </Button>
             </motion.div>
           ))}

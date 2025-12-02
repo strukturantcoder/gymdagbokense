@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, Zap, TrendingUp } from "lucide-react";
+import { Dumbbell, Zap } from "lucide-react";
 
 const Hero = () => {
   return (
@@ -46,12 +47,14 @@ const Hero = () => {
             transition={{ delay: 0.4 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <Button variant="hero" size="xl">
-              <Dumbbell className="w-5 h-5" />
-              Kom igång gratis
+            <Button variant="hero" size="xl" asChild>
+              <Link to="/auth">
+                <Dumbbell className="w-5 h-5" />
+                Kom igång gratis
+              </Link>
             </Button>
-            <Button variant="outline" size="xl">
-              Se hur det fungerar
+            <Button variant="outline" size="xl" asChild>
+              <a href="#features">Se hur det fungerar</a>
             </Button>
           </motion.div>
 
