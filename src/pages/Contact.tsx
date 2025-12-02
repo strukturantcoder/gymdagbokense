@@ -34,14 +34,21 @@ export default function Contact() {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('contact_messages').insert({
-        name: name.trim(),
-        email: email.trim(),
-        subject: subject.trim(),
-        message: message.trim(),
+      const { data, error } = await supabase.functions.invoke('submit-contact', {
+        body: {
+          name: name.trim(),
+          email: email.trim(),
+          subject: subject.trim(),
+          message: message.trim(),
+        },
       });
 
       if (error) throw error;
+      
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
 
       toast.success('Tack för ditt meddelande! Vi återkommer så snart som möjligt.');
       setName('');
