@@ -12,6 +12,7 @@ import WorkoutLog from "./pages/WorkoutLog";
 import CardioLog from "./pages/CardioLog";
 import Statistics from "./pages/Statistics";
 import Social from "./pages/Social";
+import Contact from "./pages/Contact";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/cardio" element={<CardioLog />} />
             <Route path="/stats" element={<Statistics />} />
             <Route path="/social" element={<Social />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/cookies" element={<Cookies />} />
