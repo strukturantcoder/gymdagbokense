@@ -6,6 +6,7 @@ import HowItWorks from "@/components/HowItWorks";
 import StatisticsShowcase from "@/components/StatisticsShowcase";
 import SocialShowcase from "@/components/SocialShowcase";
 import Pricing from "@/components/Pricing";
+import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -37,6 +38,8 @@ const Index = () => {
         <section id="pricing">
           <Pricing />
         </section>
+        
+        <FAQ />
         
         {/* Final ad before footer */}
         <div className="container px-4 py-8">
