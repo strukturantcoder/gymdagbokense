@@ -279,7 +279,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card">
-        <div className="container px-4 py-3">
+        <div className="container px-4 py-3 overflow-hidden">
           <div className="flex items-center justify-between mb-3 md:mb-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
