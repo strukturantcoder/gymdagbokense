@@ -54,7 +54,7 @@ const Hero = () => {
               </Link>
             </Button>
             <Button variant="outline" size="xl" asChild>
-              <a href="#features">Se hur det fungerar</a>
+              <a href="#how-it-works">Se hur det fungerar</a>
             </Button>
           </motion.div>
 

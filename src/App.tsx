@@ -11,6 +11,9 @@ import Dashboard from "./pages/Dashboard";
 import WorkoutLog from "./pages/WorkoutLog";
 import Statistics from "./pages/Statistics";
 import Social from "./pages/Social";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
+import Cookies from "./pages/Cookies";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +33,9 @@ const App = () => (
             <Route path="/log" element={<WorkoutLog />} />
             <Route path="/stats" element={<Statistics />} />
             <Route path="/social" element={<Social />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/cookies" element={<Cookies />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
