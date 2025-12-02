@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3 } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save } from 'lucide-react';
 import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
 import ExerciseInfo from '@/components/ExerciseInfo';
@@ -56,6 +58,13 @@ export default function Dashboard() {
   const [goal, setGoal] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
   const [daysPerWeek, setDaysPerWeek] = useState('');
+  const [customDescription, setCustomDescription] = useState('');
+  
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedProgram, setEditedProgram] = useState<WorkoutProgram | null>(null);
+  const [newExerciseName, setNewExerciseName] = useState('');
+  const [addingToDay, setAddingToDay] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -95,7 +104,7 @@ export default function Dashboard() {
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-workout', {
-        body: { goal, experienceLevel, daysPerWeek: parseInt(daysPerWeek) }
+        body: { goal, experienceLevel, daysPerWeek: parseInt(daysPerWeek), customDescription }
       });
 
       if (error) throw error;
@@ -122,6 +131,7 @@ export default function Dashboard() {
       setGoal('');
       setExperienceLevel('');
       setDaysPerWeek('');
+      setCustomDescription('');
       fetchPrograms();
     } catch (error) {
       console.error('Error generating program:', error);
@@ -141,9 +151,71 @@ export default function Dashboard() {
       toast.error('Kunde inte ta bort programmet');
     } else {
       toast.success('Program borttaget');
-      if (selectedProgram?.id === id) setSelectedProgram(null);
+      if (selectedProgram?.id === id) {
+        setSelectedProgram(null);
+        setEditedProgram(null);
+        setIsEditing(false);
+      }
       fetchPrograms();
     }
+  };
+
+  const startEditing = () => {
+    if (selectedProgram) {
+      setEditedProgram(JSON.parse(JSON.stringify(selectedProgram)));
+      setIsEditing(true);
+    }
+  };
+
+  const cancelEditing = () => {
+    setEditedProgram(null);
+    setIsEditing(false);
+    setAddingToDay(null);
+    setNewExerciseName('');
+  };
+
+  const saveEdits = async () => {
+    if (!editedProgram) return;
+    
+    try {
+      const { error } = await supabase
+        .from('workout_programs')
+        .update({ program_data: JSON.parse(JSON.stringify(editedProgram.program_data)) })
+        .eq('id', editedProgram.id);
+      
+      if (error) throw error;
+      
+      toast.success('Programmet uppdaterat!');
+      setSelectedProgram(editedProgram);
+      setIsEditing(false);
+      setEditedProgram(null);
+      fetchPrograms();
+    } catch (error) {
+      console.error('Error saving program:', error);
+      toast.error('Kunde inte spara ändringarna');
+    }
+  };
+
+  const removeExercise = (dayIndex: number, exerciseIndex: number) => {
+    if (!editedProgram) return;
+    const newProgram = { ...editedProgram };
+    newProgram.program_data.days[dayIndex].exercises.splice(exerciseIndex, 1);
+    setEditedProgram(newProgram);
+  };
+
+  const addExercise = (dayIndex: number) => {
+    if (!editedProgram || !newExerciseName.trim()) return;
+    const newProgram = { ...editedProgram };
+    newProgram.program_data.days[dayIndex].exercises.push({
+      name: newExerciseName.trim(),
+      sets: 3,
+      reps: '8-12',
+      rest: '60-90 sek',
+      notes: ''
+    });
+    setEditedProgram(newProgram);
+    setNewExerciseName('');
+    setAddingToDay(null);
   };
 
   const handleSignOut = async () => {
@@ -244,6 +316,7 @@ export default function Dashboard() {
                         <SelectValue placeholder="Välj nivå" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="aldrig tränat">Aldrig tränat</SelectItem>
                         <SelectItem value="nybörjare">Nybörjare</SelectItem>
                         <SelectItem value="medel">Medel</SelectItem>
                         <SelectItem value="avancerad">Avancerad</SelectItem>
@@ -266,6 +339,17 @@ export default function Dashboard() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                {/* Custom description textarea */}
+                <div className="space-y-2">
+                  <Label>Beskriv dina ambitioner (valfritt)</Label>
+                  <Textarea
+                    placeholder="T.ex. 'Jag vill fokusera på överkropp', 'Jag har en knäskada och kan inte göra knäböj', 'Jag tränar hemma utan vikter'..."
+                    value={customDescription}
+                    onChange={(e) => setCustomDescription(e.target.value)}
+                    className="min-h-[80px]"
+                  />
                 </div>
                 
                 <div className="flex gap-2 pt-4">
@@ -356,11 +440,33 @@ export default function Dashboard() {
             {selectedProgram ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>{selectedProgram.program_data.name}</CardTitle>
-                  <CardDescription>{selectedProgram.program_data.description}</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>{(isEditing ? editedProgram : selectedProgram)?.program_data.name}</CardTitle>
+                      <CardDescription>{(isEditing ? editedProgram : selectedProgram)?.program_data.description}</CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      {isEditing ? (
+                        <>
+                          <Button variant="hero" size="sm" onClick={saveEdits}>
+                            <Save className="w-4 h-4 mr-2" />
+                            Spara
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={cancelEditing}>
+                            Avbryt
+                          </Button>
+                        </>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={startEditing}>
+                          <Edit2 className="w-4 h-4 mr-2" />
+                          Redigera
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {selectedProgram.program_data.days.map((day, dayIndex) => (
+                  {(isEditing ? editedProgram : selectedProgram)?.program_data.days.map((day, dayIndex) => (
                     <div key={dayIndex} className="border border-border rounded-lg p-4">
                       <h3 className="font-display font-bold text-lg mb-1">{day.day}</h3>
                       <p className="text-sm text-gym-orange mb-4">{day.focus}</p>
@@ -379,12 +485,56 @@ export default function Dashboard() {
                                 <p className="text-xs text-muted-foreground">{exercise.notes}</p>
                               )}
                             </div>
-                            <div className="text-right text-sm">
-                              <p className="text-foreground">{exercise.sets} x {exercise.reps}</p>
-                              <p className="text-muted-foreground">Vila: {exercise.rest}</p>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right text-sm">
+                                <p className="text-foreground">{exercise.sets} x {exercise.reps}</p>
+                                <p className="text-muted-foreground">Vila: {exercise.rest}</p>
+                              </div>
+                              {isEditing && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() => removeExercise(dayIndex, exIndex)}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           </div>
                         ))}
+                        
+                        {/* Add exercise */}
+                        {isEditing && (
+                          <div className="pt-2">
+                            {addingToDay === dayIndex ? (
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="Övningsnamn"
+                                  value={newExerciseName}
+                                  onChange={(e) => setNewExerciseName(e.target.value)}
+                                  onKeyDown={(e) => e.key === 'Enter' && addExercise(dayIndex)}
+                                />
+                                <Button size="sm" onClick={() => addExercise(dayIndex)}>
+                                  <Plus className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => { setAddingToDay(null); setNewExerciseName(''); }}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full border-dashed"
+                                onClick={() => setAddingToDay(dayIndex)}
+                              >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Lägg till övning
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
