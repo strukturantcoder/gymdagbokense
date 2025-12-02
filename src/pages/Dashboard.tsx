@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints } from 'lucide-react';
 import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
 import ExerciseInfo from '@/components/ExerciseInfo';
@@ -290,6 +290,10 @@ export default function Dashboard() {
             <Button variant="outline" onClick={() => navigate('/log')}>
               <ClipboardList className="w-4 h-4 mr-2" />
               Träningslogg
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/cardio')}>
+              <Footprints className="w-4 h-4 mr-2" />
+              Kondition
             </Button>
             <Button variant="outline" onClick={() => navigate('/stats')}>
               <BarChart3 className="w-4 h-4 mr-2" />
