@@ -4,6 +4,7 @@ import AdBanner from "@/components/AdBanner";
 import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
 import StatisticsShowcase from "@/components/StatisticsShowcase";
+import SocialShowcase from "@/components/SocialShowcase";
 import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
 
@@ -30,6 +31,8 @@ const Index = () => {
         </div>
         
         <StatisticsShowcase />
+        
+        <SocialShowcase />
         
         <section id="pricing">
           <Pricing />
