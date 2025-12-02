@@ -16,6 +16,7 @@ import {
   Dumbbell, Plus, Trash2, Loader2, ArrowLeft, 
   Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles
 } from 'lucide-react';
+import ActiveCardioPlanSession from '@/components/ActiveCardioPlanSession';
 import GenerateCardioPlanDialog from '@/components/GenerateCardioPlanDialog';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { sv } from 'date-fns/locale';
@@ -541,6 +542,24 @@ export default function CardioLog() {
       </header>
 
       <main className="container px-4 py-8">
+        {/* Active Plan - Today's Session */}
+        <div className="mb-8">
+          <ActiveCardioPlanSession 
+            onLogSession={(session) => {
+              setActivityType(session.activity === 'Löpning' ? 'running' 
+                : session.activity === 'Cykling' ? 'cycling'
+                : session.activity === 'Simning' ? 'swimming'
+                : session.activity === 'Promenad' ? 'walking'
+                : 'other');
+              setDurationMinutes(session.duration.toString());
+              if (session.distance) {
+                setDistanceKm(session.distance.toString());
+              }
+              setShowForm(true);
+            }}
+          />
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           <Card>
