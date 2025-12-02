@@ -314,8 +314,9 @@ export default function Dashboard() {
           </div>
           
           {/* Mobile scrollable navigation */}
-          <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
-            <div className="flex items-center gap-2 pb-1 min-w-max">
+          <div className="md:hidden relative">
+            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+              <div className="flex items-center gap-2 pb-1 min-w-max">
               <InstallAppButton />
               <SubscriptionButton variant="compact" />
               <Button variant="outline" size="sm" onClick={() => navigate('/log')}>
@@ -337,7 +338,10 @@ export default function Dashboard() {
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" />
               </Button>
+              </div>
             </div>
+            {/* Scroll indicator gradient */}
+            <div className="absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none" />
           </div>
         </div>
       </header>
