@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dumbbell, ArrowLeft, Loader2, TrendingUp, Calendar, Flame, Weight, Footprints, MapPin, Timer } from 'lucide-react';
+import AdBanner from '@/components/AdBanner';
 import {
   LineChart,
   Line,
@@ -275,6 +276,9 @@ export default function Statistics() {
       </header>
 
       <main className="container px-4 py-8">
+        {/* Ad Banner */}
+        <AdBanner className="mb-6" />
+        
         <div className="mb-8">
           <h1 className="text-3xl font-display font-bold">Din utveckling</h1>
           <p className="text-muted-foreground">Spåra din träningsfrekvens och styrkeökning</p>
@@ -795,6 +799,9 @@ export default function Statistics() {
             </div>
           </TabsContent>
         </Tabs>
+        
+        {/* Bottom Ad Banner */}
+        <AdBanner className="mt-8" />
       </main>
     </div>
   );

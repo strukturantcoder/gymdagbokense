@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles } from 'lucide-react';
 import RestTimer from '@/components/RestTimer';
 import ExerciseInfo from '@/components/ExerciseInfo';
+import AdBanner from '@/components/AdBanner';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import confetti from 'canvas-confetti';
@@ -410,6 +411,9 @@ export default function WorkoutLog() {
       </header>
 
       <main className="container px-4 py-8">
+        {/* Ad Banner */}
+        <AdBanner className="mb-6" />
+        
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold">Logga träning</h1>
@@ -740,6 +744,9 @@ export default function WorkoutLog() {
             </div>
           )}
         </div>
+        
+        {/* Bottom Ad Banner */}
+        <AdBanner className="mt-8" />
       </main>
     </div>
   );
