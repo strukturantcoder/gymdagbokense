@@ -39,6 +39,29 @@ export function CommunityChallenges() {
     fetchChallenges();
   }, [user]);
 
+  // Subscribe to realtime updates for participants
+  useEffect(() => {
+    const channel = supabase
+      .channel('community-challenge-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'community_challenge_participants'
+        },
+        (payload) => {
+          console.log('Realtime update:', payload);
+          fetchChallenges();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const fetchChallenges = async () => {
     try {
       // Fetch active challenges
