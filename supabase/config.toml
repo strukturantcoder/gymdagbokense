@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.submit-contact]
 verify_jwt = false
+
+[functions.suggest-challenge]
+verify_jwt = true
