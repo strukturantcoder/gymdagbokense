@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Trophy, Users, Calendar, Target, Check, UserPlus, LogOut, TrendingDown } from "lucide-react";
 import { format, isPast, isFuture } from "date-fns";
 import { sv } from "date-fns/locale";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface CommunityChallenge {
   id: string;
@@ -35,6 +36,7 @@ export function CommunityChallenges() {
   const [myParticipations, setMyParticipations] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [expandedLeaderboards, setExpandedLeaderboards] = useState<Set<string>>(new Set());
+  const [rankChangedChallenges, setRankChangedChallenges] = useState<Set<string>>(new Set());
   const previousRanksRef = useRef<Record<string, number>>({});
 
   const toggleLeaderboard = (challengeId: string) => {
@@ -144,6 +146,7 @@ export function CommunityChallenges() {
         // Check for rank changes and notify user
         if (user?.id) {
           const newRanks: Record<string, number> = {};
+          const changedChallenges = new Set<string>();
           
           Object.keys(grouped).forEach(challengeId => {
             const participants = grouped[challengeId];
@@ -154,6 +157,11 @@ export function CommunityChallenges() {
               newRanks[challengeId] = myRank;
               
               const previousRank = previousRanksRef.current[challengeId];
+              
+              // If rank changed at all, trigger animation
+              if (previousRank !== undefined && myRank !== previousRank) {
+                changedChallenges.add(challengeId);
+              }
               
               // If we had a previous rank and it's now worse (higher number)
               if (previousRank !== undefined && myRank > previousRank) {
@@ -173,6 +181,13 @@ export function CommunityChallenges() {
               }
             }
           });
+          
+          // Trigger animation for changed ranks
+          if (changedChallenges.size > 0) {
+            setRankChangedChallenges(changedChallenges);
+            // Clear animation after 2 seconds
+            setTimeout(() => setRankChangedChallenges(new Set()), 2000);
+          }
           
           previousRanksRef.current = newRanks;
         }
@@ -352,41 +367,74 @@ export function CommunityChallenges() {
                     )}
                   </div>
                   <div className="space-y-1 max-h-64 overflow-y-auto">
-                    {(expandedLeaderboards.has(challenge.id) ? participants : participants.slice(0, 5)).map((p, index) => (
-                      <div 
-                        key={p.user_id} 
-                        className={`flex items-center justify-between text-sm py-1 px-2 rounded ${
-                          p.user_id === user?.id ? "bg-primary/10" : ""
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className={`w-5 text-center ${
-                            index === 0 ? "text-yellow-500 font-bold" : 
-                            index === 1 ? "text-gray-400 font-medium" :
-                            index === 2 ? "text-amber-600 font-medium" :
-                            "text-muted-foreground"
-                          }`}>
-                            {index + 1}
-                          </span>
-                          <span className={p.user_id === user?.id ? "font-medium" : ""}>
-                            {p.display_name}
-                            {p.user_id === user?.id && " (du)"}
-                          </span>
-                        </div>
-                        <span className="font-medium">
-                          {p.current_value} {challenge.goal_unit}
-                        </span>
-                      </div>
-                    ))}
+                    <AnimatePresence mode="popLayout">
+                      {(expandedLeaderboards.has(challenge.id) ? participants : participants.slice(0, 5)).map((p, index) => {
+                        const isMe = p.user_id === user?.id;
+                        const hasRankChanged = isMe && rankChangedChallenges.has(challenge.id);
+                        
+                        return (
+                          <motion.div 
+                            key={p.user_id}
+                            layout
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ 
+                              opacity: 1, 
+                              y: 0,
+                              scale: hasRankChanged ? [1, 1.02, 1] : 1,
+                              backgroundColor: hasRankChanged 
+                                ? ["hsl(var(--primary) / 0.1)", "hsl(var(--primary) / 0.3)", "hsl(var(--primary) / 0.1)"]
+                                : isMe ? "hsl(var(--primary) / 0.1)" : "transparent"
+                            }}
+                            exit={{ opacity: 0, y: 10 }}
+                            transition={{ 
+                              duration: hasRankChanged ? 0.6 : 0.2,
+                              repeat: hasRankChanged ? 2 : 0
+                            }}
+                            className={`flex items-center justify-between text-sm py-1 px-2 rounded`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`w-5 text-center ${
+                                index === 0 ? "text-yellow-500 font-bold" : 
+                                index === 1 ? "text-gray-400 font-medium" :
+                                index === 2 ? "text-amber-600 font-medium" :
+                                "text-muted-foreground"
+                              }`}>
+                                {index + 1}
+                              </span>
+                              <span className={isMe ? "font-medium" : ""}>
+                                {p.display_name}
+                                {isMe && " (du)"}
+                              </span>
+                            </div>
+                            <span className="font-medium">
+                              {p.current_value} {challenge.goal_unit}
+                            </span>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
                     {/* Show user's position if not in top 5 and not expanded */}
                     {!expandedLeaderboards.has(challenge.id) && user?.id && (() => {
                       const myIndex = participants.findIndex(p => p.user_id === user.id);
                       if (myIndex >= 5) {
                         const myData = participants[myIndex];
+                        const hasRankChanged = rankChangedChallenges.has(challenge.id);
                         return (
                           <>
                             <div className="text-center text-muted-foreground text-xs py-1">···</div>
-                            <div className="flex items-center justify-between text-sm py-1 px-2 rounded bg-primary/10">
+                            <motion.div 
+                              animate={{ 
+                                scale: hasRankChanged ? [1, 1.02, 1] : 1,
+                                backgroundColor: hasRankChanged 
+                                  ? ["hsl(var(--primary) / 0.1)", "hsl(var(--primary) / 0.3)", "hsl(var(--primary) / 0.1)"]
+                                  : "hsl(var(--primary) / 0.1)"
+                              }}
+                              transition={{ 
+                                duration: hasRankChanged ? 0.6 : 0.2,
+                                repeat: hasRankChanged ? 2 : 0
+                              }}
+                              className="flex items-center justify-between text-sm py-1 px-2 rounded"
+                            >
                               <div className="flex items-center gap-2">
                                 <span className="w-5 text-center text-muted-foreground">
                                   {myIndex + 1}
@@ -398,7 +446,7 @@ export function CommunityChallenges() {
                               <span className="font-medium">
                                 {myData.current_value} {challenge.goal_unit}
                               </span>
-                            </div>
+                            </motion.div>
                           </>
                         );
                       }
