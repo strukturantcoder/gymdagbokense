@@ -11,13 +11,8 @@ const Hero = () => {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gym-orange/10 blur-[120px] rounded-full" />
       
       <div className="container relative z-10 px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center max-w-4xl mx-auto"
-        >
-          {/* Badge */}
+        <div className="text-center max-w-4xl mx-auto">
+          {/* Badge - animated */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -28,7 +23,7 @@ const Hero = () => {
             <span className="text-sm text-muted-foreground">AI-driven träningsplanering</span>
           </motion.div>
 
-          {/* Main headline */}
+          {/* Main headline - NO animation to improve LCP */}
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold mb-6 leading-none">
             DIN TRÄNING.
             <br />
@@ -57,7 +52,7 @@ const Hero = () => {
               <a href="#how-it-works">Se hur det fungerar</a>
             </Button>
           </motion.div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Scroll indicator */}
