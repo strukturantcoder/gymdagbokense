@@ -9,13 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2 } from 'lucide-react';
 import { InstallAppButton } from '@/components/InstallPrompt';
 import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
 import ExerciseInfo from '@/components/ExerciseInfo';
 import WelcomeGuide from '@/components/WelcomeGuide';
+import ProgramRefineDialog from '@/components/ProgramRefineDialog';
 import SortableExercise from '@/components/SortableExercise';
 import {
   DndContext,
@@ -39,6 +41,7 @@ interface Exercise {
   reps: string;
   rest: string;
   notes?: string;
+  supersetGroup?: number | null;
 }
 
 interface WorkoutDay {
@@ -52,6 +55,7 @@ interface ProgramData {
   description: string;
   weeks: number;
   days: WorkoutDay[];
+  followUpQuestion?: string;
 }
 
 interface WorkoutProgram {
@@ -83,6 +87,10 @@ export default function Dashboard() {
   const [editedProgram, setEditedProgram] = useState<WorkoutProgram | null>(null);
   const [newExerciseName, setNewExerciseName] = useState('');
   const [addingToDay, setAddingToDay] = useState<number | null>(null);
+  
+  // Refine dialog state
+  const [showRefineDialog, setShowRefineDialog] = useState(false);
+  const [pendingProgram, setPendingProgram] = useState<ProgramData | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -130,32 +138,45 @@ export default function Dashboard() {
 
       const program = data.program as ProgramData;
       
-      // Save to database
-      const { error: insertError } = await supabase
-        .from('workout_programs')
-        .insert([{
-          user_id: user!.id,
-          name: program.name,
-          goal,
-          experience_level: experienceLevel,
-          days_per_week: parseInt(daysPerWeek),
-          program_data: JSON.parse(JSON.stringify(program))
-        }]);
-
-      if (insertError) throw insertError;
-
-      toast.success('Träningsprogram skapat!');
+      // Show refine dialog instead of saving immediately
+      setPendingProgram(program);
+      setShowRefineDialog(true);
       setShowGenerator(false);
-      setGoal('');
-      setExperienceLevel('');
-      setDaysPerWeek('');
-      setCustomDescription('');
-      fetchPrograms();
     } catch (error) {
       console.error('Error generating program:', error);
       toast.error(error instanceof Error ? error.message : 'Kunde inte skapa program');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const savePendingProgram = async () => {
+    if (!pendingProgram || !user) return;
+    
+    try {
+      const { error: insertError } = await supabase
+        .from('workout_programs')
+        .insert([{
+          user_id: user.id,
+          name: pendingProgram.name,
+          goal,
+          experience_level: experienceLevel,
+          days_per_week: parseInt(daysPerWeek),
+          program_data: JSON.parse(JSON.stringify(pendingProgram))
+        }]);
+
+      if (insertError) throw insertError;
+
+      toast.success('Träningsprogram sparat!');
+      setGoal('');
+      setExperienceLevel('');
+      setDaysPerWeek('');
+      setCustomDescription('');
+      setPendingProgram(null);
+      fetchPrograms();
+    } catch (error) {
+      console.error('Error saving program:', error);
+      toast.error('Kunde inte spara programmet');
     }
   };
 
@@ -280,6 +301,17 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Welcome Guide for new users */}
       {user && <WelcomeGuide userId={user.id} />}
+      
+      {/* Program Refine Dialog */}
+      {pendingProgram && (
+        <ProgramRefineDialog
+          open={showRefineDialog}
+          onOpenChange={setShowRefineDialog}
+          program={pendingProgram}
+          onProgramUpdate={setPendingProgram}
+          onComplete={savePendingProgram}
+        />
+      )}
       
       {/* Header */}
       <header className="border-b border-border bg-card">

@@ -11,55 +11,40 @@ serve(async (req) => {
   }
 
   try {
-    const { goal, experienceLevel, daysPerWeek, customDescription } = await req.json();
+    const { currentProgram, userMessage } = await req.json();
     
-    console.log("Generating workout for:", { goal, experienceLevel, daysPerWeek, customDescription });
+    console.log("Refining workout with user message:", userMessage);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `Du är en expert personlig tränare som skapar skräddarsydda träningsprogram på svenska. 
-Du skapar alltid realistiska, effektiva program baserade på användarens mål och erfarenhetsnivå.
+    const systemPrompt = `Du är en expert personlig tränare som hjälper användare att finjustera sina träningsprogram.
+Användaren har genererat ett träningsprogram och vill göra justeringar.
 
-VIKTIGT: Du kan gruppera övningar som supersets genom att ge dem samma "supersetGroup" nummer (1, 2, 3 osv).
-Övningar utan supersetGroup eller med supersetGroup: null utförs som vanliga övningar.
+Ditt nuvarande program är:
+${JSON.stringify(currentProgram, null, 2)}
 
-Svara ALLTID i JSON-format med följande struktur:
+Användaren kan be om att:
+- Lägga till eller ta bort övningar
+- Ändra sets, reps eller vila
+- Skapa supersets (gruppera övningar med samma supersetGroup-nummer)
+- Byta fokus för en dag
+- Justera intensitet eller volym
+
+Svara med det uppdaterade programmet i samma JSON-format, ELLER om användaren bara har en fråga/säger att de är nöjda, svara med:
 {
-  "name": "Programnamn",
-  "description": "Kort beskrivning av programmet",
-  "weeks": 4,
-  "days": [
-    {
-      "day": "Dag 1",
-      "focus": "Fokusområde (t.ex. Bröst & Triceps)",
-      "exercises": [
-        {
-          "name": "Övningsnamn",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": "60-90 sek",
-          "notes": "Eventuella tips",
-          "supersetGroup": null
-        }
-      ]
-    }
-  ],
-  "followUpQuestion": "En fråga till användaren om de vill justera något, t.ex. 'Vill du lägga till supersets för effektivare träning?' eller 'Ska jag justera antalet övningar för någon dag?'"
+  "type": "message",
+  "content": "Ditt meddelande här"
+}
+
+Om du gör ändringar, svara med:
+{
+  "type": "program",
+  "program": { ... det uppdaterade programmet ... },
+  "changes": "Kort sammanfattning av vad du ändrade"
 }`;
-
-    const userPrompt = `Skapa ett ${daysPerWeek}-dagars träningsprogram för någon med följande profil:
-- Mål: ${goal}
-- Erfarenhetsnivå: ${experienceLevel}
-- Träningsdagar per vecka: ${daysPerWeek}
-${customDescription ? `- Användarens egna önskemål: ${customDescription}` : ''}
-
-Ge mig ett komplett program med övningar, sets, reps och vila. 
-Inkludera supersets där det är lämpligt för att spara tid och öka intensiteten.
-Avsluta med en uppföljningsfråga om användaren vill justera något.
-Svara endast med JSON, ingen annan text.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -71,7 +56,7 @@ Svara endast med JSON, ingen annan text.`;
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user", content: userMessage },
         ],
       }),
     });
@@ -99,28 +84,35 @@ Svara endast med JSON, ingen annan text.`;
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
     
-    console.log("AI response:", content);
+    console.log("AI refine response:", content);
 
     // Parse the JSON from the response
-    let programData;
+    let responseData;
     try {
-      // Try to extract JSON from the response (in case there's extra text)
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        programData = JSON.parse(jsonMatch[0]);
+        responseData = JSON.parse(jsonMatch[0]);
       } else {
-        throw new Error("No JSON found in response");
+        // If no JSON found, treat as a plain message
+        responseData = {
+          type: "message",
+          content: content
+        };
       }
     } catch (parseError) {
       console.error("Failed to parse AI response:", parseError);
-      throw new Error("Kunde inte tolka AI-svaret");
+      // Treat as plain message if parsing fails
+      responseData = {
+        type: "message",
+        content: content
+      };
     }
 
-    return new Response(JSON.stringify({ program: programData }), {
+    return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error in generate-workout:", error);
+    console.error("Error in refine-workout:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Ett fel uppstod" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

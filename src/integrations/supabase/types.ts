@@ -332,6 +332,7 @@ export type Database = {
           id: string
           notes: string | null
           reps_completed: string
+          set_details: Json | null
           sets_completed: number
           weight_kg: number | null
           workout_log_id: string
@@ -342,6 +343,7 @@ export type Database = {
           id?: string
           notes?: string | null
           reps_completed: string
+          set_details?: Json | null
           sets_completed: number
           weight_kg?: number | null
           workout_log_id: string
@@ -352,6 +354,7 @@ export type Database = {
           id?: string
           notes?: string | null
           reps_completed?: string
+          set_details?: Json | null
           sets_completed?: number
           weight_kg?: number | null
           workout_log_id?: string
