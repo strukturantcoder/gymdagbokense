@@ -15,6 +15,7 @@ import { InstallAppButton } from '@/components/InstallPrompt';
 import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
 import ExerciseInfo from '@/components/ExerciseInfo';
+import WelcomeGuide from '@/components/WelcomeGuide';
 import SortableExercise from '@/components/SortableExercise';
 import {
   DndContext,
@@ -277,6 +278,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
+      {/* Welcome Guide for new users */}
+      {user && <WelcomeGuide userId={user.id} />}
+      
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="container px-4 py-3 overflow-hidden">
