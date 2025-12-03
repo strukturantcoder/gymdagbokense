@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -37,6 +37,7 @@ export default function AdminChallenges() {
   const [challenges, setChallenges] = useState<CommunityChallenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [generatingSuggestion, setGeneratingSuggestion] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -138,6 +139,46 @@ export default function AdminChallenges() {
     setEndDate("");
   };
 
+  const generateAISuggestion = async () => {
+    setGeneratingSuggestion(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("suggest-challenge");
+      
+      if (error) throw error;
+      
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      // Fill form with suggestion
+      setTitle(data.title || "");
+      setDescription(data.description || "");
+      setTheme(data.theme || "");
+      setGoalDescription(data.goal_description || "");
+      setGoalUnit(data.goal_unit || "");
+      setTargetValue(data.target_value?.toString() || "");
+      setWinnerType(data.winner_type || "highest");
+      
+      // Format dates for datetime-local input
+      if (data.start_date) {
+        const start = new Date(data.start_date);
+        setStartDate(start.toISOString().slice(0, 16));
+      }
+      if (data.end_date) {
+        const end = new Date(data.end_date);
+        setEndDate(end.toISOString().slice(0, 16));
+      }
+
+      toast.success("AI-förslag genererat! Granska och justera vid behov.");
+    } catch (error) {
+      console.error("Error generating suggestion:", error);
+      toast.error("Kunde inte generera förslag");
+    } finally {
+      setGeneratingSuggestion(false);
+    }
+  };
+
   const toggleActive = async (id: string, currentActive: boolean) => {
     try {
       const { error } = await supabase
@@ -204,13 +245,30 @@ export default function AdminChallenges() {
         {/* Create new challenge form */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Skapa ny tävling
-            </CardTitle>
-            <CardDescription>
-              Fyll i informationen nedan för att skapa en ny community-tävling
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Skapa ny tävling
+                </CardTitle>
+                <CardDescription>
+                  Fyll i informationen nedan för att skapa en ny community-tävling
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                onClick={generateAISuggestion}
+                disabled={generatingSuggestion}
+                className="gap-2"
+              >
+                {generatingSuggestion ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                AI-förslag
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreate} className="space-y-4">
