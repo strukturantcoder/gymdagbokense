@@ -93,6 +93,7 @@ export default function Dashboard() {
   // Refine dialog state
   const [showRefineDialog, setShowRefineDialog] = useState(false);
   const [pendingProgram, setPendingProgram] = useState<ProgramData | null>(null);
+  const [refiningProgramId, setRefiningProgramId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -156,30 +157,51 @@ export default function Dashboard() {
     if (!pendingProgram || !user) return;
     
     try {
-      const { error: insertError } = await supabase
-        .from('workout_programs')
-        .insert([{
-          user_id: user.id,
-          name: pendingProgram.name,
-          goal,
-          experience_level: experienceLevel,
-          days_per_week: parseInt(daysPerWeek),
-          program_data: JSON.parse(JSON.stringify(pendingProgram))
-        }]);
+      if (refiningProgramId) {
+        // Update existing program
+        const { error: updateError } = await supabase
+          .from('workout_programs')
+          .update({ program_data: JSON.parse(JSON.stringify(pendingProgram)) })
+          .eq('id', refiningProgramId);
 
-      if (insertError) throw insertError;
+        if (updateError) throw updateError;
+        
+        toast.success('Programmet uppdaterat!');
+        setRefiningProgramId(null);
+      } else {
+        // Insert new program
+        const { error: insertError } = await supabase
+          .from('workout_programs')
+          .insert([{
+            user_id: user.id,
+            name: pendingProgram.name,
+            goal,
+            experience_level: experienceLevel,
+            days_per_week: parseInt(daysPerWeek),
+            program_data: JSON.parse(JSON.stringify(pendingProgram))
+          }]);
 
-      toast.success('Träningsprogram sparat!');
-      setGoal('');
-      setExperienceLevel('');
-      setDaysPerWeek('');
-      setCustomDescription('');
+        if (insertError) throw insertError;
+
+        toast.success('Träningsprogram sparat!');
+        setGoal('');
+        setExperienceLevel('');
+        setDaysPerWeek('');
+        setCustomDescription('');
+      }
+      
       setPendingProgram(null);
       fetchPrograms();
     } catch (error) {
       console.error('Error saving program:', error);
       toast.error('Kunde inte spara programmet');
     }
+  };
+
+  const openRefineDialogForProgram = (program: WorkoutProgram) => {
+    setPendingProgram(program.program_data);
+    setRefiningProgramId(program.id);
+    setShowRefineDialog(true);
   };
 
   const handleDeleteProgram = async (id: string) => {
@@ -593,10 +615,16 @@ export default function Dashboard() {
                           </Button>
                         </>
                       ) : (
-                        <Button variant="outline" size="sm" onClick={startEditing}>
-                          <Edit2 className="w-4 h-4 mr-2" />
-                          Redigera
-                        </Button>
+                        <>
+                          <Button variant="hero" size="sm" onClick={() => openRefineDialogForProgram(selectedProgram)}>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Finjustera
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={startEditing}>
+                            <Edit2 className="w-4 h-4 mr-2" />
+                            Redigera
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
