@@ -378,6 +378,32 @@ export function CommunityChallenges() {
                         </span>
                       </div>
                     ))}
+                    {/* Show user's position if not in top 5 and not expanded */}
+                    {!expandedLeaderboards.has(challenge.id) && user?.id && (() => {
+                      const myIndex = participants.findIndex(p => p.user_id === user.id);
+                      if (myIndex >= 5) {
+                        const myData = participants[myIndex];
+                        return (
+                          <>
+                            <div className="text-center text-muted-foreground text-xs py-1">···</div>
+                            <div className="flex items-center justify-between text-sm py-1 px-2 rounded bg-primary/10">
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 text-center text-muted-foreground">
+                                  {myIndex + 1}
+                                </span>
+                                <span className="font-medium">
+                                  {myData.display_name} (du)
+                                </span>
+                              </div>
+                              <span className="font-medium">
+                                {myData.current_value} {challenge.goal_unit}
+                              </span>
+                            </div>
+                          </>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               )}
