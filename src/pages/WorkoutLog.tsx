@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles } from 'lucide-react';
+import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import RestTimer from '@/components/RestTimer';
 import ExerciseInfo from '@/components/ExerciseInfo';
 import AdBanner from '@/components/AdBanner';
@@ -43,12 +43,19 @@ interface WorkoutProgram {
   program_data: ProgramData;
 }
 
+interface SetDetail {
+  reps: number;
+  weight: number;
+}
+
 interface ExerciseLogEntry {
   exercise_name: string;
   sets_completed: number;
   reps_completed: string;
   weight_kg: string;
   notes: string;
+  set_details: SetDetail[];
+  expanded: boolean;
 }
 
 interface WorkoutLogEntry {
@@ -236,22 +243,80 @@ export default function WorkoutLog() {
         
         setExerciseLogs(day.exercises.map(ex => {
           const lastValues = lastValuesMap.get(ex.name);
+          const numSets = lastValues?.sets ?? ex.sets;
+          const defaultWeight = lastValues?.weight ? parseFloat(lastValues.weight) : 0;
+          const defaultReps = parseInt(ex.reps.split('-')[0]) || 10;
+          
+          // Create set_details array with default values for each set
+          const setDetails: SetDetail[] = Array.from({ length: numSets }, () => ({
+            reps: defaultReps,
+            weight: defaultWeight
+          }));
+          
           return {
             exercise_name: ex.name,
-            sets_completed: lastValues?.sets ?? ex.sets,
+            sets_completed: numSets,
             reps_completed: lastValues?.reps ?? ex.reps,
             weight_kg: lastValues?.weight ?? '',
-            notes: ''
+            notes: '',
+            set_details: setDetails,
+            expanded: false
           };
         }));
       }
     }
   };
 
-  const updateExerciseLog = (index: number, field: keyof ExerciseLogEntry, value: string | number) => {
+  const updateExerciseLog = (index: number, field: keyof ExerciseLogEntry, value: string | number | boolean) => {
     setExerciseLogs(prev => prev.map((log, i) => 
       i === index ? { ...log, [field]: value } : log
     ));
+  };
+
+  const updateSetDetail = (exerciseIndex: number, setIndex: number, field: 'reps' | 'weight', value: number) => {
+    setExerciseLogs(prev => prev.map((log, i) => {
+      if (i !== exerciseIndex) return log;
+      const newSetDetails = [...log.set_details];
+      newSetDetails[setIndex] = { ...newSetDetails[setIndex], [field]: value };
+      
+      // Update the summary fields as well
+      const maxWeight = Math.max(...newSetDetails.map(s => s.weight));
+      const totalReps = newSetDetails.map(s => s.reps).join(', ');
+      
+      return { 
+        ...log, 
+        set_details: newSetDetails,
+        weight_kg: maxWeight > 0 ? maxWeight.toString() : '',
+        reps_completed: totalReps
+      };
+    }));
+  };
+
+  const handleSetsChange = (index: number, newSetsCount: number) => {
+    setExerciseLogs(prev => prev.map((log, i) => {
+      if (i !== index) return log;
+      
+      const currentSets = log.set_details;
+      let newSetDetails: SetDetail[];
+      
+      if (newSetsCount > currentSets.length) {
+        // Add new sets with default values from last set
+        const lastSet = currentSets[currentSets.length - 1] || { reps: 10, weight: 0 };
+        newSetDetails = [
+          ...currentSets,
+          ...Array.from({ length: newSetsCount - currentSets.length }, () => ({ ...lastSet }))
+        ];
+      } else {
+        // Remove sets from the end
+        newSetDetails = currentSets.slice(0, newSetsCount);
+      }
+      
+      return { ...log, sets_completed: newSetsCount, set_details: newSetDetails };
+    }));
+  };
+
+  const toggleExpanded = (index: number) => {
+    updateExerciseLog(index, 'expanded', !exerciseLogs[index].expanded);
   };
 
   const handleSaveWorkout = async () => {
@@ -280,14 +345,15 @@ export default function WorkoutLog() {
 
       if (workoutError) throw workoutError;
 
-      // Create exercise logs
+      // Create exercise logs with set_details
       const exerciseLogData = exerciseLogs.map(log => ({
         workout_log_id: workoutLog.id,
         exercise_name: log.exercise_name,
         sets_completed: log.sets_completed,
         reps_completed: log.reps_completed,
         weight_kg: log.weight_kg ? parseFloat(log.weight_kg) : null,
-        notes: log.notes || null
+        notes: log.notes || null,
+        set_details: log.set_details.length > 0 ? JSON.parse(JSON.stringify(log.set_details)) : null
       }));
 
       const { error: exerciseError } = await supabase
@@ -607,34 +673,110 @@ export default function WorkoutLog() {
                               </Dialog>
                             </div>
                           </div>
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="space-y-1">
-                              <Label className="text-xs">Sets</Label>
-                              <Input
-                                type="number"
-                                value={log.sets_completed}
-                                onChange={(e) => updateExerciseLog(index, 'sets_completed', parseInt(e.target.value) || 0)}
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Reps</Label>
-                              <Input
-                                value={log.reps_completed}
-                                onChange={(e) => updateExerciseLog(index, 'reps_completed', e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Vikt (kg)</Label>
-                              <Input
-                                type="number"
-                                step="0.5"
-                                placeholder="0"
-                                value={log.weight_kg}
-                                onChange={(e) => updateExerciseLog(index, 'weight_kg', e.target.value)}
-                                className={isNewPB ? 'border-gym-orange' : isGoalReached ? 'border-green-500' : ''}
-                              />
-                            </div>
+                          
+                          {/* Quick summary row */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs text-muted-foreground hover:text-foreground"
+                              onClick={() => toggleExpanded(index)}
+                            >
+                              {log.expanded ? (
+                                <>
+                                  <ChevronUp className="w-4 h-4 mr-1" />
+                                  Dölj set-detaljer
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="w-4 h-4 mr-1" />
+                                  Visa per set ({log.sets_completed} sets)
+                                </>
+                              )}
+                            </Button>
+                            {!log.expanded && log.weight_kg && (
+                              <span className="text-xs text-muted-foreground">
+                                Max: {log.weight_kg} kg
+                              </span>
+                            )}
                           </div>
+
+                          {/* Expanded per-set inputs */}
+                          {log.expanded ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Label className="text-xs">Antal sets:</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max="10"
+                                  value={log.sets_completed}
+                                  onChange={(e) => handleSetsChange(index, parseInt(e.target.value) || 1)}
+                                  className="w-16 h-8"
+                                />
+                              </div>
+                              {log.set_details.map((setDetail, setIndex) => (
+                                <div key={setIndex} className="flex items-center gap-2 bg-background/50 rounded p-2">
+                                  <span className="text-xs font-medium w-12 text-muted-foreground">
+                                    Set {setIndex + 1}
+                                  </span>
+                                  <div className="flex-1 grid grid-cols-2 gap-2">
+                                    <div className="flex items-center gap-1">
+                                      <Input
+                                        type="number"
+                                        value={setDetail.reps}
+                                        onChange={(e) => updateSetDetail(index, setIndex, 'reps', parseInt(e.target.value) || 0)}
+                                        className="h-8"
+                                      />
+                                      <span className="text-xs text-muted-foreground">reps</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Input
+                                        type="number"
+                                        step="0.5"
+                                        value={setDetail.weight || ''}
+                                        onChange={(e) => updateSetDetail(index, setIndex, 'weight', parseFloat(e.target.value) || 0)}
+                                        className="h-8"
+                                        placeholder="0"
+                                      />
+                                      <span className="text-xs text-muted-foreground">kg</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            /* Compact summary view */
+                            <div className="grid grid-cols-3 gap-3">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Sets</Label>
+                                <Input
+                                  type="number"
+                                  value={log.sets_completed}
+                                  onChange={(e) => handleSetsChange(index, parseInt(e.target.value) || 1)}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Reps</Label>
+                                <Input
+                                  value={log.reps_completed}
+                                  onChange={(e) => updateExerciseLog(index, 'reps_completed', e.target.value)}
+                                  placeholder="8-12"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Vikt (kg)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.5"
+                                  placeholder="0"
+                                  value={log.weight_kg}
+                                  onChange={(e) => updateExerciseLog(index, 'weight_kg', e.target.value)}
+                                  className={isNewPB ? 'border-gym-orange' : isGoalReached ? 'border-green-500' : ''}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })}

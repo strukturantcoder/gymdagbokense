@@ -3,6 +3,9 @@ project_id = "sqsoeyvwtgkevkhpwndj"
 [functions.generate-workout]
 verify_jwt = true
 
+[functions.refine-workout]
+verify_jwt = true
+
 [functions.generate-cardio-plan]
 verify_jwt = true
 
