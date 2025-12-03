@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Trophy, Users, Calendar, Target, Check, UserPlus, LogOut } from "lucide-react";
+import { Trophy, Users, Calendar, Target, Check, UserPlus, LogOut, TrendingDown } from "lucide-react";
 import { format, isPast, isFuture } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -34,6 +34,7 @@ export function CommunityChallenges() {
   const [participantData, setParticipantData] = useState<Record<string, Participant[]>>({});
   const [myParticipations, setMyParticipations] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const previousRanksRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     fetchChallenges();
@@ -126,6 +127,42 @@ export function CommunityChallenges() {
         Object.keys(grouped).forEach(key => {
           grouped[key].sort((a, b) => b.current_value - a.current_value);
         });
+
+        // Check for rank changes and notify user
+        if (user?.id) {
+          const newRanks: Record<string, number> = {};
+          
+          Object.keys(grouped).forEach(challengeId => {
+            const participants = grouped[challengeId];
+            const myIndex = participants.findIndex(p => p.user_id === user.id);
+            
+            if (myIndex !== -1) {
+              const myRank = myIndex + 1;
+              newRanks[challengeId] = myRank;
+              
+              const previousRank = previousRanksRef.current[challengeId];
+              
+              // If we had a previous rank and it's now worse (higher number)
+              if (previousRank !== undefined && myRank > previousRank) {
+                const challenge = challengesData.find(c => c.id === challengeId);
+                const whoPassedMe = participants[myRank - 2]; // The person now above us
+                
+                if (challenge && whoPassedMe) {
+                  toast.warning(
+                    `${whoPassedMe.display_name} gick om dig i "${challenge.title}"!`,
+                    {
+                      description: `Du är nu på plats ${myRank}`,
+                      icon: <TrendingDown className="h-4 w-4" />,
+                      duration: 5000,
+                    }
+                  );
+                }
+              }
+            }
+          });
+          
+          previousRanksRef.current = newRanks;
+        }
 
         setParticipantData(grouped);
         setMyParticipations(myJoined);
