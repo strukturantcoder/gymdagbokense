@@ -34,7 +34,20 @@ export function CommunityChallenges() {
   const [participantData, setParticipantData] = useState<Record<string, Participant[]>>({});
   const [myParticipations, setMyParticipations] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [expandedLeaderboards, setExpandedLeaderboards] = useState<Set<string>>(new Set());
   const previousRanksRef = useRef<Record<string, number>>({});
+
+  const toggleLeaderboard = (challengeId: string) => {
+    setExpandedLeaderboards(prev => {
+      const next = new Set(prev);
+      if (next.has(challengeId)) {
+        next.delete(challengeId);
+      } else {
+        next.add(challengeId);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     fetchChallenges();
@@ -320,12 +333,26 @@ export function CommunityChallenges() {
                 </div>
               )}
 
-              {/* Leaderboard preview */}
+              {/* Leaderboard */}
               {participants.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-foreground">Topplista</h4>
-                  <div className="space-y-1">
-                    {participants.slice(0, 5).map((p, index) => (
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-foreground">Topplista</h4>
+                    {participants.length > 5 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-6 px-2"
+                        onClick={() => toggleLeaderboard(challenge.id)}
+                      >
+                        {expandedLeaderboards.has(challenge.id) 
+                          ? "Visa mindre" 
+                          : `Visa alla (${participants.length})`}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                    {(expandedLeaderboards.has(challenge.id) ? participants : participants.slice(0, 5)).map((p, index) => (
                       <div 
                         key={p.user_id} 
                         className={`flex items-center justify-between text-sm py-1 px-2 rounded ${
@@ -333,7 +360,12 @@ export function CommunityChallenges() {
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <span className={`w-5 text-center ${index === 0 ? "text-yellow-500 font-bold" : "text-muted-foreground"}`}>
+                          <span className={`w-5 text-center ${
+                            index === 0 ? "text-yellow-500 font-bold" : 
+                            index === 1 ? "text-gray-400 font-medium" :
+                            index === 2 ? "text-amber-600 font-medium" :
+                            "text-muted-foreground"
+                          }`}>
                             {index + 1}
                           </span>
                           <span className={p.user_id === user?.id ? "font-medium" : ""}>
