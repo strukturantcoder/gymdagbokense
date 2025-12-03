@@ -1,13 +1,22 @@
+import { lazy, Suspense } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import AdBanner from "@/components/AdBanner";
-import Features from "@/components/Features";
-import HowItWorks from "@/components/HowItWorks";
-import StatisticsShowcase from "@/components/StatisticsShowcase";
-import SocialShowcase from "@/components/SocialShowcase";
-import Pricing from "@/components/Pricing";
-import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
+
+// Lazy load below-fold components to reduce initial bundle size
+const Features = lazy(() => import("@/components/Features"));
+const HowItWorks = lazy(() => import("@/components/HowItWorks"));
+const StatisticsShowcase = lazy(() => import("@/components/StatisticsShowcase"));
+const SocialShowcase = lazy(() => import("@/components/SocialShowcase"));
+const Pricing = lazy(() => import("@/components/Pricing"));
+const FAQ = lazy(() => import("@/components/FAQ"));
+
+const LazySection = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={<div className="min-h-[200px]" />}>
+    {children}
+  </Suspense>
+);
 
 const Index = () => {
   return (
@@ -22,24 +31,36 @@ const Index = () => {
           <AdBanner size="horizontal" />
         </div>
         
-        <Features />
+        <LazySection>
+          <Features />
+        </LazySection>
         
-        <HowItWorks />
+        <LazySection>
+          <HowItWorks />
+        </LazySection>
         
         {/* Ad banner in middle */}
         <div className="container px-4 py-8">
           <AdBanner size="horizontal" />
         </div>
         
-        <StatisticsShowcase />
+        <LazySection>
+          <StatisticsShowcase />
+        </LazySection>
         
-        <SocialShowcase />
+        <LazySection>
+          <SocialShowcase />
+        </LazySection>
         
         <section id="pricing">
-          <Pricing />
+          <LazySection>
+            <Pricing />
+          </LazySection>
         </section>
         
-        <FAQ />
+        <LazySection>
+          <FAQ />
+        </LazySection>
         
         {/* Final ad before footer */}
         <div className="container px-4 py-8">
