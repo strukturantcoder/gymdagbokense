@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2 } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield } from 'lucide-react';
 import { InstallAppButton } from '@/components/InstallPrompt';
 import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
@@ -70,6 +71,7 @@ interface WorkoutProgram {
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [programs, setPrograms] = useState<WorkoutProgram[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -342,6 +344,12 @@ export default function Dashboard() {
                 <Users className="w-4 h-4 mr-2" />
                 Socialt
               </Button>
+              {isAdmin && (
+                <Button variant="outline" onClick={() => navigate('/admin/challenges')}>
+                  <Shield className="w-4 h-4 mr-2" />
+                  Admin
+                </Button>
+              )}
               <Button variant="ghost" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logga ut
@@ -371,6 +379,12 @@ export default function Dashboard() {
                 <Users className="w-4 h-4 mr-1.5" />
                 Socialt
               </Button>
+              {isAdmin && (
+                <Button variant="outline" size="sm" onClick={() => navigate('/admin/challenges')}>
+                  <Shield className="w-4 h-4 mr-1.5" />
+                  Admin
+                </Button>
+              )}
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" />
               </Button>

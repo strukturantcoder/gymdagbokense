@@ -268,6 +268,89 @@ export type Database = {
         }
         Relationships: []
       }
+      community_challenge_participants: {
+        Row: {
+          challenge_id: string
+          current_value: number
+          id: string
+          joined_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          current_value?: number
+          id?: string
+          joined_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          current_value?: number
+          id?: string
+          joined_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "community_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_challenges: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string
+          goal_description: string
+          goal_unit: string
+          id: string
+          is_active: boolean
+          start_date: string
+          target_value: number | null
+          theme: string | null
+          title: string
+          winner_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date: string
+          goal_description: string
+          goal_unit: string
+          id?: string
+          is_active?: boolean
+          start_date: string
+          target_value?: number | null
+          theme?: string | null
+          title: string
+          winner_type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string
+          goal_description?: string
+          goal_unit?: string
+          id?: string
+          is_active?: boolean
+          start_date?: string
+          target_value?: number | null
+          theme?: string | null
+          title?: string
+          winner_type?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -527,6 +610,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_stats: {
         Row: {
           created_at: string
@@ -651,9 +755,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "user"
       challenge_type: "workouts" | "sets" | "minutes"
     }
     CompositeTypes: {
@@ -782,6 +893,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       challenge_type: ["workouts", "sets", "minutes"],
     },
   },
