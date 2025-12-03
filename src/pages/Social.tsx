@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   Dumbbell, LogOut, Users, Swords, Trophy, UserPlus, 
-  Check, X, Loader2, ArrowLeft, Bell, Gift, Sparkles
+  Check, X, Loader2, ArrowLeft, Bell, Gift, Sparkles, Globe
 } from 'lucide-react';
 import UserSearch from '@/components/UserSearch';
 import ChallengeCard from '@/components/ChallengeCard';
@@ -19,6 +19,7 @@ import XPProgress from '@/components/XPProgress';
 import AchievementsList from '@/components/AchievementsList';
 import InviteFriends from '@/components/InviteFriends';
 import AdBanner from '@/components/AdBanner';
+import { CommunityChallenges } from '@/components/CommunityChallenges';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -230,10 +231,11 @@ export default function Social() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <TabsList className="grid w-full grid-cols-3 bg-secondary/50 backdrop-blur-sm">
+            <TabsList className="grid w-full grid-cols-4 bg-secondary/50 backdrop-blur-sm">
               {[
                 { value: "friends", icon: Users, label: "Vänner", badge: pendingRequests.length },
                 { value: "challenges", icon: Swords, label: "Utmaningar", badge: pendingChallenges.filter(c => c.challenged_id === user?.id).length },
+                { value: "community", icon: Globe, label: "Tävlingar", badge: 0 },
                 { value: "achievements", icon: Trophy, label: "Prestationer", badge: 0 }
               ].map((tab) => (
                 <TabsTrigger 
@@ -680,6 +682,34 @@ export default function Social() {
               </motion.div>
               <motion.div variants={itemVariants}>
                 <AchievementsList achievements={achievements} userAchievements={userAchievements} />
+              </motion.div>
+            </motion.div>
+          </TabsContent>
+
+          {/* Community Challenges Tab */}
+          <TabsContent value="community" className="space-y-6">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-6"
+            >
+              <motion.div variants={itemVariants}>
+                <div className="flex items-center gap-3 mb-4">
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  >
+                    <Globe className="w-6 h-6 text-primary" />
+                  </motion.div>
+                  <h2 className="text-xl font-bold text-foreground">Community-tävlingar</h2>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Delta i öppna tävlingar och tävla mot andra användare!
+                </p>
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                <CommunityChallenges />
               </motion.div>
             </motion.div>
           </TabsContent>
