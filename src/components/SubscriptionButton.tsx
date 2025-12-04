@@ -36,7 +36,8 @@ const SubscriptionButton = ({ variant = "default", className = "" }: Subscriptio
       if (error) throw error;
       
       if (data?.url) {
-        window.open(data.url, '_blank');
+        // Use location.href for PWA/mobile compatibility instead of window.open
+        window.location.href = data.url;
       }
     } catch (error) {
       console.error('Error creating checkout:', error);
@@ -64,7 +65,8 @@ const SubscriptionButton = ({ variant = "default", className = "" }: Subscriptio
       if (error) throw error;
       
       if (data?.url) {
-        window.open(data.url, '_blank');
+        // Use location.href for PWA/mobile compatibility
+        window.location.href = data.url;
       }
     } catch (error) {
       console.error('Error opening customer portal:', error);
