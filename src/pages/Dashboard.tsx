@@ -20,6 +20,7 @@ import ExerciseInfo from '@/components/ExerciseInfo';
 import WelcomeGuide from '@/components/WelcomeGuide';
 import ProgramRefineDialog from '@/components/ProgramRefineDialog';
 import SortableExercise from '@/components/SortableExercise';
+import { NotificationBell } from '@/components/NotificationBell';
 import {
   DndContext,
   closestCenter,
@@ -372,6 +373,7 @@ export default function Dashboard() {
                   Admin
                 </Button>
               )}
+              <NotificationBell />
               <Button variant="ghost" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logga ut
@@ -407,6 +409,7 @@ export default function Dashboard() {
                   Admin
                 </Button>
               )}
+              <NotificationBell />
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" />
               </Button>

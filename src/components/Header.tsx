@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Dumbbell, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { NotificationBell } from "./NotificationBell";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -60,6 +61,7 @@ const Header = () => {
               <>
                 {user ? (
                   <>
+                    <NotificationBell />
                     <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
                       Min Dashboard
                     </Button>
