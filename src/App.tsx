@@ -21,7 +21,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Cookies = lazy(() => import("./pages/Cookies"));
 const AdminChallenges = lazy(() => import("./pages/AdminChallenges"));
-
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const queryClient = new QueryClient();
 
 // Minimal loading fallback
@@ -53,6 +53,7 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/cookies" element={<Cookies />} />
               <Route path="/admin/challenges" element={<AdminChallenges />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
