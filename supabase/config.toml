@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.suggest-challenge]
 verify_jwt = true
+
+[functions.send-push-notification]
+verify_jwt = true
