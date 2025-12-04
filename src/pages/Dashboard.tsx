@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield } from 'lucide-react';
 import { InstallAppButton } from '@/components/InstallPrompt';
+import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
 import ExerciseInfo from '@/components/ExerciseInfo';
@@ -350,6 +351,7 @@ export default function Dashboard() {
             </div>
             <div className="hidden md:flex items-center gap-2">
               <InstallAppButton />
+              <PushNotificationSettings />
               <SubscriptionButton variant="compact" />
               <Button variant="outline" onClick={() => navigate('/log')}>
                 <ClipboardList className="w-4 h-4 mr-2" />
@@ -386,6 +388,7 @@ export default function Dashboard() {
             <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
               <div className="flex items-center gap-2 pb-1 min-w-max">
               <InstallAppButton />
+              <PushNotificationSettings />
               <SubscriptionButton variant="compact" />
               <Button variant="outline" size="sm" onClick={() => navigate('/log')}>
                 <ClipboardList className="w-4 h-4 mr-1.5" />
