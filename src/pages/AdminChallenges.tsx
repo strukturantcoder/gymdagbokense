@@ -10,8 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3 } from "lucide-react";
+import { AdminStats } from "@/components/AdminStats";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -298,13 +300,30 @@ export default function AdminChallenges() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold text-foreground">Admin: Community-tävlingar</h1>
-            <p className="text-sm text-muted-foreground">Skapa och hantera öppna tävlingar</p>
+            <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Statistik och tävlingshantering</p>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        <Tabs defaultValue="stats" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="stats" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Statistik
+            </TabsTrigger>
+            <TabsTrigger value="challenges" className="gap-2">
+              <Trophy className="h-4 w-4" />
+              Tävlingar
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="stats" className="mt-6">
+            <AdminStats />
+          </TabsContent>
+
+          <TabsContent value="challenges" className="mt-6 space-y-6">
         {/* Create/Edit challenge form */}
         <Card>
           <CardHeader>
@@ -544,6 +563,8 @@ export default function AdminChallenges() {
             </div>
           )}
         </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
