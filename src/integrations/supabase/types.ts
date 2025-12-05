@@ -197,6 +197,60 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_pool_entries: {
+        Row: {
+          allow_multiple: boolean
+          challenge_category: string
+          challenge_type: string
+          created_at: string
+          duration_days: number
+          id: string
+          latest_start_date: string
+          max_age: number | null
+          max_participants: number | null
+          min_age: number | null
+          preferred_gender: string | null
+          status: string
+          target_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_multiple?: boolean
+          challenge_category: string
+          challenge_type: string
+          created_at?: string
+          duration_days: number
+          id?: string
+          latest_start_date: string
+          max_age?: number | null
+          max_participants?: number | null
+          min_age?: number | null
+          preferred_gender?: string | null
+          status?: string
+          target_value: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_multiple?: boolean
+          challenge_category?: string
+          challenge_type?: string
+          created_at?: string
+          duration_days?: number
+          id?: string
+          latest_start_date?: string
+          max_age?: number | null
+          max_participants?: number | null
+          min_age?: number | null
+          preferred_gender?: string | null
+          status?: string
+          target_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenge_progress: {
         Row: {
           challenge_id: string
@@ -563,27 +617,149 @@ export type Database = {
         }
         Relationships: []
       }
+      pool_challenge_messages: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_challenge_messages_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "pool_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pool_challenge_participants: {
+        Row: {
+          challenge_id: string
+          current_value: number
+          id: string
+          joined_at: string
+          pool_entry_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          current_value?: number
+          id?: string
+          joined_at?: string
+          pool_entry_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          current_value?: number
+          id?: string
+          joined_at?: string
+          pool_entry_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "pool_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pool_challenge_participants_pool_entry_id_fkey"
+            columns: ["pool_entry_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_pool_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pool_challenges: {
+        Row: {
+          challenge_category: string
+          challenge_type: string
+          created_at: string
+          end_date: string
+          id: string
+          start_date: string
+          status: string
+          target_value: number
+          winner_id: string | null
+          xp_reward: number
+        }
+        Insert: {
+          challenge_category: string
+          challenge_type: string
+          created_at?: string
+          end_date: string
+          id?: string
+          start_date?: string
+          status?: string
+          target_value: number
+          winner_id?: string | null
+          xp_reward?: number
+        }
+        Update: {
+          challenge_category?: string
+          challenge_type?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          start_date?: string
+          status?: string
+          target_value?: number
+          winner_id?: string | null
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          birth_year: number | null
           created_at: string
           display_name: string | null
+          gender: string | null
           id: string
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          birth_year?: number | null
           created_at?: string
           display_name?: string | null
+          gender?: string | null
           id?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          birth_year?: number | null
           created_at?: string
           display_name?: string | null
+          gender?: string | null
           id?: string
           updated_at?: string
           user_id?: string
