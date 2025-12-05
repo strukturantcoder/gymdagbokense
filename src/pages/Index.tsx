@@ -1,4 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import AdBanner from "@/components/AdBanner";
@@ -19,6 +21,14 @@ const LazySection = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Index = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/log', { replace: true });
+    }
+  }, [user, loading, navigate]);
   return (
     <div className="min-h-screen bg-background">
       <Header />
