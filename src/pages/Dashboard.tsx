@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield, Trophy } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield, Trophy, RotateCcw, Trash } from 'lucide-react';
 import { InstallAppButton } from '@/components/InstallPrompt';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import SubscriptionButton from '@/components/SubscriptionButton';
@@ -96,6 +96,10 @@ export default function Dashboard() {
   const [showRefineDialog, setShowRefineDialog] = useState(false);
   const [pendingProgram, setPendingProgram] = useState<ProgramData | null>(null);
   const [refiningProgramId, setRefiningProgramId] = useState<string | null>(null);
+  
+  // Trash state
+  const [showTrash, setShowTrash] = useState(false);
+  const [trashPrograms, setTrashPrograms] = useState<WorkoutProgram[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -106,6 +110,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) {
       fetchPrograms();
+      fetchTrashPrograms();
     }
   }, [user]);
 
@@ -113,6 +118,7 @@ export default function Dashboard() {
     const { data, error } = await supabase
       .from('workout_programs')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -120,6 +126,27 @@ export default function Dashboard() {
       toast.error('Kunde inte hämta program');
     } else if (data) {
       setPrograms(data.map(item => ({
+        ...item,
+        program_data: item.program_data as unknown as ProgramData
+      })));
+    }
+  };
+
+  const fetchTrashPrograms = async () => {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    
+    const { data, error } = await supabase
+      .from('workout_programs')
+      .select('*')
+      .not('deleted_at', 'is', null)
+      .gte('deleted_at', ninetyDaysAgo.toISOString())
+      .order('deleted_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching trash:', error);
+    } else if (data) {
+      setTrashPrograms(data.map(item => ({
         ...item,
         program_data: item.program_data as unknown as ProgramData
       })));
@@ -209,19 +236,50 @@ export default function Dashboard() {
   const handleDeleteProgram = async (id: string) => {
     const { error } = await supabase
       .from('workout_programs')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
     
     if (error) {
       toast.error('Kunde inte ta bort programmet');
     } else {
-      toast.success('Program borttaget');
+      toast.success('Program flyttat till papperskorgen', {
+        description: 'Du kan återställa det inom 90 dagar'
+      });
       if (selectedProgram?.id === id) {
         setSelectedProgram(null);
         setEditedProgram(null);
         setIsEditing(false);
       }
       fetchPrograms();
+    }
+  };
+
+  const restoreProgram = async (id: string) => {
+    const { error } = await supabase
+      .from('workout_programs')
+      .update({ deleted_at: null })
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Kunde inte återställa programmet');
+    } else {
+      toast.success('Program återställt!');
+      fetchPrograms();
+      fetchTrashPrograms();
+    }
+  };
+
+  const permanentlyDeleteProgram = async (id: string) => {
+    const { error } = await supabase
+      .from('workout_programs')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Kunde inte ta bort programmet permanent');
+    } else {
+      toast.success('Program borttaget permanent');
+      fetchTrashPrograms();
     }
   };
 
@@ -454,11 +512,85 @@ export default function Dashboard() {
             <h1 className="text-3xl font-display font-bold">Mina Träningsprogram</h1>
             <p className="text-muted-foreground">Skapa AI-genererade program anpassade för dig</p>
           </div>
-          <Button variant="hero" onClick={() => setShowGenerator(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nytt Program
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant={showTrash ? "default" : "outline"} 
+              onClick={() => {
+                setShowTrash(!showTrash);
+                if (!showTrash) fetchTrashPrograms();
+              }}
+            >
+              <Trash className="w-4 h-4 mr-2" />
+              Papperskorg
+              {trashPrograms.length > 0 && !showTrash && (
+                <Badge variant="secondary" className="ml-2">{trashPrograms.length}</Badge>
+              )}
+            </Button>
+            <Button variant="hero" onClick={() => setShowGenerator(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nytt Program
+            </Button>
+          </div>
         </div>
+
+        {/* Trash View */}
+        {showTrash && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trash className="w-5 h-5 text-muted-foreground" />
+                  Papperskorg
+                </CardTitle>
+                <CardDescription>
+                  Borttagna program sparas i 90 dagar innan de raderas permanent
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {trashPrograms.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">Papperskorgen är tom</p>
+                ) : (
+                  <div className="space-y-3">
+                    {trashPrograms.map(program => (
+                      <div 
+                        key={program.id}
+                        className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg"
+                      >
+                        <div>
+                          <p className="font-medium">{program.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Borttaget: {new Date((program as any).deleted_at).toLocaleDateString('sv-SE')}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => restoreProgram(program.id)}
+                          >
+                            <RotateCcw className="w-4 h-4 mr-1" />
+                            Återställ
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => permanentlyDeleteProgram(program.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Program Generator */}
         {showGenerator && (
