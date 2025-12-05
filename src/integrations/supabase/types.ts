@@ -1002,6 +1002,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      search_users_by_name: {
+        Args: { search_query: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          user_id: string
+        }[]
+      }
       validate_invite_code: {
         Args: { code_to_check: string }
         Returns: {

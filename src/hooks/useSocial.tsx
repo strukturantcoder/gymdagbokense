@@ -234,12 +234,9 @@ export function useSocial() {
   const searchUsers = async (query: string): Promise<UserProfile[]> => {
     if (!query || query.length < 2) return [];
     
+    // Use secure RPC function that only returns minimal data
     const { data, error } = await supabase
-      .from('profiles')
-      .select('user_id, display_name, avatar_url')
-      .or(`display_name.ilike.%${query}%`)
-      .neq('user_id', user?.id || '')
-      .limit(10);
+      .rpc('search_users_by_name', { search_query: query });
     
     if (error) {
       console.error('Error searching users:', error);
