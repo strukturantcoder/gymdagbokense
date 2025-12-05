@@ -226,14 +226,8 @@ export function usePoolChallenges() {
     toast.success('Utmaningsförfrågan skapad! Du matchas automatiskt när någon passar.');
     await fetchMyEntries();
 
-    // Trigger matching
-    try {
-      await supabase.functions.invoke('match-pool-challenges');
-      await fetchMyEntries();
-      await fetchMyChallenges();
-    } catch (e) {
-      console.error('Matching error:', e);
-    }
+    // Note: Matching is handled by scheduled cron job for security
+    // No direct client invocation of match-pool-challenges
 
     return data;
   };
