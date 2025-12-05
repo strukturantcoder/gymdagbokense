@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield, Trophy } from 'lucide-react';
 import { InstallAppButton } from '@/components/InstallPrompt';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import SubscriptionButton from '@/components/SubscriptionButton';
@@ -427,6 +427,28 @@ export default function Dashboard() {
       <main className="container px-4 py-8">
         {/* Ad Banner */}
         <AdBanner className="mb-6" />
+        
+        {/* Quick link to challenges */}
+        <Card 
+          className="mb-6 cursor-pointer hover:border-primary/50 transition-colors bg-gradient-to-r from-gym-orange/10 to-amber-500/10"
+          onClick={() => navigate('/social')}
+        >
+          <CardContent className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-gym-orange to-amber-500 rounded-lg flex items-center justify-center">
+                <Trophy className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Community-tävlingar</h3>
+                <p className="text-sm text-muted-foreground">Tävla mot andra och vinn XP!</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm">
+              Se tävlingar
+            </Button>
+          </CardContent>
+        </Card>
+        
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold">Mina Träningsprogram</h1>
