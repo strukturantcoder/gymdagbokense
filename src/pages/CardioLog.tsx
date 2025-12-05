@@ -20,6 +20,7 @@ import {
 import ActiveCardioPlanSession from '@/components/ActiveCardioPlanSession';
 import GenerateCardioPlanDialog from '@/components/GenerateCardioPlanDialog';
 import AdBanner from '@/components/AdBanner';
+import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import confetti from 'canvas-confetti';
@@ -87,6 +88,15 @@ export default function CardioLog() {
   const [goalTargetType, setGoalTargetType] = useState('distance_km');
   const [goalTargetValue, setGoalTargetValue] = useState('');
   const [goalPeriod, setGoalPeriod] = useState('weekly');
+
+  // Share to Instagram
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [cardioShareData, setCardioShareData] = useState<{
+    activityType: string;
+    duration: number;
+    distance?: number;
+    calories?: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -289,11 +299,24 @@ export default function CardioLog() {
         await checkCardioAchievements(newStats);
       }
 
+      // Prepare share data
+      setCardioShareData({
+        activityType: getActivityLabel(activityType),
+        duration: parseInt(durationMinutes),
+        distance: distanceKm ? parseFloat(distanceKm) : undefined,
+        calories: caloriesBurned ? parseInt(caloriesBurned) : undefined
+      });
+
       toast.success(`Konditionspass loggat! +${xpEarned} XP`);
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
       
       resetForm();
       fetchLogs();
+
+      // Show share dialog after a short delay
+      setTimeout(() => {
+        setShowShareDialog(true);
+      }, 1000);
     } catch (error) {
       console.error('Error saving cardio log:', error);
       toast.error('Kunde inte spara passet');
@@ -892,6 +915,15 @@ export default function CardioLog() {
         {/* Bottom Ad Banner */}
         <AdBanner className="mt-8" />
       </main>
+
+      {/* Share to Instagram Dialog */}
+      {cardioShareData && (
+        <ShareToInstagramDialog
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          cardioData={cardioShareData}
+        />
+      )}
     </div>
   );
 }

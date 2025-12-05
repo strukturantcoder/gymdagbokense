@@ -16,6 +16,7 @@ import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight, Time
 import RestTimer from '@/components/RestTimer';
 import ExerciseInfo from '@/components/ExerciseInfo';
 import AdBanner from '@/components/AdBanner';
+import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import confetti from 'canvas-confetti';
@@ -110,6 +111,17 @@ export default function WorkoutLog() {
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [goalWeight, setGoalWeight] = useState('');
   const [newPBs, setNewPBs] = useState<string[]>([]);
+  
+  // Share to Instagram
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [shareData, setShareData] = useState<{
+    dayName: string;
+    duration?: number;
+    exerciseCount: number;
+    totalSets: number;
+    newPBs?: string[];
+    programName?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -426,8 +438,25 @@ export default function WorkoutLog() {
         );
       }
 
+      // Prepare share data before resetting form
+      const shareProgram = programs.find(p => p.id === selectedProgram);
+      setShareData({
+        dayName,
+        duration: duration ? parseInt(duration) : undefined,
+        exerciseCount: exerciseLogs.length,
+        totalSets: exerciseLogs.reduce((sum, log) => sum + log.sets_completed, 0),
+        newPBs: newPBsList.length > 0 ? newPBsList : undefined,
+        programName: shareProgram?.name
+      });
+
       toast.success('Träningspass sparat!');
       setIsLogging(false);
+      
+      // Show share dialog after a short delay
+      setTimeout(() => {
+        setShowShareDialog(true);
+      }, 1000);
+      
       resetForm();
       fetchRecentLogs();
       fetchPersonalBests();
@@ -971,6 +1000,15 @@ export default function WorkoutLog() {
         {/* Bottom Ad Banner */}
         <AdBanner className="mt-8" />
       </main>
+
+      {/* Share to Instagram Dialog */}
+      {shareData && (
+        <ShareToInstagramDialog
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          workoutData={shareData}
+        />
+      )}
     </div>
   );
 }
