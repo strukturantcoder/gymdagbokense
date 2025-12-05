@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   User, Camera, Save, Loader2, ArrowLeft, Crown, Mail, 
-  Calendar, UserCircle, LogOut, Settings, Shield
+  Calendar, UserCircle, LogOut, Settings, Shield, Sun, Moon, Monitor
 } from 'lucide-react';
 
 interface Profile {
@@ -25,6 +26,7 @@ interface Profile {
 
 export default function Account() {
   const { user, loading, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -363,6 +365,47 @@ export default function Account() {
                   Uppgradera
                 </Button>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Theme Settings Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sun className="h-5 w-5" />
+              Utseende
+            </CardTitle>
+            <CardDescription>
+              Välj hur appen ska se ut
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                variant={theme === 'light' ? 'default' : 'outline'}
+                className="flex flex-col items-center gap-2 h-auto py-4"
+                onClick={() => setTheme('light')}
+              >
+                <Sun className="h-5 w-5" />
+                <span className="text-xs">Ljust</span>
+              </Button>
+              <Button
+                variant={theme === 'dark' ? 'default' : 'outline'}
+                className="flex flex-col items-center gap-2 h-auto py-4"
+                onClick={() => setTheme('dark')}
+              >
+                <Moon className="h-5 w-5" />
+                <span className="text-xs">Mörkt</span>
+              </Button>
+              <Button
+                variant={theme === 'system' ? 'default' : 'outline'}
+                className="flex flex-col items-center gap-2 h-auto py-4"
+                onClick={() => setTheme('system')}
+              >
+                <Monitor className="h-5 w-5" />
+                <span className="text-xs">System</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
