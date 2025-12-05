@@ -43,7 +43,12 @@ const SubscriptionButton = ({ variant = "default", className = "" }: Subscriptio
       
       if (data?.url) {
         console.log('[Premium] Redirecting to:', data.url);
-        window.location.href = data.url;
+        // Try multiple redirect methods for PWA/iframe compatibility
+        const newWindow = window.open(data.url, '_blank');
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          // Popup blocked or failed, try direct navigation
+          window.location.assign(data.url);
+        }
       } else {
         console.error('[Premium] No URL in response:', data);
         toast({
