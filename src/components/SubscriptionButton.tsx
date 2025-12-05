@@ -27,20 +27,33 @@ const SubscriptionButton = ({ variant = "default", className = "" }: Subscriptio
 
     setLoading(true);
     try {
+      console.log('[Premium] Calling create-checkout...');
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
 
-      if (error) throw error;
+      console.log('[Premium] Response:', { data, error });
+
+      if (error) {
+        console.error('[Premium] Error from invoke:', error);
+        throw error;
+      }
       
       if (data?.url) {
-        // Use location.href for PWA/mobile compatibility instead of window.open
+        console.log('[Premium] Redirecting to:', data.url);
         window.location.href = data.url;
+      } else {
+        console.error('[Premium] No URL in response:', data);
+        toast({
+          title: "Något gick fel",
+          description: "Inget betalningslänk returnerades.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      console.error('[Premium] Error creating checkout:', error);
       toast({
         title: "Något gick fel",
         description: "Kunde inte starta betalningen. Försök igen.",
