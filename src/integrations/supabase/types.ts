@@ -960,6 +960,7 @@ export type Database = {
         Row: {
           created_at: string
           days_per_week: number
+          deleted_at: string | null
           experience_level: string
           goal: string
           id: string
@@ -970,6 +971,7 @@ export type Database = {
         Insert: {
           created_at?: string
           days_per_week: number
+          deleted_at?: string | null
           experience_level: string
           goal: string
           id?: string
@@ -980,6 +982,7 @@ export type Database = {
         Update: {
           created_at?: string
           days_per_week?: number
+          deleted_at?: string | null
           experience_level?: string
           goal?: string
           id?: string
