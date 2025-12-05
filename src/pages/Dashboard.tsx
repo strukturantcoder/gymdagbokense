@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield, Trophy, RotateCcw, Trash } from 'lucide-react';
 import { InstallAppButton } from '@/components/InstallPrompt';
@@ -100,6 +101,7 @@ export default function Dashboard() {
   // Trash state
   const [showTrash, setShowTrash] = useState(false);
   const [trashPrograms, setTrashPrograms] = useState<WorkoutProgram[]>([]);
+  const [programToDelete, setProgramToDelete] = useState<WorkoutProgram | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -578,7 +580,7 @@ export default function Dashboard() {
                           <Button 
                             variant="destructive" 
                             size="sm"
-                            onClick={() => permanentlyDeleteProgram(program.id)}
+                            onClick={() => setProgramToDelete(program)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -892,6 +894,33 @@ export default function Dashboard() {
         {/* Bottom Ad Banner */}
         <AdBanner className="mt-8" />
       </main>
+
+      {/* Confirm permanent delete dialog */}
+      <AlertDialog open={!!programToDelete} onOpenChange={() => setProgramToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Radera permanent?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill radera "{programToDelete?.name}" permanent? 
+              Detta går inte att ångra.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (programToDelete) {
+                  permanentlyDeleteProgram(programToDelete.id);
+                  setProgramToDelete(null);
+                }
+              }}
+            >
+              Radera permanent
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
