@@ -81,9 +81,10 @@ export function CommunityChallenges() {
   const fetchChallenges = async () => {
     try {
       // Fetch active challenges
+      // Select only necessary fields, excluding created_by for security
       const { data: challengesData, error: challengesError } = await supabase
         .from("community_challenges")
-        .select("*")
+        .select("id, title, description, theme, goal_description, goal_unit, target_value, winner_type, start_date, end_date, is_active")
         .eq("is_active", true)
         .order("start_date", { ascending: true });
 
