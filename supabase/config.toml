@@ -26,3 +26,6 @@ verify_jwt = true
 
 [functions.send-push-notification]
 verify_jwt = true
+
+[functions.match-pool-challenges]
+verify_jwt = false
