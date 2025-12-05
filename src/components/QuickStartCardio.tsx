@@ -1,25 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { 
   Play, Pause, Square, Timer, Footprints, Bike, Waves, Flag, 
-  MapPin, Flame, Sparkles, Loader2
+  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { useGpsTracking } from '@/hooks/useGpsTracking';
 
 const activityTypes = [
-  { value: 'running', label: 'Löpning', icon: Footprints, color: 'from-orange-500 to-red-500' },
-  { value: 'walking', label: 'Promenad', icon: Footprints, color: 'from-green-500 to-emerald-500' },
-  { value: 'cycling', label: 'Cykling', icon: Bike, color: 'from-blue-500 to-cyan-500' },
-  { value: 'swimming', label: 'Simning', icon: Waves, color: 'from-cyan-500 to-blue-500' },
-  { value: 'golf', label: 'Golf', icon: Flag, color: 'from-green-600 to-lime-500' },
-  { value: 'other', label: 'Annat', icon: Timer, color: 'from-purple-500 to-pink-500' },
+  { value: 'running', label: 'Löpning', icon: Footprints, color: 'from-orange-500 to-red-500', gpsRecommended: true },
+  { value: 'walking', label: 'Promenad', icon: Footprints, color: 'from-green-500 to-emerald-500', gpsRecommended: true },
+  { value: 'cycling', label: 'Cykling', icon: Bike, color: 'from-blue-500 to-cyan-500', gpsRecommended: true },
+  { value: 'swimming', label: 'Simning', icon: Waves, color: 'from-cyan-500 to-blue-500', gpsRecommended: false },
+  { value: 'golf', label: 'Golf', icon: Flag, color: 'from-green-600 to-lime-500', gpsRecommended: true },
+  { value: 'other', label: 'Annat', icon: Timer, color: 'from-purple-500 to-pink-500', gpsRecommended: false },
 ];
 
 const CARDIO_XP_PER_MINUTE = 2;
@@ -39,7 +41,12 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
   const [caloriesBurned, setCaloriesBurned] = useState('');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [gpsEnabled, setGpsEnabled] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { isTracking, hasPermission, error: gpsError, stats: gpsStats, resetStats } = useGpsTracking(
+    activeSession !== null && !isPaused && gpsEnabled
+  );
 
   useEffect(() => {
     if (activeSession && !isPaused) {
@@ -57,6 +64,13 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
     };
   }, [activeSession, isPaused]);
 
+  // Sync GPS distance to form
+  useEffect(() => {
+    if (gpsStats.totalDistanceKm > 0 && !showFinishForm) {
+      setDistanceKm(gpsStats.totalDistanceKm.toFixed(2));
+    }
+  }, [gpsStats.totalDistanceKm, showFinishForm]);
+
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -68,7 +82,16 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const formatPace = (speedKmh: number) => {
+    if (speedKmh <= 0) return '--:--';
+    const paceMinPerKm = 60 / speedKmh;
+    const mins = Math.floor(paceMinPerKm);
+    const secs = Math.round((paceMinPerKm - mins) * 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const startSession = (activityType: string) => {
+    const activity = activityTypes.find(a => a.value === activityType);
     setActiveSession(activityType);
     setElapsedSeconds(0);
     setIsPaused(false);
@@ -76,6 +99,8 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
     setDistanceKm('');
     setCaloriesBurned('');
     setNotes('');
+    setGpsEnabled(activity?.gpsRecommended ?? true);
+    resetStats();
   };
 
   const togglePause = () => {
@@ -85,6 +110,10 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
   const stopSession = () => {
     setIsPaused(true);
     setShowFinishForm(true);
+    // Set final distance from GPS if available
+    if (gpsStats.totalDistanceKm > 0) {
+      setDistanceKm(gpsStats.totalDistanceKm.toFixed(2));
+    }
   };
 
   const cancelSession = () => {
@@ -92,6 +121,7 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
     setElapsedSeconds(0);
     setIsPaused(false);
     setShowFinishForm(false);
+    resetStats();
   };
 
   const calculateXP = (duration: number, distance: number | null) => {
@@ -111,7 +141,6 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
 
     setIsSaving(true);
     try {
-      // Save cardio log
       const { error } = await supabase.from('cardio_logs').insert({
         user_id: userId,
         activity_type: activeSession,
@@ -123,7 +152,6 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
 
       if (error) throw error;
 
-      // Update user stats
       const xpEarned = calculateXP(durationMinutes, distance);
       
       const { data: currentStats } = await supabase
@@ -158,10 +186,10 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
       toast.success(`${activityLabel} loggat! +${xpEarned} XP`);
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
 
-      // Reset state
       setActiveSession(null);
       setElapsedSeconds(0);
       setShowFinishForm(false);
+      resetStats();
       onSessionComplete();
     } catch (error) {
       console.error('Error saving cardio session:', error);
@@ -176,7 +204,10 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
   if (activeSession && activeActivity) {
     const ActivityIcon = activeActivity.icon;
     const durationMinutes = Math.round(elapsedSeconds / 60);
-    const estimatedXP = calculateXP(durationMinutes, distanceKm ? parseFloat(distanceKm) : null);
+    const currentDistance = gpsEnabled && gpsStats.totalDistanceKm > 0 
+      ? gpsStats.totalDistanceKm 
+      : (distanceKm ? parseFloat(distanceKm) : null);
+    const estimatedXP = calculateXP(durationMinutes, currentDistance);
 
     return (
       <motion.div
@@ -184,7 +215,7 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
         animate={{ opacity: 1, scale: 1 }}
         className="mb-8"
       >
-        <Card className={`border-2 border-primary overflow-hidden`}>
+        <Card className="border-2 border-primary overflow-hidden">
           <div className={`h-2 bg-gradient-to-r ${activeActivity.color}`} />
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-3">
@@ -192,27 +223,92 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                 <ActivityIcon className="w-6 h-6 text-white" />
               </div>
               <span>{activeActivity.label}</span>
-              {!isPaused && (
-                <span className="ml-auto text-sm font-normal text-muted-foreground animate-pulse">
-                  ● Pågår
-                </span>
-              )}
+              <div className="ml-auto flex items-center gap-2">
+                {gpsEnabled && isTracking && (
+                  <span className="text-xs font-normal text-green-500 flex items-center gap-1">
+                    <Navigation className="w-3 h-3 animate-pulse" />
+                    GPS
+                  </span>
+                )}
+                {!isPaused && (
+                  <span className="text-sm font-normal text-muted-foreground animate-pulse">
+                    ● Pågår
+                  </span>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Timer */}
-            <div className="text-center py-6">
+            <div className="text-center py-4">
               <motion.div
                 key={elapsedSeconds}
-                initial={{ scale: 1.05 }}
+                initial={{ scale: 1.02 }}
                 animate={{ scale: 1 }}
                 className="text-6xl font-mono font-bold tracking-wider"
               >
                 {formatTime(elapsedSeconds)}
               </motion.div>
-              <p className="text-muted-foreground mt-2">
-                ~{durationMinutes} min • ~{estimatedXP} XP
-              </p>
+            </div>
+
+            {/* GPS Stats */}
+            {gpsEnabled && (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 text-muted-foreground text-xs mb-1">
+                    <MapPin className="w-3 h-3" />
+                    Distans
+                  </div>
+                  <p className="text-xl font-bold">
+                    {gpsStats.totalDistanceKm.toFixed(2)} <span className="text-sm font-normal">km</span>
+                  </p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 text-muted-foreground text-xs mb-1">
+                    <Gauge className="w-3 h-3" />
+                    Hastighet
+                  </div>
+                  <p className="text-xl font-bold">
+                    {gpsStats.currentSpeedKmh.toFixed(1)} <span className="text-sm font-normal">km/h</span>
+                  </p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 text-muted-foreground text-xs mb-1">
+                    <TrendingUp className="w-3 h-3" />
+                    Tempo
+                  </div>
+                  <p className="text-xl font-bold">
+                    {formatPace(gpsStats.currentSpeedKmh)} <span className="text-sm font-normal">/km</span>
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* GPS Error */}
+            {gpsEnabled && gpsError && (
+              <div className="flex items-center gap-2 text-amber-500 text-sm bg-amber-500/10 p-3 rounded-lg">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{gpsError}</span>
+              </div>
+            )}
+
+            {/* GPS Toggle */}
+            {!showFinishForm && (
+              <div className="flex items-center justify-between bg-muted/30 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <Navigation className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm">GPS-spårning</span>
+                </div>
+                <Switch
+                  checked={gpsEnabled}
+                  onCheckedChange={setGpsEnabled}
+                />
+              </div>
+            )}
+
+            {/* XP Preview */}
+            <div className="text-center text-sm text-muted-foreground">
+              ~{durationMinutes} min • ~{estimatedXP} XP
             </div>
 
             {/* Controls */}
@@ -222,7 +318,7 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                   variant="outline"
                   size="lg"
                   onClick={togglePause}
-                  className="w-24"
+                  className="w-28"
                 >
                   {isPaused ? (
                     <>
@@ -240,7 +336,7 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                   variant="hero"
                   size="lg"
                   onClick={stopSession}
-                  className="w-24"
+                  className="w-28"
                 >
                   <Square className="w-5 h-5 mr-2" />
                   Avsluta
@@ -252,6 +348,19 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-4"
               >
+                {/* Summary */}
+                {gpsEnabled && gpsStats.totalDistanceKm > 0 && (
+                  <div className="bg-primary/10 rounded-lg p-4 space-y-2">
+                    <p className="font-medium text-sm">GPS-sammanfattning</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>Distans: <span className="font-bold">{gpsStats.totalDistanceKm.toFixed(2)} km</span></div>
+                      <div>Snitt: <span className="font-bold">{gpsStats.averageSpeedKmh.toFixed(1)} km/h</span></div>
+                      <div>Max: <span className="font-bold">{gpsStats.maxSpeedKmh.toFixed(1)} km/h</span></div>
+                      <div>Tempo: <span className="font-bold">{formatPace(gpsStats.averageSpeedKmh)} /km</span></div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
@@ -260,8 +369,8 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                     </Label>
                     <Input
                       type="number"
-                      step="0.1"
-                      placeholder="5.0"
+                      step="0.01"
+                      placeholder="5.00"
                       value={distanceKm}
                       onChange={(e) => setDistanceKm(e.target.value)}
                     />
@@ -290,14 +399,12 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                   />
                 </div>
 
-                {distanceKm && (
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <p className="text-sm font-medium flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      Förväntad XP: +{estimatedXP}
-                    </p>
-                  </div>
-                )}
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    Förväntad XP: +{estimatedXP}
+                  </p>
+                </div>
 
                 <div className="flex gap-2 pt-2">
                   <Button variant="hero" onClick={saveSession} disabled={isSaving} className="flex-1">
@@ -340,16 +447,19 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => startSession(activity.value)}
-                className={`p-4 rounded-xl bg-gradient-to-br ${activity.color} text-white flex flex-col items-center gap-2 shadow-lg hover:shadow-xl transition-shadow`}
+                className={`p-4 rounded-xl bg-gradient-to-br ${activity.color} text-white flex flex-col items-center gap-2 shadow-lg hover:shadow-xl transition-shadow relative`}
               >
                 <Icon className="w-8 h-8" />
                 <span className="text-sm font-medium">{activity.label}</span>
+                {activity.gpsRecommended && (
+                  <Navigation className="w-3 h-3 absolute top-2 right-2 opacity-70" />
+                )}
               </motion.button>
             );
           })}
         </div>
         <p className="text-sm text-muted-foreground mt-4 text-center">
-          Tryck på en aktivitet för att starta timern
+          Tryck på en aktivitet för att starta med GPS-spårning
         </p>
       </CardContent>
     </Card>
