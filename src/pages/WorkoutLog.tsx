@@ -102,6 +102,7 @@ export default function WorkoutLog() {
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLogEntry[]>([]);
   const [showTimer, setShowTimer] = useState(false);
+  const [autoSuggestLoading, setAutoSuggestLoading] = useState(false);
   
   // Personal bests and goals
   const [personalBests, setPersonalBests] = useState<Map<string, PersonalBest>>(new Map());
@@ -449,6 +450,82 @@ export default function WorkoutLog() {
 
   const currentProgram = programs.find(p => p.id === selectedProgram);
 
+  const startNewWorkout = async () => {
+    setIsLogging(true);
+    setAutoSuggestLoading(true);
+    
+    try {
+      // If only one program exists, auto-select it
+      if (programs.length === 1) {
+        const program = programs[0];
+        setSelectedProgram(program.id);
+        
+        // Find the most recent workout for this program
+        const { data: lastWorkout } = await supabase
+          .from('workout_logs')
+          .select('workout_day, program_id')
+          .eq('program_id', program.id)
+          .order('completed_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (lastWorkout && program.program_data.days) {
+          // Find the index of the last workout day
+          const lastDayIndex = program.program_data.days.findIndex(
+            d => d.day === lastWorkout.workout_day
+          );
+          
+          // Suggest the next day in the cycle
+          if (lastDayIndex !== -1) {
+            const nextDayIndex = (lastDayIndex + 1) % program.program_data.days.length;
+            await handleDayChange(nextDayIndex.toString());
+            toast.info(`Föreslår: ${program.program_data.days[nextDayIndex].day}`, {
+              description: 'Baserat på ditt senaste pass'
+            });
+          }
+        } else if (program.program_data.days?.length > 0) {
+          // No previous workouts, suggest first day
+          await handleDayChange('0');
+          toast.info(`Föreslår: ${program.program_data.days[0].day}`, {
+            description: 'Starta från början!'
+          });
+        }
+      } else if (programs.length > 1) {
+        // Multiple programs - find the most recently used one
+        const { data: lastWorkout } = await supabase
+          .from('workout_logs')
+          .select('workout_day, program_id')
+          .order('completed_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (lastWorkout?.program_id) {
+          const program = programs.find(p => p.id === lastWorkout.program_id);
+          if (program) {
+            setSelectedProgram(program.id);
+            
+            // Find next day in the cycle
+            const lastDayIndex = program.program_data.days?.findIndex(
+              d => d.day === lastWorkout.workout_day
+            ) ?? -1;
+            
+            if (lastDayIndex !== -1 && program.program_data.days) {
+              const nextDayIndex = (lastDayIndex + 1) % program.program_data.days.length;
+              await handleDayChange(nextDayIndex.toString());
+              toast.info(`Föreslår: ${program.program_data.days[nextDayIndex].day}`, {
+                description: `Program: ${program.name}`
+              });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error auto-suggesting workout:', error);
+    } finally {
+      setAutoSuggestLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -495,8 +572,12 @@ export default function WorkoutLog() {
               Vila Timer
             </Button>
             {!isLogging && (
-              <Button variant="hero" onClick={() => setIsLogging(true)}>
-                <Plus className="w-4 h-4 mr-2" />
+              <Button variant="hero" onClick={startNewWorkout} disabled={autoSuggestLoading}>
+                {autoSuggestLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
                 Nytt Pass
               </Button>
             )}
