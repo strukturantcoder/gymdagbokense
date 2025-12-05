@@ -1002,6 +1002,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      validate_invite_code: {
+        Args: { code_to_check: string }
+        Returns: {
+          inviter_id: string
+          is_valid: boolean
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
