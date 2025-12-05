@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield, Trophy, RotateCcw, Trash } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield, Trophy, RotateCcw, Trash, UserCircle } from 'lucide-react';
 import { InstallAppButton } from '@/components/InstallPrompt';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import SubscriptionButton from '@/components/SubscriptionButton';
@@ -436,6 +436,10 @@ export default function Dashboard() {
                 </Button>
               )}
               <NotificationBell />
+              <Button variant="outline" onClick={() => navigate('/account')}>
+                <UserCircle className="w-4 h-4 mr-2" />
+                Konto
+              </Button>
               <Button variant="ghost" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logga ut
@@ -473,6 +477,9 @@ export default function Dashboard() {
                 </Button>
               )}
               <NotificationBell />
+              <Button variant="outline" size="sm" onClick={() => navigate('/account')}>
+                <UserCircle className="w-4 h-4" />
+              </Button>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" />
               </Button>

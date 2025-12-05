@@ -1,0 +1,386 @@
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { 
+  User, Camera, Save, Loader2, ArrowLeft, Crown, Mail, 
+  Calendar, UserCircle, LogOut, Settings, Shield
+} from 'lucide-react';
+
+interface Profile {
+  display_name: string | null;
+  avatar_url: string | null;
+  gender: string | null;
+  birth_year: number | null;
+}
+
+export default function Account() {
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  
+  // Form state
+  const [displayName, setDisplayName] = useState('');
+  const [gender, setGender] = useState('');
+  const [birthYear, setBirthYear] = useState('');
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+      checkSubscription();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('display_name, avatar_url, gender, birth_year')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching profile:', error);
+    }
+    
+    if (data) {
+      setProfile(data);
+      setDisplayName(data.display_name || '');
+      setGender(data.gender || '');
+      setBirthYear(data.birth_year?.toString() || '');
+    }
+    
+    setIsLoading(false);
+  };
+
+  const checkSubscription = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      if (!error && data?.subscribed) {
+        setIsPremium(true);
+      }
+    } catch (err) {
+      console.error('Error checking subscription:', err);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          display_name: displayName || null,
+          gender: gender || null,
+          birth_year: birthYear ? parseInt(birthYear) : null,
+        }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+      
+      toast.success('Profil uppdaterad!');
+      fetchProfile();
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Kunde inte spara profilen');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Välj en bildfil');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Bilden får max vara 5MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          avatar_url: urlData.publicUrl,
+        }, { onConflict: 'user_id' });
+
+      if (updateError) throw updateError;
+
+      toast.success('Profilbild uppdaterad!');
+      fetchProfile();
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Kunde inte ladda upp bilden');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  // Generate year options (current year - 100 to current year - 13)
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 88 }, (_, i) => currentYear - 13 - i);
+
+  if (loading || isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-card">
+        <div className="container px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                <span className="font-display text-xl font-bold">Mitt konto</span>
+              </div>
+            </div>
+            {isPremium && (
+              <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white">
+                <Crown className="h-3 w-3 mr-1" />
+                Premium
+              </Badge>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="container px-4 py-6 max-w-2xl mx-auto space-y-6">
+        {/* Profile Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserCircle className="h-5 w-5" />
+              Profil
+            </CardTitle>
+            <CardDescription>
+              Hantera din profilinformation
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Avatar Section */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <Avatar className="h-24 w-24 ring-4 ring-primary/20">
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-2xl">
+                    {displayName?.slice(0, 2).toUpperCase() || <User className="h-10 w-10" />}
+                  </AvatarFallback>
+                </Avatar>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                >
+                  {isUploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Klicka på kameran för att byta profilbild
+              </p>
+            </div>
+
+            <Separator />
+
+            {/* Profile Form */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="displayName">Visningsnamn</Label>
+                <Input
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Ditt namn"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Kön</Label>
+                  <Select value={gender} onValueChange={setGender}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Välj kön" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Man</SelectItem>
+                      <SelectItem value="female">Kvinna</SelectItem>
+                      <SelectItem value="other">Annat</SelectItem>
+                      <SelectItem value="prefer_not_to_say">Vill ej ange</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="birthYear">Födelseår</Label>
+                  <Select value={birthYear} onValueChange={setBirthYear}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Välj år" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {yearOptions.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Button onClick={handleSaveProfile} disabled={isSaving} className="w-full">
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Spara ändringar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Account Info Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Kontoinformation
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <Mail className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">E-postadress</p>
+                <p className="font-medium">{user?.email}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Medlem sedan</p>
+                <p className="font-medium">
+                  {user?.created_at 
+                    ? new Date(user.created_at).toLocaleDateString('sv-SE', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })
+                    : 'Okänt'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <Crown className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">Prenumeration</p>
+                <p className="font-medium">
+                  {isPremium ? 'Premium-medlem' : 'Gratisversion'}
+                </p>
+              </div>
+              {!isPremium && (
+                <Button size="sm" onClick={() => navigate('/dashboard')}>
+                  Uppgradera
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sign Out */}
+        <Card className="border-destructive/20">
+          <CardContent className="pt-6">
+            <Button 
+              variant="destructive" 
+              onClick={handleSignOut} 
+              className="w-full"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logga ut
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+}

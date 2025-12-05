@@ -23,6 +23,7 @@ const Cookies = lazy(() => import("./pages/Cookies"));
 const AdminChallenges = lazy(() => import("./pages/AdminChallenges"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCanceled = lazy(() => import("./pages/PaymentCanceled"));
+const Account = lazy(() => import("./pages/Account"));
 const queryClient = new QueryClient();
 
 // Minimal loading fallback
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/cookies" element={<Cookies />} />
               <Route path="/admin/challenges" element={<AdminChallenges />} />
+              <Route path="/account" element={<Account />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-canceled" element={<PaymentCanceled />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
