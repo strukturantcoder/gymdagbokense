@@ -994,7 +994,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      abbreviate_name: { Args: { full_name: string }; Returns: string }
       complete_pool_challenges: { Args: never; Returns: undefined }
+      get_pool_challenge_participants: {
+        Args: { challenge_uuid: string }
+        Returns: {
+          avatar_url: string
+          current_value: number
+          display_name: string
+          participant_id: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
