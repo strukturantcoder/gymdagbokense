@@ -557,6 +557,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          achievements: boolean
+          challenges: boolean
+          community_challenges: boolean
+          created_at: string
+          friend_requests: boolean
+          id: string
+          push_enabled: boolean
+          updated_at: string
+          user_id: string
+          workout_reminders: boolean
+        }
+        Insert: {
+          achievements?: boolean
+          challenges?: boolean
+          community_challenges?: boolean
+          created_at?: string
+          friend_requests?: boolean
+          id?: string
+          push_enabled?: boolean
+          updated_at?: string
+          user_id: string
+          workout_reminders?: boolean
+        }
+        Update: {
+          achievements?: boolean
+          challenges?: boolean
+          community_challenges?: boolean
+          created_at?: string
+          friend_requests?: boolean
+          id?: string
+          push_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+          workout_reminders?: boolean
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
