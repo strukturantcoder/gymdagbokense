@@ -18,6 +18,7 @@ import {
   ClipboardList, BarChart3, Users, Home
 } from 'lucide-react';
 import ActiveCardioPlanSession from '@/components/ActiveCardioPlanSession';
+import QuickStartCardio from '@/components/QuickStartCardio';
 import GenerateCardioPlanDialog from '@/components/GenerateCardioPlanDialog';
 import AdBanner from '@/components/AdBanner';
 import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
@@ -624,6 +625,14 @@ export default function CardioLog() {
         {/* Ad Banner */}
         <AdBanner className="mb-6" />
         
+        {/* Quick Start Cardio */}
+        {user && (
+          <QuickStartCardio 
+            userId={user.id} 
+            onSessionComplete={fetchLogs}
+          />
+        )}
+
         {/* Active Plan - Today's Session */}
         <div className="mb-8">
           <ActiveCardioPlanSession 
