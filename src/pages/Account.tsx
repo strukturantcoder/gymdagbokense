@@ -11,10 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { 
   User, Camera, Save, Loader2, ArrowLeft, Crown, Mail, 
-  Calendar, UserCircle, LogOut, Settings, Shield, Sun, Moon, Monitor
+  Calendar, UserCircle, LogOut, Settings, Shield, Sun, Moon, Monitor,
+  Bell, Users, Trophy, Target, Dumbbell
 } from 'lucide-react';
 
 interface Profile {
@@ -23,6 +25,24 @@ interface Profile {
   gender: string | null;
   birth_year: number | null;
 }
+
+interface NotificationPreferences {
+  friend_requests: boolean;
+  challenges: boolean;
+  achievements: boolean;
+  workout_reminders: boolean;
+  community_challenges: boolean;
+  push_enabled: boolean;
+}
+
+const defaultPreferences: NotificationPreferences = {
+  friend_requests: true,
+  challenges: true,
+  achievements: true,
+  workout_reminders: true,
+  community_challenges: true,
+  push_enabled: true,
+};
 
 export default function Account() {
   const { user, loading, signOut } = useAuth();
@@ -35,6 +55,8 @@ export default function Account() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>(defaultPreferences);
+  const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   
   // Form state
   const [displayName, setDisplayName] = useState('');
@@ -51,6 +73,7 @@ export default function Account() {
     if (user) {
       fetchProfile();
       checkSubscription();
+      fetchNotificationPreferences();
     }
   }, [user]);
 
@@ -87,6 +110,59 @@ export default function Account() {
       }
     } catch (err) {
       console.error('Error checking subscription:', err);
+    }
+  };
+
+  const fetchNotificationPreferences = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('notification_preferences')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching notification preferences:', error);
+      return;
+    }
+    
+    if (data) {
+      setNotificationPrefs({
+        friend_requests: data.friend_requests,
+        challenges: data.challenges,
+        achievements: data.achievements,
+        workout_reminders: data.workout_reminders,
+        community_challenges: data.community_challenges,
+        push_enabled: data.push_enabled,
+      });
+    }
+  };
+
+  const updateNotificationPreference = async (key: keyof NotificationPreferences, value: boolean) => {
+    if (!user) return;
+    
+    const newPrefs = { ...notificationPrefs, [key]: value };
+    setNotificationPrefs(newPrefs);
+    setIsSavingPrefs(true);
+    
+    try {
+      const { error } = await supabase
+        .from('notification_preferences')
+        .upsert({
+          user_id: user.id,
+          ...newPrefs,
+        }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+      toast.success('Inställningar sparade');
+    } catch (error) {
+      console.error('Error saving notification preferences:', error);
+      toast.error('Kunde inte spara inställningarna');
+      // Revert on error
+      setNotificationPrefs(notificationPrefs);
+    } finally {
+      setIsSavingPrefs(false);
     }
   };
 
@@ -406,6 +482,124 @@ export default function Account() {
                 <Monitor className="h-5 w-5" />
                 <span className="text-xs">System</span>
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Notification Settings Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              Notifikationer
+            </CardTitle>
+            <CardDescription>
+              Välj vilka notiser du vill få
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Bell className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Push-notiser</p>
+                  <p className="text-xs text-muted-foreground">Få notiser även när appen är stängd</p>
+                </div>
+              </div>
+              <Switch
+                checked={notificationPrefs.push_enabled}
+                onCheckedChange={(checked) => updateNotificationPreference('push_enabled', checked)}
+                disabled={isSavingPrefs}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Vänförfrågningar</p>
+                  <p className="text-xs text-muted-foreground">När någon vill bli din vän</p>
+                </div>
+              </div>
+              <Switch
+                checked={notificationPrefs.friend_requests}
+                onCheckedChange={(checked) => updateNotificationPreference('friend_requests', checked)}
+                disabled={isSavingPrefs}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Target className="h-4 w-4 text-orange-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Utmaningar</p>
+                  <p className="text-xs text-muted-foreground">När du blir utmanad av en vän</p>
+                </div>
+              </div>
+              <Switch
+                checked={notificationPrefs.challenges}
+                onCheckedChange={(checked) => updateNotificationPreference('challenges', checked)}
+                disabled={isSavingPrefs}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                  <Trophy className="h-4 w-4 text-yellow-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Achievements</p>
+                  <p className="text-xs text-muted-foreground">När du låser upp nya prestationer</p>
+                </div>
+              </div>
+              <Switch
+                checked={notificationPrefs.achievements}
+                onCheckedChange={(checked) => updateNotificationPreference('achievements', checked)}
+                disabled={isSavingPrefs}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <Dumbbell className="h-4 w-4 text-green-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Träningspåminnelser</p>
+                  <p className="text-xs text-muted-foreground">Påminnelser om pågående pass</p>
+                </div>
+              </div>
+              <Switch
+                checked={notificationPrefs.workout_reminders}
+                onCheckedChange={(checked) => updateNotificationPreference('workout_reminders', checked)}
+                disabled={isSavingPrefs}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-purple-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Community-tävlingar</p>
+                  <p className="text-xs text-muted-foreground">Uppdateringar om tävlingar</p>
+                </div>
+              </div>
+              <Switch
+                checked={notificationPrefs.community_challenges}
+                onCheckedChange={(checked) => updateNotificationPreference('community_challenges', checked)}
+                disabled={isSavingPrefs}
+              />
             </div>
           </CardContent>
         </Card>
