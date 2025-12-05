@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save } from "lucide-react";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -38,6 +38,8 @@ export default function AdminChallenges() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [generatingSuggestion, setGeneratingSuggestion] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -137,6 +139,67 @@ export default function AdminChallenges() {
     setWinnerType("highest");
     setStartDate("");
     setEndDate("");
+    setEditingId(null);
+  };
+
+  const startEditing = (challenge: CommunityChallenge) => {
+    setTitle(challenge.title);
+    setDescription(challenge.description || "");
+    setTheme(challenge.theme || "");
+    setGoalDescription(challenge.goal_description);
+    setGoalUnit(challenge.goal_unit);
+    setTargetValue(challenge.target_value?.toString() || "");
+    setWinnerType(challenge.winner_type as "highest" | "first_to_goal");
+    setStartDate(new Date(challenge.start_date).toISOString().slice(0, 16));
+    setEndDate(new Date(challenge.end_date).toISOString().slice(0, 16));
+    setEditingId(challenge.id);
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingId) return;
+    
+    if (!title.trim() || !goalDescription.trim() || !goalUnit.trim() || !startDate || !endDate) {
+      toast.error("Fyll i alla obligatoriska fält");
+      return;
+    }
+
+    if (winnerType === "first_to_goal" && !targetValue) {
+      toast.error("Målvärde krävs för 'Först till mål'-tävlingar");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("community_challenges")
+        .update({
+          title: title.trim(),
+          description: description.trim() || null,
+          theme: theme.trim() || null,
+          goal_description: goalDescription.trim(),
+          goal_unit: goalUnit.trim(),
+          target_value: targetValue ? parseInt(targetValue) : null,
+          winner_type: winnerType,
+          start_date: new Date(startDate).toISOString(),
+          end_date: new Date(endDate).toISOString(),
+        })
+        .eq("id", editingId);
+
+      if (error) throw error;
+
+      toast.success("Tävling uppdaterad!");
+      resetForm();
+      fetchChallenges();
+    } catch (error) {
+      console.error("Error updating challenge:", error);
+      toast.error("Kunde inte uppdatera tävling");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const generateAISuggestion = async () => {
@@ -242,36 +305,52 @@ export default function AdminChallenges() {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Create new challenge form */}
+        {/* Create/Edit challenge form */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  Skapa ny tävling
+                  {editingId ? <Edit2 className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+                  {editingId ? "Redigera tävling" : "Skapa ny tävling"}
                 </CardTitle>
                 <CardDescription>
-                  Fyll i informationen nedan för att skapa en ny community-tävling
+                  {editingId 
+                    ? "Ändra informationen nedan och spara" 
+                    : "Fyll i informationen nedan för att skapa en ny community-tävling"}
                 </CardDescription>
               </div>
-              <Button
-                variant="outline"
-                onClick={generateAISuggestion}
-                disabled={generatingSuggestion}
-                className="gap-2"
-              >
-                {generatingSuggestion ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
+              <div className="flex gap-2">
+                {editingId && (
+                  <Button
+                    variant="outline"
+                    onClick={resetForm}
+                    className="gap-2"
+                  >
+                    <X className="h-4 w-4" />
+                    Avbryt
+                  </Button>
                 )}
-                AI-förslag
-              </Button>
+                {!editingId && (
+                  <Button
+                    variant="outline"
+                    onClick={generateAISuggestion}
+                    disabled={generatingSuggestion}
+                    className="gap-2"
+                  >
+                    {generatingSuggestion ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                    AI-förslag
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={editingId ? handleSaveEdit : handleCreate} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Titel *</Label>
@@ -379,8 +458,10 @@ export default function AdminChallenges() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={creating} className="w-full md:w-auto">
-                {creating ? "Skapar..." : "Skapa tävling"}
+              <Button type="submit" disabled={creating || saving} className="w-full md:w-auto">
+                {editingId 
+                  ? (saving ? "Sparar..." : "Spara ändringar")
+                  : (creating ? "Skapar..." : "Skapa tävling")}
               </Button>
             </form>
           </CardContent>
@@ -428,7 +509,7 @@ export default function AdminChallenges() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 md:gap-4">
                         <div className="flex items-center gap-2">
                           <Label htmlFor={`active-${challenge.id}`} className="text-sm">
                             Aktiv
@@ -439,6 +520,14 @@ export default function AdminChallenges() {
                             onCheckedChange={() => toggleActive(challenge.id, challenge.is_active)}
                           />
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => startEditing(challenge)}
+                          className="text-primary hover:text-primary"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
