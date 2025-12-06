@@ -413,13 +413,9 @@ export default function Dashboard() {
               <InstallAppButton />
               <PushNotificationSettings />
               <SubscriptionButton variant="compact" />
-              <Button variant="outline" onClick={() => navigate('/log')}>
+              <Button variant="outline" onClick={() => navigate('/training')}>
                 <ClipboardList className="w-4 h-4 mr-2" />
-                Träningslogg
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/cardio')}>
-                <Footprints className="w-4 h-4 mr-2" />
-                Kondition
+                Träning
               </Button>
               <Button variant="outline" onClick={() => navigate('/stats')}>
                 <BarChart3 className="w-4 h-4 mr-2" />
@@ -454,13 +450,9 @@ export default function Dashboard() {
               <InstallAppButton />
               <PushNotificationSettings />
               <SubscriptionButton variant="compact" />
-              <Button variant="outline" size="sm" onClick={() => navigate('/log')}>
+              <Button variant="outline" size="sm" onClick={() => navigate('/training')}>
                 <ClipboardList className="w-4 h-4 mr-1.5" />
-                Logg
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate('/cardio')}>
-                <Footprints className="w-4 h-4 mr-1.5" />
-                Kondition
+                Träning
               </Button>
               <Button variant="outline" size="sm" onClick={() => navigate('/stats')}>
                 <BarChart3 className="w-4 h-4 mr-1.5" />
