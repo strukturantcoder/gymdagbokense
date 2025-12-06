@@ -1,44 +1,47 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Check, X, Crown } from "lucide-react";
 
-const plans = [
-  {
-    name: "Gratis",
-    price: "0",
-    description: "Perfekt för att komma igång",
-    features: [
-      { text: "Grundläggande träningslogg", included: true },
-      { text: "AI-genererade program (3/mån)", included: true },
-      { text: "Enkel statistik", included: true },
-      { text: "Mobilapp", included: true },
-      { text: "Reklam visas", included: false },
-      { text: "Avancerade grafer", included: false },
-      { text: "Export av data", included: false },
-    ],
-    cta: "Skapa konto",
-    popular: false,
-  },
-  {
-    name: "Premium",
-    price: "19",
-    description: "För den seriösa atleten",
-    features: [
-      { text: "Obegränsad träningslogg", included: true },
-      { text: "Obegränsade AI-program", included: true },
-      { text: "Avancerad statistik & grafer", included: true },
-      { text: "Mobilapp utan reklam", included: true },
-      { text: "Ingen reklam", included: true },
-      { text: "Export av all data", included: true },
-      { text: "Prioriterad support", included: true },
-    ],
-    cta: "Bli Premium",
-    popular: true,
-  },
-];
-
 const Pricing = () => {
+  const { t, i18n } = useTranslation();
+
+  const plans = [
+    {
+      nameKey: "pricing.free.name",
+      priceKey: "pricing.free.price",
+      descriptionKey: "pricing.free.description",
+      features: [
+        { textKey: "pricing.free.feature1", included: true },
+        { textKey: "pricing.free.feature2", included: true },
+        { textKey: "pricing.free.feature3", included: true },
+        { textKey: "pricing.free.feature4", included: true },
+        { textKey: "pricing.free.feature5", included: false },
+        { textKey: "pricing.free.feature6", included: false },
+        { textKey: "pricing.free.feature7", included: false },
+      ],
+      ctaKey: "pricing.free.cta",
+      popular: false,
+    },
+    {
+      nameKey: "pricing.premium.name",
+      priceKey: "pricing.premium.price",
+      descriptionKey: "pricing.premium.description",
+      features: [
+        { textKey: "pricing.premium.feature1", included: true },
+        { textKey: "pricing.premium.feature2", included: true },
+        { textKey: "pricing.premium.feature3", included: true },
+        { textKey: "pricing.premium.feature4", included: true },
+        { textKey: "pricing.premium.feature5", included: true },
+        { textKey: "pricing.premium.feature6", included: true },
+        { textKey: "pricing.premium.feature7", included: true },
+      ],
+      ctaKey: "pricing.premium.cta",
+      popular: true,
+    },
+  ];
+
   return (
     <section className="py-24 bg-background relative">
       <div className="container px-4">
@@ -49,10 +52,10 @@ const Pricing = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-            ENKLA <span className="text-gradient">PRISER</span>
+            {t('pricing.title')} <span className="text-gradient">{t('pricing.titleHighlight')}</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Börja gratis och uppgradera när du är redo att ta bort reklamen och låsa upp alla funktioner.
+            {t('pricing.subtitle')}
           </p>
         </motion.div>
 
@@ -74,17 +77,17 @@ const Pricing = () => {
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                   <div className="bg-gradient-to-r from-gym-orange to-gym-amber text-primary-foreground px-4 py-1 rounded-full text-sm font-display flex items-center gap-2">
                     <Crown className="w-4 h-4" />
-                    POPULÄRAST
+                    {t('pricing.popular')}
                   </div>
                 </div>
               )}
 
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-display font-bold mb-2">{plan.name}</h3>
-                <p className="text-muted-foreground text-sm mb-4">{plan.description}</p>
+                <h3 className="text-2xl font-display font-bold mb-2">{t(plan.nameKey)}</h3>
+                <p className="text-muted-foreground text-sm mb-4">{t(plan.descriptionKey)}</p>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-5xl font-display font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground">kr/mån</span>
+                  <span className="text-5xl font-display font-bold">{t(plan.priceKey)}</span>
+                  <span className="text-muted-foreground">{t('pricing.perMonth')}</span>
                 </div>
               </div>
 
@@ -97,7 +100,7 @@ const Pricing = () => {
                       <X className="w-5 h-5 text-muted-foreground/50 flex-shrink-0" />
                     )}
                     <span className={feature.included ? "text-foreground" : "text-muted-foreground/50"}>
-                      {feature.text}
+                      {t(feature.textKey)}
                     </span>
                   </li>
                 ))}
@@ -109,7 +112,7 @@ const Pricing = () => {
                 className="w-full"
                 asChild
               >
-                <Link to="/auth">{plan.cta}</Link>
+                <Link to="/auth">{t(plan.ctaKey)}</Link>
               </Button>
             </motion.div>
           ))}

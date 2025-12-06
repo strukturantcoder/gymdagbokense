@@ -1,9 +1,12 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Dumbbell, Zap } from "lucide-react";
 
 const Hero = () => {
+  const { t } = useTranslation();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden texture-noise">
       {/* Background glow effects */}
@@ -20,19 +23,18 @@ const Hero = () => {
             className="inline-flex items-center gap-2 bg-secondary/50 border border-border px-4 py-2 rounded-full mb-8"
           >
             <Zap className="w-4 h-4 text-gym-orange" />
-            <span className="text-sm text-muted-foreground">AI-driven träningsplanering</span>
+            <span className="text-sm text-muted-foreground">{t('hero.badge')}</span>
           </motion.div>
 
           {/* Main headline - NO animation to improve LCP */}
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold mb-6 leading-none">
-            DIN TRÄNING.
+            {t('hero.title1')}
             <br />
-            <span className="text-gradient">DITT RESULTAT.</span>
+            <span className="text-gradient">{t('hero.title2')}</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body">
-            Skapa skräddarsydda träningsprogram med AI, följ din utveckling med detaljerade grafer 
-            och nå dina mål snabbare än någonsin.
+            {t('hero.description')}
           </p>
 
           {/* CTA Buttons */}
@@ -45,11 +47,11 @@ const Hero = () => {
             <Button variant="hero" size="xl" asChild>
               <Link to="/auth">
                 <Dumbbell className="w-5 h-5" />
-                Kom igång gratis
+                {t('hero.cta')}
               </Link>
             </Button>
             <Button variant="outline" size="xl" asChild>
-              <a href="#how-it-works">Se hur det fungerar</a>
+              <a href="#how-it-works">{t('hero.howItWorks')}</a>
             </Button>
           </motion.div>
         </div>

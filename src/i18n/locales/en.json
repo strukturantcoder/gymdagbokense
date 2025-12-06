@@ -1,0 +1,373 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "or": "or",
+    "yes": "Yes",
+    "no": "No",
+    "error": "An error occurred",
+    "success": "Success",
+    "premium": "Premium",
+    "free": "Free"
+  },
+  "nav": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "login": "Log in",
+    "logout": "Log out",
+    "getStarted": "Get Started",
+    "myDashboard": "My Dashboard",
+    "training": "Training",
+    "statistics": "Statistics",
+    "social": "Social",
+    "admin": "Admin",
+    "account": "Account"
+  },
+  "hero": {
+    "badge": "AI-powered workout planning",
+    "title1": "YOUR WORKOUT.",
+    "title2": "YOUR RESULTS.",
+    "description": "Create customized workout programs with AI, track your progress with detailed graphs and reach your goals faster than ever.",
+    "cta": "Get started for free",
+    "howItWorks": "See how it works"
+  },
+  "features": {
+    "title": "EVERYTHING YOU NEED TO",
+    "titleHighlight": "SUCCEED",
+    "subtitle": "Powerful tools designed to take your training to the next level.",
+    "aiPlanner": {
+      "title": "AI Workout Planner",
+      "description": "Get customized workout programs based on your goals, experience and available equipment."
+    },
+    "statistics": {
+      "title": "Detailed Statistics",
+      "description": "Visualize your progress with beautiful graphs for strength, volume and performance over time."
+    },
+    "scheduling": {
+      "title": "Smart Scheduling",
+      "description": "Plan your workouts and get reminders to stay consistent."
+    },
+    "goals": {
+      "title": "Goal Tracking",
+      "description": "Set concrete goals and track your progress towards each milestone and final goal."
+    },
+    "mobile": {
+      "title": "Mobile App",
+      "description": "Take your workout diary everywhere with our user-friendly app."
+    },
+    "community": {
+      "title": "Community",
+      "description": "Share your journey, get inspiration and compete with others in our community."
+    }
+  },
+  "howItWorks": {
+    "title": "HOW IT",
+    "titleHighlight": "WORKS",
+    "subtitle": "Get started with Gymdagboken in six easy steps",
+    "step1": {
+      "title": "1. Create account",
+      "description": "Sign up for free in seconds. You only need an email address to get started."
+    },
+    "step2": {
+      "title": "2. Generate program",
+      "description": "Tell us about your goals, experience level and how often you want to train. Our AI creates a customized program for you."
+    },
+    "step3": {
+      "title": "3. Train and log",
+      "description": "Follow your program and log each session. The app remembers your weights and suggests progression."
+    },
+    "step4": {
+      "title": "4. Track your progress",
+      "description": "See your success with detailed graphs and statistics. Celebrate personal bests with confetti!"
+    },
+    "step5": {
+      "title": "5. Set goals",
+      "description": "Set personal goals for each exercise. Get notified when you hit them and earn XP."
+    },
+    "step6": {
+      "title": "6. Compete with friends",
+      "description": "Invite friends, challenge them to competitions and see who trains the hardest!"
+    }
+  },
+  "pricing": {
+    "title": "SIMPLE",
+    "titleHighlight": "PRICING",
+    "subtitle": "Start for free and upgrade when you're ready to remove ads and unlock all features.",
+    "perMonth": "/month",
+    "popular": "MOST POPULAR",
+    "free": {
+      "name": "Free",
+      "price": "0",
+      "description": "Perfect to get started",
+      "cta": "Create account",
+      "feature1": "Basic workout log",
+      "feature2": "AI-generated programs (3/month)",
+      "feature3": "Simple statistics",
+      "feature4": "Mobile app",
+      "feature5": "Ads displayed",
+      "feature6": "Advanced graphs",
+      "feature7": "Data export"
+    },
+    "premium": {
+      "name": "Premium",
+      "price": "19 SEK",
+      "description": "For the serious athlete",
+      "cta": "Go Premium",
+      "feature1": "Unlimited workout log",
+      "feature2": "Unlimited AI programs",
+      "feature3": "Advanced statistics & graphs",
+      "feature4": "Ad-free mobile app",
+      "feature5": "No ads",
+      "feature6": "Export all data",
+      "feature7": "Priority support"
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Have questions? Here you'll find answers to the most common questions about Gymdagboken.",
+    "q1": {
+      "question": "Is Gymdagboken free to use?",
+      "answer": "Yes! The basic version of Gymdagboken is completely free. You can log workouts, track your progress and use AI-generated workout programs at no cost. The Premium version for 19 SEK/month removes all ads."
+    },
+    "q2": {
+      "question": "How do the AI workout programs work?",
+      "answer": "Our AI analyzes your goals, experience level and available training days to create a customized workout program. You can customize the program by adding/removing exercises, changing order and adjusting sets and reps."
+    },
+    "q3": {
+      "question": "Can I track both strength training and cardio?",
+      "answer": "Absolutely! Gymdagboken has separate features for strength training and cardio activities like running, swimming, cycling and more. You get detailed statistics for both types."
+    },
+    "q4": {
+      "question": "How does the social system work?",
+      "answer": "You can invite friends via a unique invite link, see each other's statistics and challenge each other to competitions. Compete for most workouts, most time or most sets over a chosen period."
+    },
+    "q5": {
+      "question": "Does the app work offline?",
+      "answer": "Yes, Gymdagboken is built as a PWA (Progressive Web App) which means you can install it on your phone and use basic features even without an internet connection."
+    },
+    "q6": {
+      "question": "How do I install the app on my phone?",
+      "answer": "On Android: Open gymdagboken.se in Chrome and tap 'Add to home screen'. On iPhone: Open in Safari, tap the share button and select 'Add to Home Screen'."
+    }
+  },
+  "footer": {
+    "tagline": "Your digital training companion. Track, analyze and improve your training.",
+    "product": "PRODUCT",
+    "legal": "LEGAL",
+    "features": "Features",
+    "howItWorks": "How it works",
+    "pricing": "Pricing",
+    "contact": "Contact",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "cookies": "Cookies",
+    "copyright": "© {{year}} Gymdagboken. All rights reserved."
+  },
+  "auth": {
+    "createAccount": "Create account",
+    "login": "Log in",
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "continueWithGoogle": "Continue with Google",
+    "hasAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "backToHome": "← Back to home",
+    "invitedBy": "{{name}} invited you!",
+    "invitedGeneric": "You've been invited!",
+    "inviteSubtext": "Create an account to become friends automatically",
+    "accountCreated": "Account created! Welcome to Gymdagboken!",
+    "loggedIn": "Logged in!",
+    "loggedOut": "Logged out!",
+    "friendAdded": "You're now friends with the person who invited you!",
+    "invalidEmail": "Invalid email address",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "nameMinLength": "Name must be at least 2 characters",
+    "nameMaxLength": "Name can be max 50 characters",
+    "emailAlreadyRegistered": "Email is already registered",
+    "invalidCredentials": "Wrong email or password",
+    "googleError": "Could not log in with Google",
+    "genericError": "Something went wrong, please try again"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "generateProgram": "Generate new program",
+    "myPrograms": "My programs",
+    "noPrograms": "You don't have any workout programs yet",
+    "createFirst": "Create your first AI-generated program to get started!",
+    "goal": "Goal",
+    "experienceLevel": "Experience level",
+    "daysPerWeek": "Days per week",
+    "customDescription": "Describe your goal (optional)",
+    "generate": "Generate program",
+    "generating": "Creating program...",
+    "programSaved": "Workout program saved!",
+    "programUpdated": "Program updated!",
+    "couldNotSave": "Could not save the program",
+    "couldNotFetch": "Could not fetch programs",
+    "couldNotCreate": "Could not create program",
+    "fillAllFields": "Please fill in all fields",
+    "trash": "Trash",
+    "restoreProgram": "Restore",
+    "deleteForever": "Delete permanently",
+    "movedToTrash": "Program moved to trash",
+    "restoreWithin": "You can restore it within 90 days",
+    "programRestored": "Program restored!",
+    "programDeleted": "Program permanently deleted",
+    "couldNotRestore": "Could not restore the program",
+    "couldNotDelete": "Could not delete the program",
+    "challenges": "Challenges",
+    "viewChallenges": "View challenges",
+    "activeChallenges": "Active challenges",
+    "noChallenges": "No active challenges right now",
+    "rest": "Rest",
+    "sets": "sets",
+    "reps": "reps",
+    "addExercise": "Add exercise",
+    "refine": "Refine",
+    "goals": {
+      "muscleBuilding": "Muscle building",
+      "strength": "Strength",
+      "endurance": "Endurance",
+      "weightLoss": "Weight loss",
+      "flexibility": "Flexibility",
+      "generalFitness": "General fitness"
+    },
+    "levels": {
+      "neverTrained": "Never trained",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "expert": "Expert"
+    }
+  },
+  "training": {
+    "title": "Training",
+    "strength": "Strength",
+    "cardio": "Cardio",
+    "startWorkout": "Start workout",
+    "endWorkout": "End workout",
+    "logWorkout": "Log workout",
+    "workoutHistory": "Workout history",
+    "noWorkouts": "No logged workouts",
+    "exercise": "Exercise",
+    "weight": "Weight",
+    "duration": "Duration",
+    "distance": "Distance",
+    "calories": "Calories",
+    "notes": "Notes",
+    "running": "Running",
+    "walking": "Walking",
+    "cycling": "Cycling",
+    "swimming": "Swimming",
+    "golf": "Golf",
+    "other": "Other"
+  },
+  "statistics": {
+    "title": "Statistics",
+    "overview": "Overview",
+    "progress": "Progress",
+    "personalBests": "Personal bests",
+    "totalWorkouts": "Total workouts",
+    "totalSets": "Total sets",
+    "totalMinutes": "Total minutes",
+    "level": "Level",
+    "xp": "XP",
+    "thisWeek": "This week",
+    "thisMonth": "This month",
+    "allTime": "All time"
+  },
+  "social": {
+    "title": "Social",
+    "friends": "Friends",
+    "challenges": "Challenges",
+    "leaderboard": "Leaderboard",
+    "addFriend": "Add friend",
+    "searchUsers": "Search users",
+    "noFriends": "You don't have any friends yet",
+    "inviteFriends": "Invite friends",
+    "pendingRequests": "Pending requests",
+    "createChallenge": "Create challenge",
+    "activeChallenge": "Active challenge",
+    "completedChallenges": "Completed challenges",
+    "challengeTypes": {
+      "workouts": "Most workouts",
+      "sets": "Most sets",
+      "minutes": "Most minutes"
+    },
+    "durations": {
+      "1week": "1 week",
+      "2weeks": "2 weeks",
+      "1month": "1 month"
+    }
+  },
+  "account": {
+    "title": "Account",
+    "profile": "Profile",
+    "displayName": "Display name",
+    "gender": "Gender",
+    "birthYear": "Birth year",
+    "avatar": "Profile picture",
+    "changeAvatar": "Change profile picture",
+    "subscription": "Subscription",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "notifications": "Notifications",
+    "memberSince": "Member since",
+    "genders": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other",
+      "preferNotToSay": "Prefer not to say"
+    }
+  },
+  "contact": {
+    "title": "Contact us",
+    "subtitle": "Have questions or feedback? We're here to help!",
+    "name": "Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Message",
+    "send": "Send message",
+    "sending": "Sending...",
+    "success": "Thank you for your message! We'll get back to you as soon as possible.",
+    "error": "Could not send the message. Please try again later.",
+    "aboutUs": "About us",
+    "aboutUsText1": "Gymdagboken is developed by Strukturant – a company specializing in creating technical support solutions using AI.",
+    "aboutUsText2": "We are passionate about combining modern technology with user-friendly design to help people reach their goals – whether it's about training, productivity or everyday life.",
+    "poweredBy": "Powered by AI – Designed for You"
+  },
+  "notifications": {
+    "friendRequest": "Friend request",
+    "challengeInvite": "Challenge invitation",
+    "workoutReminder": "Workout reminder",
+    "achievement": "Achievement",
+    "newMessage": "New message",
+    "noNotifications": "No notifications"
+  },
+  "restTimer": {
+    "title": "Rest timer",
+    "start": "Start",
+    "pause": "Pause",
+    "reset": "Reset",
+    "soundOn": "Sound on",
+    "soundOff": "Sound off",
+    "timeUp": "Time's up!",
+    "rest": "Rest"
+  }
+}

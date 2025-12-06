@@ -1,25 +1,28 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Dumbbell, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { NotificationBell } from "./NotificationBell";
+import LanguageSelector from "./LanguageSelector";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const navItems = [
-    { label: "Funktioner", href: "#features" },
-    { label: "Priser", href: "#pricing" },
+    { label: t('nav.features'), href: "#features" },
+    { label: t('nav.pricing'), href: "#pricing" },
   ];
 
   const handleSignOut = async () => {
     await signOut();
-    toast.success("Utloggad!");
+    toast.success(t('auth.loggedOut'));
     setIsMenuOpen(false);
   };
 
@@ -57,26 +60,27 @@ const Header = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-          {!loading && (
+            <LanguageSelector />
+            {!loading && (
               <>
                 {user ? (
                   <>
                     <NotificationBell />
                     <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
-                      Min Dashboard
+                      {t('nav.myDashboard')}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
-                      Logga ut
+                      {t('nav.logout')}
                     </Button>
                   </>
                 ) : (
                   <>
                     <Button variant="ghost" size="sm" onClick={handleAuthClick}>
-                      Logga in
+                      {t('nav.login')}
                     </Button>
                     <Button variant="hero" size="sm" onClick={handleAuthClick}>
-                      Kom igång
+                      {t('nav.getStarted')}
                     </Button>
                   </>
                 )}
@@ -85,16 +89,19 @@ const Header = () => {
           </div>
 
           {/* Mobile menu button */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <LanguageSelector />
+            <button
+              className="p-2"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -129,16 +136,16 @@ const Header = () => {
                           </p>
                           <Button variant="ghost" className="w-full justify-center" onClick={handleSignOut}>
                             <LogOut className="w-4 h-4 mr-2" />
-                            Logga ut
+                            {t('nav.logout')}
                           </Button>
                         </>
                       ) : (
                         <>
                           <Button variant="ghost" className="w-full justify-center" onClick={handleAuthClick}>
-                            Logga in
+                            {t('nav.login')}
                           </Button>
                           <Button variant="hero" className="w-full justify-center" onClick={handleAuthClick}>
-                            Kom igång
+                            {t('nav.getStarted')}
                           </Button>
                         </>
                       )}

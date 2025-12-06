@@ -1,0 +1,373 @@
+{
+  "common": {
+    "loading": "Laddar...",
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "delete": "Ta bort",
+    "edit": "Redigera",
+    "back": "Tillbaka",
+    "next": "Nästa",
+    "previous": "Föregående",
+    "close": "Stäng",
+    "search": "Sök",
+    "filter": "Filter",
+    "or": "eller",
+    "yes": "Ja",
+    "no": "Nej",
+    "error": "Ett fel uppstod",
+    "success": "Lyckades",
+    "premium": "Premium",
+    "free": "Gratis"
+  },
+  "nav": {
+    "features": "Funktioner",
+    "pricing": "Priser",
+    "login": "Logga in",
+    "logout": "Logga ut",
+    "getStarted": "Kom igång",
+    "myDashboard": "Min Dashboard",
+    "training": "Träning",
+    "statistics": "Statistik",
+    "social": "Socialt",
+    "admin": "Admin",
+    "account": "Konto"
+  },
+  "hero": {
+    "badge": "AI-driven träningsplanering",
+    "title1": "DIN TRÄNING.",
+    "title2": "DITT RESULTAT.",
+    "description": "Skapa skräddarsydda träningsprogram med AI, följ din utveckling med detaljerade grafer och nå dina mål snabbare än någonsin.",
+    "cta": "Kom igång gratis",
+    "howItWorks": "Se hur det fungerar"
+  },
+  "features": {
+    "title": "ALLT DU BEHÖVER FÖR ATT",
+    "titleHighlight": "LYCKAS",
+    "subtitle": "Kraftfulla verktyg designade för att ta din träning till nästa nivå.",
+    "aiPlanner": {
+      "title": "AI-Träningsplanerare",
+      "description": "Få skräddarsydda träningsprogram baserat på dina mål, erfarenhet och tillgänglig utrustning."
+    },
+    "statistics": {
+      "title": "Detaljerad Statistik",
+      "description": "Visualisera din utveckling med snygga grafer för styrka, volym och prestation över tid."
+    },
+    "scheduling": {
+      "title": "Smart Schemaläggning",
+      "description": "Planera dina träningspass och få påminnelser för att hålla dig konsekvent."
+    },
+    "goals": {
+      "title": "Måluppföljning",
+      "description": "Sätt upp konkreta mål och följ din progress mot varje delmål och slutmål."
+    },
+    "mobile": {
+      "title": "Mobilapp",
+      "description": "Ta med dig träningsdagboken överallt med vår användarvänliga app."
+    },
+    "community": {
+      "title": "Community",
+      "description": "Dela din resa, få inspiration och tävla med andra i vår gemenskap."
+    }
+  },
+  "howItWorks": {
+    "title": "SÅ",
+    "titleHighlight": "FUNGERAR DET",
+    "subtitle": "Kom igång med Gymdagboken i sex enkla steg",
+    "step1": {
+      "title": "1. Skapa konto",
+      "description": "Registrera dig gratis på några sekunder. Du behöver bara en e-postadress för att komma igång."
+    },
+    "step2": {
+      "title": "2. Generera program",
+      "description": "Berätta om dina mål, erfarenhetsnivå och hur ofta du vill träna. Vår AI skapar ett skräddarsytt program åt dig."
+    },
+    "step3": {
+      "title": "3. Träna och logga",
+      "description": "Följ ditt program och logga varje pass. Appen kommer ihåg dina vikter och föreslår progression."
+    },
+    "step4": {
+      "title": "4. Följ din utveckling",
+      "description": "Se din framgång med detaljerade grafer och statistik. Fira personbästa med konfetti!"
+    },
+    "step5": {
+      "title": "5. Sätt mål",
+      "description": "Sätt personliga mål för varje övning. Få notis när du slår dem och tjäna XP."
+    },
+    "step6": {
+      "title": "6. Tävla med vänner",
+      "description": "Bjud in vänner, utmana dem på tävlingar och se vem som tränar hårdast!"
+    }
+  },
+  "pricing": {
+    "title": "ENKLA",
+    "titleHighlight": "PRISER",
+    "subtitle": "Börja gratis och uppgradera när du är redo att ta bort reklamen och låsa upp alla funktioner.",
+    "perMonth": "kr/mån",
+    "popular": "POPULÄRAST",
+    "free": {
+      "name": "Gratis",
+      "price": "0",
+      "description": "Perfekt för att komma igång",
+      "cta": "Skapa konto",
+      "feature1": "Grundläggande träningslogg",
+      "feature2": "AI-genererade program (3/mån)",
+      "feature3": "Enkel statistik",
+      "feature4": "Mobilapp",
+      "feature5": "Reklam visas",
+      "feature6": "Avancerade grafer",
+      "feature7": "Export av data"
+    },
+    "premium": {
+      "name": "Premium",
+      "price": "19",
+      "description": "För den seriösa atleten",
+      "cta": "Bli Premium",
+      "feature1": "Obegränsad träningslogg",
+      "feature2": "Obegränsade AI-program",
+      "feature3": "Avancerad statistik & grafer",
+      "feature4": "Mobilapp utan reklam",
+      "feature5": "Ingen reklam",
+      "feature6": "Export av all data",
+      "feature7": "Prioriterad support"
+    }
+  },
+  "faq": {
+    "title": "Vanliga frågor",
+    "subtitle": "Har du frågor? Här hittar du svar på de vanligaste frågorna om Gymdagboken.",
+    "q1": {
+      "question": "Är Gymdagboken gratis att använda?",
+      "answer": "Ja! Grundversionen av Gymdagboken är helt gratis. Du kan logga träningspass, följa din utveckling och använda AI-genererade träningsprogram utan kostnad. Premium-versionen för 19 kr/månad tar bort all reklam."
+    },
+    "q2": {
+      "question": "Hur fungerar AI-träningsprogrammen?",
+      "answer": "Vår AI analyserar dina mål, erfarenhetsnivå och tillgängliga träningsdagar för att skapa ett skräddarsytt träningsprogram. Du kan anpassa programmet genom att lägga till/ta bort övningar, ändra ordning och justera sets och reps."
+    },
+    "q3": {
+      "question": "Kan jag spåra både styrketräning och kondition?",
+      "answer": "Absolut! Gymdagboken har separata funktioner för styrketräning och konditionsaktiviteter som löpning, simning, cykling och mer. Du får detaljerad statistik för båda typerna."
+    },
+    "q4": {
+      "question": "Hur fungerar det sociala systemet?",
+      "answer": "Du kan bjuda in vänner via en unik inbjudningslänk, se varandras statistik och utmana varandra i tävlingar. Tävla om flest träningspass, mest tid eller flest sets under en vald period."
+    },
+    "q5": {
+      "question": "Fungerar appen offline?",
+      "answer": "Ja, Gymdagboken är byggd som en PWA (Progressive Web App) vilket betyder att du kan installera den på din telefon och använda grundläggande funktioner även utan internetanslutning."
+    },
+    "q6": {
+      "question": "Hur installerar jag appen på min telefon?",
+      "answer": "På Android: Öppna gymdagboken.se i Chrome och tryck på 'Lägg till på startskärmen'. På iPhone: Öppna i Safari, tryck på dela-knappen och välj 'Lägg till på hemskärmen'."
+    }
+  },
+  "footer": {
+    "tagline": "Din digitala träningskompis. Spåra, analysera och förbättra din träning.",
+    "product": "PRODUKT",
+    "legal": "JURIDISKT",
+    "features": "Funktioner",
+    "howItWorks": "Så fungerar det",
+    "pricing": "Priser",
+    "contact": "Kontakt",
+    "privacy": "Integritetspolicy",
+    "terms": "Användarvillkor",
+    "cookies": "Cookies",
+    "copyright": "© {{year}} Gymdagboken. Alla rättigheter förbehållna."
+  },
+  "auth": {
+    "createAccount": "Skapa konto",
+    "login": "Logga in",
+    "name": "Namn",
+    "namePlaceholder": "Ditt namn",
+    "email": "E-post",
+    "emailPlaceholder": "din@email.se",
+    "password": "Lösenord",
+    "passwordPlaceholder": "••••••••",
+    "continueWithGoogle": "Fortsätt med Google",
+    "hasAccount": "Har du redan ett konto?",
+    "noAccount": "Har du inget konto?",
+    "backToHome": "← Tillbaka till startsidan",
+    "invitedBy": "{{name}} bjöd in dig!",
+    "invitedGeneric": "Du har blivit inbjuden!",
+    "inviteSubtext": "Skapa konto för att bli vänner automatiskt",
+    "accountCreated": "Konto skapat! Välkommen till Gymdagboken!",
+    "loggedIn": "Inloggad!",
+    "loggedOut": "Utloggad!",
+    "friendAdded": "Du är nu vän med personen som bjöd in dig!",
+    "invalidEmail": "Ogiltig e-postadress",
+    "passwordRequired": "Lösenord krävs",
+    "passwordMinLength": "Lösenord måste vara minst 6 tecken",
+    "nameMinLength": "Namn måste vara minst 2 tecken",
+    "nameMaxLength": "Namn får max vara 50 tecken",
+    "emailAlreadyRegistered": "E-postadressen är redan registrerad",
+    "invalidCredentials": "Fel e-post eller lösenord",
+    "googleError": "Kunde inte logga in med Google",
+    "genericError": "Något gick fel, försök igen"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "generateProgram": "Generera nytt program",
+    "myPrograms": "Mina program",
+    "noPrograms": "Du har inga träningsprogram än",
+    "createFirst": "Skapa ditt första AI-genererade program för att komma igång!",
+    "goal": "Mål",
+    "experienceLevel": "Erfarenhetsnivå",
+    "daysPerWeek": "Dagar per vecka",
+    "customDescription": "Beskriv ditt mål (valfritt)",
+    "generate": "Generera program",
+    "generating": "Skapar program...",
+    "programSaved": "Träningsprogram sparat!",
+    "programUpdated": "Programmet uppdaterat!",
+    "couldNotSave": "Kunde inte spara programmet",
+    "couldNotFetch": "Kunde inte hämta program",
+    "couldNotCreate": "Kunde inte skapa program",
+    "fillAllFields": "Fyll i alla fält",
+    "trash": "Papperskorg",
+    "restoreProgram": "Återställ",
+    "deleteForever": "Ta bort permanent",
+    "movedToTrash": "Program flyttat till papperskorgen",
+    "restoreWithin": "Du kan återställa det inom 90 dagar",
+    "programRestored": "Program återställt!",
+    "programDeleted": "Program borttaget permanent",
+    "couldNotRestore": "Kunde inte återställa programmet",
+    "couldNotDelete": "Kunde inte ta bort programmet",
+    "challenges": "Utmaningar",
+    "viewChallenges": "Se utmaningar",
+    "activeChallenges": "Aktiva utmaningar",
+    "noChallenges": "Inga aktiva utmaningar just nu",
+    "rest": "Vila",
+    "sets": "set",
+    "reps": "reps",
+    "addExercise": "Lägg till övning",
+    "refine": "Finjustera",
+    "goals": {
+      "muscleBuilding": "Muskelmassa",
+      "strength": "Styrka",
+      "endurance": "Uthållighet",
+      "weightLoss": "Viktminskning",
+      "flexibility": "Rörlighet",
+      "generalFitness": "Allmän fitness"
+    },
+    "levels": {
+      "neverTrained": "Aldrig tränat",
+      "beginner": "Nybörjare",
+      "intermediate": "Medelerfaren",
+      "advanced": "Avancerad",
+      "expert": "Expert"
+    }
+  },
+  "training": {
+    "title": "Träning",
+    "strength": "Styrka",
+    "cardio": "Kondition",
+    "startWorkout": "Starta träningspass",
+    "endWorkout": "Avsluta pass",
+    "logWorkout": "Logga träning",
+    "workoutHistory": "Träningshistorik",
+    "noWorkouts": "Inga loggade träningspass",
+    "exercise": "Övning",
+    "weight": "Vikt",
+    "duration": "Längd",
+    "distance": "Distans",
+    "calories": "Kalorier",
+    "notes": "Anteckningar",
+    "running": "Löpning",
+    "walking": "Promenad",
+    "cycling": "Cykling",
+    "swimming": "Simning",
+    "golf": "Golf",
+    "other": "Övrigt"
+  },
+  "statistics": {
+    "title": "Statistik",
+    "overview": "Översikt",
+    "progress": "Utveckling",
+    "personalBests": "Personbästa",
+    "totalWorkouts": "Totala pass",
+    "totalSets": "Totala set",
+    "totalMinutes": "Totala minuter",
+    "level": "Nivå",
+    "xp": "XP",
+    "thisWeek": "Denna vecka",
+    "thisMonth": "Denna månad",
+    "allTime": "Alla tider"
+  },
+  "social": {
+    "title": "Socialt",
+    "friends": "Vänner",
+    "challenges": "Utmaningar",
+    "leaderboard": "Topplista",
+    "addFriend": "Lägg till vän",
+    "searchUsers": "Sök användare",
+    "noFriends": "Du har inga vänner ännu",
+    "inviteFriends": "Bjud in vänner",
+    "pendingRequests": "Väntande förfrågningar",
+    "createChallenge": "Skapa utmaning",
+    "activeChallenge": "Aktiv utmaning",
+    "completedChallenges": "Avslutade utmaningar",
+    "challengeTypes": {
+      "workouts": "Flest träningspass",
+      "sets": "Flest set",
+      "minutes": "Flest minuter"
+    },
+    "durations": {
+      "1week": "1 vecka",
+      "2weeks": "2 veckor",
+      "1month": "1 månad"
+    }
+  },
+  "account": {
+    "title": "Konto",
+    "profile": "Profil",
+    "displayName": "Visningsnamn",
+    "gender": "Kön",
+    "birthYear": "Födelseår",
+    "avatar": "Profilbild",
+    "changeAvatar": "Byt profilbild",
+    "subscription": "Prenumeration",
+    "theme": "Tema",
+    "themeLight": "Ljust",
+    "themeDark": "Mörkt",
+    "themeSystem": "System",
+    "notifications": "Notiser",
+    "memberSince": "Medlem sedan",
+    "genders": {
+      "male": "Man",
+      "female": "Kvinna",
+      "other": "Annat",
+      "preferNotToSay": "Vill inte ange"
+    }
+  },
+  "contact": {
+    "title": "Kontakta oss",
+    "subtitle": "Har du frågor eller feedback? Vi finns här för att hjälpa!",
+    "name": "Namn",
+    "email": "E-post",
+    "subject": "Ämne",
+    "message": "Meddelande",
+    "send": "Skicka meddelande",
+    "sending": "Skickar...",
+    "success": "Tack för ditt meddelande! Vi återkommer så snart vi kan.",
+    "error": "Kunde inte skicka meddelandet. Försök igen senare.",
+    "aboutUs": "Om oss",
+    "aboutUsText1": "Gymdagboken är utvecklad av Strukturant – ett företag som specialiserar sig på att skapa tekniska stödlösningar med hjälp av AI.",
+    "aboutUsText2": "Vi brinner för att kombinera modern teknik med användarvänlig design för att hjälpa människor nå sina mål – oavsett om det handlar om träning, produktivitet eller vardagslivet.",
+    "poweredBy": "Powered by AI – Designed for You"
+  },
+  "notifications": {
+    "friendRequest": "Vänförfrågan",
+    "challengeInvite": "Utmaningsinbjudan",
+    "workoutReminder": "Träningspåminnelse",
+    "achievement": "Prestation",
+    "newMessage": "Nytt meddelande",
+    "noNotifications": "Inga notiser"
+  },
+  "restTimer": {
+    "title": "Vilotimer",
+    "start": "Starta",
+    "pause": "Pausa",
+    "reset": "Återställ",
+    "soundOn": "Ljud på",
+    "soundOff": "Ljud av",
+    "timeUp": "Tiden är ute!",
+    "rest": "Vila"
+  }
+}
