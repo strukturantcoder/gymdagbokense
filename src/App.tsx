@@ -6,8 +6,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+
+// Lazy load all route components to reduce initial bundle size
+const Index = lazy(() => import("./pages/Index"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Lazy load route components to reduce initial bundle size
 const Auth = lazy(() => import("./pages/Auth"));
