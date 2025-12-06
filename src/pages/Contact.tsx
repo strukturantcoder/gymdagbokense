@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Dumbbell, ArrowLeft, Send, Loader2, Mail, MessageSquare } from 'lucide-react';
+import { Dumbbell, ArrowLeft, Send, Loader2, Mail, MessageSquare, Sparkles, Building2 } from 'lucide-react';
 
 export default function Contact() {
   const [name, setName] = useState('');
@@ -225,6 +225,39 @@ export default function Contact() {
                     )}
                   </Button>
                 </form>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* About Us Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-12"
+          >
+            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <CardHeader className="text-center">
+                <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Building2 className="w-7 h-7 text-primary" />
+                </div>
+                <CardTitle className="text-2xl">Om oss</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center space-y-4">
+                <p className="text-muted-foreground">
+                  Gymdagboken är utvecklad av <span className="font-semibold text-foreground">Strukturant</span> – 
+                  ett företag som specialiserar sig på att skapa tekniska stödlösningar med hjälp av AI.
+                </p>
+                <p className="text-muted-foreground">
+                  Vi brinner för att kombinera modern teknik med användarvänlig design för att hjälpa människor 
+                  nå sina mål – oavsett om det handlar om träning, produktivitet eller vardagslivet.
+                </p>
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <Sparkles className="w-5 h-5 text-gym-orange" />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Powered by AI – Designed for You
+                  </span>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
