@@ -12,8 +12,7 @@ import NotFound from "./pages/NotFound";
 // Lazy load route components to reduce initial bundle size
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const WorkoutLog = lazy(() => import("./pages/WorkoutLog"));
-const CardioLog = lazy(() => import("./pages/CardioLog"));
+const Training = lazy(() => import("./pages/Training"));
 const Statistics = lazy(() => import("./pages/Statistics"));
 const Social = lazy(() => import("./pages/Social"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -46,8 +45,9 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/log" element={<WorkoutLog />} />
-              <Route path="/cardio" element={<CardioLog />} />
+              <Route path="/training" element={<Training />} />
+              <Route path="/log" element={<Training />} />
+              <Route path="/cardio" element={<Training />} />
               <Route path="/stats" element={<Statistics />} />
               <Route path="/social" element={<Social />} />
               <Route path="/contact" element={<Contact />} />
