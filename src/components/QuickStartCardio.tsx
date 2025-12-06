@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { 
   Play, Pause, Square, Timer, Footprints, Bike, Waves, Flag, 
-  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle, Map
+  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,6 +27,14 @@ const activityTypes = [
 
 const CARDIO_XP_PER_MINUTE = 2;
 const CARDIO_XP_PER_KM = 10;
+const SESSION_STORAGE_KEY = 'active_cardio_session';
+
+interface StoredSession {
+  activityType: string;
+  startTime: number;
+  gpsEnabled: boolean;
+  sessionId: string;
+}
 
 interface QuickStartCardioProps {
   userId: string;
@@ -35,6 +43,8 @@ interface QuickStartCardioProps {
 
 export default function QuickStartCardio({ userId, onSessionComplete }: QuickStartCardioProps) {
   const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string>('');
+  const [startTime, setStartTime] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showFinishForm, setShowFinishForm] = useState(false);
@@ -54,14 +64,56 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
   const [savedActivityLabel, setSavedActivityLabel] = useState('');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { isTracking, hasPermission, error: gpsError, stats: gpsStats, resetStats } = useGpsTracking(
-    activeSession !== null && !isPaused && gpsEnabled
+  const { isTracking, hasPermission, error: gpsError, stats: gpsStats, resetStats, clearPersistedData } = useGpsTracking(
+    activeSession !== null && !isPaused && gpsEnabled,
+    sessionId
   );
 
+  // Restore session on mount
   useEffect(() => {
-    if (activeSession && !isPaused) {
+    const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (stored) {
+      try {
+        const session: StoredSession = JSON.parse(stored);
+        setActiveSession(session.activityType);
+        setStartTime(session.startTime);
+        setGpsEnabled(session.gpsEnabled);
+        setSessionId(session.sessionId);
+        // Calculate elapsed time from stored start time
+        const elapsed = Math.floor((Date.now() - session.startTime) / 1000);
+        setElapsedSeconds(elapsed);
+      } catch (e) {
+        console.error('Failed to restore session:', e);
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+    }
+  }, []);
+
+  // Persist session state
+  const persistSession = useCallback(() => {
+    if (activeSession && startTime && sessionId) {
+      const session: StoredSession = {
+        activityType: activeSession,
+        startTime,
+        gpsEnabled,
+        sessionId,
+      };
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+    }
+  }, [activeSession, startTime, gpsEnabled, sessionId]);
+
+  useEffect(() => {
+    if (activeSession && startTime) {
+      persistSession();
+    }
+  }, [activeSession, startTime, gpsEnabled, persistSession]);
+
+  // Timer that calculates from start time (survives page refresh)
+  useEffect(() => {
+    if (activeSession && startTime && !isPaused) {
       intervalRef.current = setInterval(() => {
-        setElapsedSeconds(prev => prev + 1);
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        setElapsedSeconds(elapsed);
       }, 1000);
     } else if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -72,7 +124,7 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
         clearInterval(intervalRef.current);
       }
     };
-  }, [activeSession, isPaused]);
+  }, [activeSession, startTime, isPaused]);
 
   // Sync GPS distance to form
   useEffect(() => {
@@ -102,7 +154,12 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
 
   const startSession = (activityType: string) => {
     const activity = activityTypes.find(a => a.value === activityType);
+    const newSessionId = `session_${Date.now()}`;
+    const now = Date.now();
+    
     setActiveSession(activityType);
+    setSessionId(newSessionId);
+    setStartTime(now);
     setElapsedSeconds(0);
     setIsPaused(false);
     setShowFinishForm(false);
@@ -111,6 +168,15 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
     setNotes('');
     setGpsEnabled(activity?.gpsRecommended ?? true);
     resetStats();
+
+    // Persist immediately
+    const session: StoredSession = {
+      activityType,
+      startTime: now,
+      gpsEnabled: activity?.gpsRecommended ?? true,
+      sessionId: newSessionId,
+    };
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
   };
 
   const togglePause = () => {
@@ -120,7 +186,6 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
   const stopSession = () => {
     setIsPaused(true);
     setShowFinishForm(true);
-    // Set final distance from GPS if available
     if (gpsStats.totalDistanceKm > 0) {
       setDistanceKm(gpsStats.totalDistanceKm.toFixed(2));
     }
@@ -128,10 +193,13 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
 
   const cancelSession = () => {
     setActiveSession(null);
+    setStartTime(null);
     setElapsedSeconds(0);
     setIsPaused(false);
     setShowFinishForm(false);
     resetStats();
+    clearPersistedData();
+    localStorage.removeItem(SESSION_STORAGE_KEY);
   };
 
   const calculateXP = (duration: number, distance: number | null) => {
@@ -152,7 +220,6 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
 
     setIsSaving(true);
     try {
-      // Save cardio log
       const { data: cardioLog, error } = await supabase.from('cardio_logs').insert({
         user_id: userId,
         activity_type: activeSession,
@@ -164,7 +231,6 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
 
       if (error) throw error;
 
-      // Save GPS route if available
       const hasGpsRoute = gpsEnabled && gpsStats.positions.length >= 2;
       if (hasGpsRoute && cardioLog) {
         const routeDataToSave = {
@@ -185,7 +251,6 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
           max_speed_kmh: gpsStats.maxSpeedKmh,
         });
 
-        // Store route data for showing map
         setSavedRouteData({
           positions: routeDataToSave.positions,
           totalDistanceKm: gpsStats.totalDistanceKm,
@@ -229,13 +294,16 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
       toast.success(`${activityLabel} loggat! +${xpEarned} XP`);
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
 
+      // Clear all persisted data
       setActiveSession(null);
+      setStartTime(null);
       setElapsedSeconds(0);
       setShowFinishForm(false);
       resetStats();
+      clearPersistedData();
+      localStorage.removeItem(SESSION_STORAGE_KEY);
       onSessionComplete();
 
-      // Show route map if GPS data was saved
       if (hasGpsRoute) {
         setTimeout(() => setShowRouteMap(true), 500);
       }
@@ -349,7 +417,10 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                 </div>
                 <Switch
                   checked={gpsEnabled}
-                  onCheckedChange={setGpsEnabled}
+                  onCheckedChange={(checked) => {
+                    setGpsEnabled(checked);
+                    persistSession();
+                  }}
                 />
               </div>
             )}
@@ -478,38 +549,40 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
   }
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Play className="w-5 h-5 text-primary" />
-          Starta spontant pass
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-          {activityTypes.map((activity) => {
-            const Icon = activity.icon;
-            return (
-              <motion.button
-                key={activity.value}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => startSession(activity.value)}
-                className={`p-4 rounded-xl bg-gradient-to-br ${activity.color} text-white flex flex-col items-center gap-2 shadow-lg hover:shadow-xl transition-shadow relative`}
-              >
-                <Icon className="w-8 h-8" />
-                <span className="text-sm font-medium">{activity.label}</span>
-                {activity.gpsRecommended && (
-                  <Navigation className="w-3 h-3 absolute top-2 right-2 opacity-70" />
-                )}
-              </motion.button>
-            );
-          })}
-        </div>
-        <p className="text-sm text-muted-foreground mt-4 text-center">
-          Tryck på en aktivitet för att starta med GPS-spårning
-        </p>
-      </CardContent>
+    <>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Play className="w-5 h-5 text-primary" />
+            Starta spontant pass
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+            {activityTypes.map((activity) => {
+              const Icon = activity.icon;
+              return (
+                <motion.button
+                  key={activity.value}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => startSession(activity.value)}
+                  className={`p-4 rounded-xl bg-gradient-to-br ${activity.color} text-white flex flex-col items-center gap-2 shadow-lg hover:shadow-xl transition-shadow relative`}
+                >
+                  <Icon className="w-8 h-8" />
+                  <span className="text-sm font-medium">{activity.label}</span>
+                  {activity.gpsRecommended && (
+                    <Navigation className="w-3 h-3 absolute top-2 right-2 opacity-70" />
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
+          <p className="text-sm text-muted-foreground mt-4 text-center">
+            Tryck på en aktivitet för att starta med GPS-spårning
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Route Map Dialog */}
       <RouteMapDialog
@@ -519,6 +592,6 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
         activityLabel={savedActivityLabel}
         durationMinutes={savedDuration}
       />
-    </Card>
+    </>
   );
 }

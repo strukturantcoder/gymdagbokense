@@ -29,7 +29,49 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
-export function useGpsTracking(isActive: boolean) {
+function recalculateStats(positions: GpsPosition[], startTime: number | null): Omit<GpsStats, 'positions'> {
+  if (positions.length < 2) {
+    return { totalDistanceKm: 0, currentSpeedKmh: 0, averageSpeedKmh: 0, maxSpeedKmh: 0 };
+  }
+
+  let totalDistance = 0;
+  let maxSpeed = 0;
+
+  for (let i = 1; i < positions.length; i++) {
+    const prev = positions[i - 1];
+    const curr = positions[i];
+    
+    if (curr.accuracy < 50 && prev.accuracy < 50) {
+      const segmentDistance = calculateDistance(prev.latitude, prev.longitude, curr.latitude, curr.longitude);
+      const timeDiff = (curr.timestamp - prev.timestamp) / 1000;
+      const segmentSpeed = timeDiff > 0 ? (segmentDistance / timeDiff) * 3600 : 0;
+      
+      if (segmentSpeed < 50) {
+        totalDistance += segmentDistance;
+      }
+    }
+
+    if (curr.speed !== null) {
+      const speedKmh = curr.speed * 3.6;
+      if (speedKmh > maxSpeed && speedKmh < 50) {
+        maxSpeed = speedKmh;
+      }
+    }
+  }
+
+  const lastPos = positions[positions.length - 1];
+  let currentSpeed = 0;
+  if (lastPos.speed !== null) {
+    currentSpeed = Math.min(lastPos.speed * 3.6, 50);
+  }
+
+  const elapsedHours = startTime ? (Date.now() - startTime) / 3600000 : 0;
+  const avgSpeed = elapsedHours > 0 ? Math.min(totalDistance / elapsedHours, 50) : 0;
+
+  return { totalDistanceKm: totalDistance, currentSpeedKmh: currentSpeed, averageSpeedKmh: avgSpeed, maxSpeedKmh: maxSpeed };
+}
+
+export function useGpsTracking(isActive: boolean, sessionId?: string) {
   const [isTracking, setIsTracking] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +87,35 @@ export function useGpsTracking(isActive: boolean) {
   const positionsRef = useRef<GpsPosition[]>([]);
   const startTimeRef = useRef<number | null>(null);
 
+  // Load persisted positions on mount
+  useEffect(() => {
+    if (sessionId) {
+      const stored = localStorage.getItem(`gps_positions_${sessionId}`);
+      const storedStartTime = localStorage.getItem(`gps_start_${sessionId}`);
+      if (stored) {
+        try {
+          const positions = JSON.parse(stored) as GpsPosition[];
+          positionsRef.current = positions;
+          startTimeRef.current = storedStartTime ? parseInt(storedStartTime) : Date.now();
+          const recalc = recalculateStats(positions, startTimeRef.current);
+          setStats({ ...recalc, positions });
+        } catch (e) {
+          console.error('Failed to parse stored GPS positions:', e);
+        }
+      }
+    }
+  }, [sessionId]);
+
+  // Persist positions when they change
+  const persistPositions = useCallback(() => {
+    if (sessionId && positionsRef.current.length > 0) {
+      localStorage.setItem(`gps_positions_${sessionId}`, JSON.stringify(positionsRef.current));
+      if (startTimeRef.current) {
+        localStorage.setItem(`gps_start_${sessionId}`, startTimeRef.current.toString());
+      }
+    }
+  }, [sessionId]);
+
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
       setError('GPS stöds inte av din enhet');
@@ -52,16 +123,14 @@ export function useGpsTracking(isActive: boolean) {
     }
 
     setError(null);
-    positionsRef.current = [];
-    startTimeRef.current = Date.now();
     
-    setStats({
-      totalDistanceKm: 0,
-      currentSpeedKmh: 0,
-      averageSpeedKmh: 0,
-      maxSpeedKmh: 0,
-      positions: [],
-    });
+    // Only reset if no existing positions
+    if (positionsRef.current.length === 0) {
+      startTimeRef.current = Date.now();
+      if (sessionId) {
+        localStorage.setItem(`gps_start_${sessionId}`, startTimeRef.current.toString());
+      }
+    }
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
@@ -76,82 +145,16 @@ export function useGpsTracking(isActive: boolean) {
           speed: position.coords.speed,
         };
 
-        const positions = positionsRef.current;
-        let totalDistance = 0;
-        let currentSpeed = 0;
-        let maxSpeed = 0;
-
-        // Calculate distance from previous point
-        if (positions.length > 0) {
-          const lastPos = positions[positions.length - 1];
-          
-          // Only add distance if accuracy is reasonable (< 50m)
-          if (newPosition.accuracy < 50 && lastPos.accuracy < 50) {
-            const segmentDistance = calculateDistance(
-              lastPos.latitude, lastPos.longitude,
-              newPosition.latitude, newPosition.longitude
-            );
-            
-            // Filter out GPS jumps (unrealistic distances)
-            const timeDiff = (newPosition.timestamp - lastPos.timestamp) / 1000; // seconds
-            const segmentSpeedKmh = (segmentDistance / timeDiff) * 3600;
-            
-            // Only count if speed is realistic (< 50 km/h for running/cycling)
-            if (segmentSpeedKmh < 50) {
-              totalDistance = positions.reduce((sum, pos, i) => {
-                if (i === 0) return 0;
-                const prev = positions[i - 1];
-                return sum + calculateDistance(prev.latitude, prev.longitude, pos.latitude, pos.longitude);
-              }, 0) + segmentDistance;
-            }
-          }
-
-          // Calculate current speed
-          if (newPosition.speed !== null && newPosition.speed >= 0) {
-            currentSpeed = newPosition.speed * 3.6; // m/s to km/h
-          } else if (positions.length >= 2) {
-            // Calculate from last few positions
-            const recentPositions = positions.slice(-3);
-            const firstRecent = recentPositions[0];
-            const recentDistance = calculateDistance(
-              firstRecent.latitude, firstRecent.longitude,
-              newPosition.latitude, newPosition.longitude
-            );
-            const recentTime = (newPosition.timestamp - firstRecent.timestamp) / 1000;
-            if (recentTime > 0) {
-              currentSpeed = (recentDistance / recentTime) * 3600;
-            }
-          }
-        }
-
-        // Update max speed
-        for (const pos of positions) {
-          if (pos.speed !== null) {
-            const speedKmh = pos.speed * 3.6;
-            if (speedKmh > maxSpeed && speedKmh < 50) {
-              maxSpeed = speedKmh;
-            }
-          }
-        }
-        if (currentSpeed > maxSpeed && currentSpeed < 50) {
-          maxSpeed = currentSpeed;
-        }
-
         positionsRef.current.push(newPosition);
-
-        // Calculate average speed
-        const elapsedHours = startTimeRef.current 
-          ? (Date.now() - startTimeRef.current) / 3600000 
-          : 0;
-        const avgSpeed = elapsedHours > 0 ? totalDistance / elapsedHours : 0;
-
+        const recalc = recalculateStats(positionsRef.current, startTimeRef.current);
+        
         setStats({
-          totalDistanceKm: totalDistance,
-          currentSpeedKmh: Math.min(currentSpeed, 50),
-          averageSpeedKmh: Math.min(avgSpeed, 50),
-          maxSpeedKmh: maxSpeed,
+          ...recalc,
           positions: [...positionsRef.current],
         });
+
+        // Persist after each position update
+        persistPositions();
       },
       (err) => {
         console.error('GPS error:', err);
@@ -171,7 +174,7 @@ export function useGpsTracking(isActive: boolean) {
         maximumAge: 0,
       }
     );
-  }, []);
+  }, [sessionId, persistPositions]);
 
   const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null) {
@@ -191,7 +194,19 @@ export function useGpsTracking(isActive: boolean) {
       maxSpeedKmh: 0,
       positions: [],
     });
-  }, []);
+    // Clear persisted data
+    if (sessionId) {
+      localStorage.removeItem(`gps_positions_${sessionId}`);
+      localStorage.removeItem(`gps_start_${sessionId}`);
+    }
+  }, [sessionId]);
+
+  const clearPersistedData = useCallback(() => {
+    if (sessionId) {
+      localStorage.removeItem(`gps_positions_${sessionId}`);
+      localStorage.removeItem(`gps_start_${sessionId}`);
+    }
+  }, [sessionId]);
 
   // Auto start/stop based on isActive prop
   useEffect(() => {
@@ -214,5 +229,6 @@ export function useGpsTracking(isActive: boolean) {
     startTracking,
     stopTracking,
     resetStats,
+    clearPersistedData,
   };
 }

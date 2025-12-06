@@ -15,13 +15,14 @@ import { toast } from 'sonner';
 import { 
   Dumbbell, Plus, Trash2, Loader2,
   Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles,
-  ClipboardList, BarChart3, Users, Home
+  ClipboardList, BarChart3, Users, Home, Map
 } from 'lucide-react';
 import ActiveCardioPlanSession from '@/components/ActiveCardioPlanSession';
 import QuickStartCardio from '@/components/QuickStartCardio';
 import GenerateCardioPlanDialog from '@/components/GenerateCardioPlanDialog';
 import AdBanner from '@/components/AdBanner';
 import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
+import RouteMapDialog from '@/components/RouteMapDialog';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import confetti from 'canvas-confetti';
@@ -34,6 +35,7 @@ interface CardioLog {
   calories_burned: number | null;
   notes: string | null;
   completed_at: string;
+  has_route?: boolean;
 }
 
 interface CardioGoal {
@@ -99,6 +101,13 @@ export default function CardioLog() {
     calories?: number;
   } | null>(null);
 
+  // Route map
+  const [showRouteMap, setShowRouteMap] = useState(false);
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+  const [selectedLogLabel, setSelectedLogLabel] = useState('');
+  const [selectedLogDuration, setSelectedLogDuration] = useState(0);
+  const [logsWithRoutes, setLogsWithRoutes] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
@@ -128,6 +137,19 @@ export default function CardioLog() {
       console.error('Error fetching cardio logs:', error);
     } else {
       setLogs(data || []);
+      
+      // Fetch which logs have routes
+      if (data && data.length > 0) {
+        const logIds = data.map(log => log.id);
+        const { data: routes } = await supabase
+          .from('cardio_routes')
+          .select('cardio_log_id')
+          .in('cardio_log_id', logIds);
+        
+        if (routes) {
+          setLogsWithRoutes(new Set(routes.map(r => r.cardio_log_id)));
+        }
+      }
     }
   };
 
@@ -882,7 +904,7 @@ export default function CardioLog() {
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-2 md:gap-6">
                             <div className="text-right">
                               <p className="font-semibold">{log.duration_minutes} min</p>
                               {log.distance_km && (
@@ -890,12 +912,27 @@ export default function CardioLog() {
                               )}
                             </div>
                             {log.calories_burned && (
-                              <div className="text-right">
+                              <div className="text-right hidden sm:block">
                                 <p className="text-sm text-muted-foreground">
                                   <Flame className="w-4 h-4 inline mr-1" />
                                   {log.calories_burned} kcal
                                 </p>
                               </div>
+                            )}
+                            {logsWithRoutes.has(log.id) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-primary hover:text-primary/80"
+                                onClick={() => {
+                                  setSelectedLogId(log.id);
+                                  setSelectedLogLabel(getActivityLabel(log.activity_type));
+                                  setSelectedLogDuration(log.duration_minutes);
+                                  setShowRouteMap(true);
+                                }}
+                              >
+                                <Map className="w-4 h-4" />
+                              </Button>
                             )}
                             <Button
                               variant="ghost"
@@ -933,6 +970,15 @@ export default function CardioLog() {
           cardioData={cardioShareData}
         />
       )}
+
+      {/* Route Map Dialog */}
+      <RouteMapDialog
+        open={showRouteMap}
+        onOpenChange={setShowRouteMap}
+        cardioLogId={selectedLogId || undefined}
+        activityLabel={selectedLogLabel}
+        durationMinutes={selectedLogDuration}
+      />
     </div>
   );
 }
