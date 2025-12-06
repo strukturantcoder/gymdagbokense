@@ -1089,6 +1089,23 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_public_community_challenges: {
+        Args: never
+        Returns: {
+          created_at: string
+          description: string
+          end_date: string
+          goal_description: string
+          goal_unit: string
+          id: string
+          is_active: boolean
+          start_date: string
+          target_value: number
+          theme: string
+          title: string
+          winner_type: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
