@@ -197,6 +197,47 @@ export type Database = {
         }
         Relationships: []
       }
+      cardio_routes: {
+        Row: {
+          average_speed_kmh: number
+          cardio_log_id: string
+          created_at: string
+          id: string
+          max_speed_kmh: number
+          route_data: Json
+          total_distance_km: number
+          user_id: string
+        }
+        Insert: {
+          average_speed_kmh?: number
+          cardio_log_id: string
+          created_at?: string
+          id?: string
+          max_speed_kmh?: number
+          route_data: Json
+          total_distance_km?: number
+          user_id: string
+        }
+        Update: {
+          average_speed_kmh?: number
+          cardio_log_id?: string
+          created_at?: string
+          id?: string
+          max_speed_kmh?: number
+          route_data?: Json
+          total_distance_km?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cardio_routes_cardio_log_id_fkey"
+            columns: ["cardio_log_id"]
+            isOneToOne: false
+            referencedRelation: "cardio_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_pool_entries: {
         Row: {
           allow_multiple: boolean
