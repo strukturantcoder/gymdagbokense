@@ -1079,6 +1079,14 @@ export type Database = {
     Functions: {
       abbreviate_name: { Args: { full_name: string }; Returns: string }
       complete_pool_challenges: { Args: never; Returns: undefined }
+      get_friend_profile: {
+        Args: { friend_user_id: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          user_id: string
+        }[]
+      }
       get_pool_challenge_participants: {
         Args: { challenge_uuid: string }
         Returns: {
