@@ -373,15 +373,16 @@ export default function CardioLogContent() {
 
       <AdBanner className="mb-6" />
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-display font-bold">Konditionsträning</h1>
           <p className="text-muted-foreground text-sm">Spåra löpning, cykling och mer</p>
         </div>
-        <div className="flex gap-2">
-          <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
+        <div className="relative">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+            <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="shrink-0">
                 <Target className="w-4 h-4 mr-2" />
                 Mål
               </Button>
@@ -443,11 +444,13 @@ export default function CardioLogContent() {
               </div>
             </DialogContent>
           </Dialog>
-          <GenerateCardioPlanDialog />
-          <Button variant="hero" size="sm" onClick={() => setShowForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Logga
-          </Button>
+            <GenerateCardioPlanDialog />
+            <Button variant="hero" size="sm" onClick={() => setShowForm(true)} className="shrink-0">
+              <Plus className="w-4 h-4 mr-2" />
+              Logga
+            </Button>
+          </div>
+          <div className="absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />
         </div>
       </div>
 

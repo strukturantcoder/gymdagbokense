@@ -437,7 +437,7 @@ export default function GenerateCardioPlanDialog() {
       if (!isOpen) resetForm();
     }}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 shrink-0">
           <Sparkles className="w-4 h-4" />
           AI-träningsplan
         </Button>
