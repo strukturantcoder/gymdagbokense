@@ -1,42 +1,45 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Brain, BarChart3, Calendar, Target, Smartphone, Users } from "lucide-react";
 
-const features = [
-  {
-    icon: Brain,
-    title: "AI-Träningsplanerare",
-    description: "Få skräddarsydda träningsprogram baserat på dina mål, erfarenhet och tillgänglig utrustning.",
-  },
-  {
-    icon: BarChart3,
-    title: "Detaljerad Statistik",
-    description: "Visualisera din utveckling med snygga grafer för styrka, volym och prestation över tid.",
-  },
-  {
-    icon: Calendar,
-    title: "Smart Schemaläggning",
-    description: "Planera dina träningspass och få påminnelser för att hålla dig konsekvent.",
-  },
-  {
-    icon: Target,
-    title: "Måluppföljning",
-    description: "Sätt upp konkreta mål och följ din progress mot varje delmål och slutmål.",
-  },
-  {
-    icon: Smartphone,
-    title: "Mobilapp",
-    description: "Ta med dig träningsdagboken överallt med vår användarvänliga app.",
-  },
-  {
-    icon: Users,
-    title: "Community",
-    description: "Dela din resa, få inspiration och tävla med andra i vår gemenskap.",
-  },
-];
-
 const Features = () => {
+  const { t } = useTranslation();
+
+  const features = [
+    {
+      icon: Brain,
+      titleKey: "features.aiPlanner.title",
+      descriptionKey: "features.aiPlanner.description",
+    },
+    {
+      icon: BarChart3,
+      titleKey: "features.statistics.title",
+      descriptionKey: "features.statistics.description",
+    },
+    {
+      icon: Calendar,
+      titleKey: "features.scheduling.title",
+      descriptionKey: "features.scheduling.description",
+    },
+    {
+      icon: Target,
+      titleKey: "features.goals.title",
+      descriptionKey: "features.goals.description",
+    },
+    {
+      icon: Smartphone,
+      titleKey: "features.mobile.title",
+      descriptionKey: "features.mobile.description",
+    },
+    {
+      icon: Users,
+      titleKey: "features.community.title",
+      descriptionKey: "features.community.description",
+    },
+  ];
+
   return (
-    <section className="py-24 bg-gym-charcoal relative texture-noise">
+    <section className="py-24 bg-gym-charcoal relative texture-noise" id="features">
       <div className="container px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -45,10 +48,10 @@ const Features = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-            ALLT DU BEHÖVER FÖR ATT <span className="text-gradient">LYCKAS</span>
+            {t('features.title')} <span className="text-gradient">{t('features.titleHighlight')}</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Kraftfulla verktyg designade för att ta din träning till nästa nivå.
+            {t('features.subtitle')}
           </p>
         </motion.div>
 
@@ -69,8 +72,8 @@ const Features = () => {
                   <feature.icon className="w-6 h-6 text-gym-orange" />
                 </div>
                 
-                <h3 className="text-xl font-display font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground text-sm">{feature.description}</p>
+                <h3 className="text-xl font-display font-semibold mb-2">{t(feature.titleKey)}</h3>
+                <p className="text-muted-foreground text-sm">{t(feature.descriptionKey)}</p>
               </div>
             </motion.div>
           ))}

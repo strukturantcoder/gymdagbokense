@@ -1,18 +1,21 @@
 import { Dumbbell, Instagram } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  const { t } = useTranslation();
+
   const links = {
     product: [
-      { label: "Funktioner", href: "#features" },
-      { label: "Så fungerar det", href: "#how-it-works" },
-      { label: "Priser", href: "#pricing" },
-      { label: "Kontakt", href: "/contact", isRoute: true },
+      { labelKey: "footer.features", href: "#features" },
+      { labelKey: "footer.howItWorks", href: "#how-it-works" },
+      { labelKey: "footer.pricing", href: "#pricing" },
+      { labelKey: "footer.contact", href: "/contact", isRoute: true },
     ],
     legal: [
-      { label: "Integritetspolicy", href: "/privacy" },
-      { label: "Användarvillkor", href: "/terms" },
-      { label: "Cookies", href: "/cookies" },
+      { labelKey: "footer.privacy", href: "/privacy" },
+      { labelKey: "footer.terms", href: "/terms" },
+      { labelKey: "footer.cookies", href: "/cookies" },
     ],
   };
 
@@ -31,7 +34,7 @@ const Footer = () => {
               </span>
             </div>
             <p className="text-muted-foreground text-sm mb-6">
-              Din digitala träningskompis. Spåra, analysera och förbättra din träning.
+              {t('footer.tagline')}
             </p>
             <div className="flex gap-4">
               <a 
@@ -47,23 +50,23 @@ const Footer = () => {
 
           {/* Product links */}
           <div>
-            <h4 className="font-display font-semibold mb-4">PRODUKT</h4>
+            <h4 className="font-display font-semibold mb-4">{t('footer.product')}</h4>
             <ul className="space-y-2">
               {links.product.map((link) => (
-                <li key={link.label}>
+                <li key={link.labelKey}>
                   {link.isRoute ? (
                     <Link
                       to={link.href}
                       className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                     >
-                      {link.label}
+                      {t(link.labelKey)}
                     </Link>
                   ) : (
                     <a
                       href={link.href}
                       className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                     >
-                      {link.label}
+                      {t(link.labelKey)}
                     </a>
                   )}
                 </li>
@@ -73,15 +76,15 @@ const Footer = () => {
 
           {/* Legal links */}
           <div>
-            <h4 className="font-display font-semibold mb-4">JURIDISKT</h4>
+            <h4 className="font-display font-semibold mb-4">{t('footer.legal')}</h4>
             <ul className="space-y-2">
               {links.legal.map((link) => (
-                <li key={link.label}>
+                <li key={link.labelKey}>
                   <Link
                     to={link.href}
                     className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 </li>
               ))}
@@ -90,7 +93,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-border mt-12 pt-8 text-center text-muted-foreground text-sm">
-          <p>© {new Date().getFullYear()} Gymdagboken. Alla rättigheter förbehållna.</p>
+          <p>{t('footer.copyright', { year: new Date().getFullYear() })}</p>
         </div>
       </div>
     </footer>
