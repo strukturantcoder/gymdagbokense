@@ -8,12 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { 
   Play, Pause, Square, Timer, Footprints, Bike, Waves, Flag, 
-  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle
+  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle, Map
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { useGpsTracking } from '@/hooks/useGpsTracking';
+import RouteMapDialog from '@/components/RouteMapDialog';
 
 const activityTypes = [
   { value: 'running', label: 'Löpning', icon: Footprints, color: 'from-orange-500 to-red-500', gpsRecommended: true },
@@ -42,6 +43,15 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [gpsEnabled, setGpsEnabled] = useState(true);
+  const [showRouteMap, setShowRouteMap] = useState(false);
+  const [savedRouteData, setSavedRouteData] = useState<{
+    positions: Array<{ latitude: number; longitude: number; timestamp: number; speed: number | null }>;
+    totalDistanceKm: number;
+    averageSpeedKmh: number;
+    maxSpeedKmh: number;
+  } | null>(null);
+  const [savedDuration, setSavedDuration] = useState(0);
+  const [savedActivityLabel, setSavedActivityLabel] = useState('');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { isTracking, hasPermission, error: gpsError, stats: gpsStats, resetStats } = useGpsTracking(
@@ -138,19 +148,53 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
     const durationMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
     const distance = distanceKm ? parseFloat(distanceKm) : null;
     const calories = caloriesBurned ? parseInt(caloriesBurned) : null;
+    const activityLabel = activityTypes.find(a => a.value === activeSession)?.label || activeSession;
 
     setIsSaving(true);
     try {
-      const { error } = await supabase.from('cardio_logs').insert({
+      // Save cardio log
+      const { data: cardioLog, error } = await supabase.from('cardio_logs').insert({
         user_id: userId,
         activity_type: activeSession,
         duration_minutes: durationMinutes,
         distance_km: distance,
         calories_burned: calories,
         notes: notes || null,
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Save GPS route if available
+      const hasGpsRoute = gpsEnabled && gpsStats.positions.length >= 2;
+      if (hasGpsRoute && cardioLog) {
+        const routeDataToSave = {
+          positions: gpsStats.positions.map(p => ({
+            latitude: p.latitude,
+            longitude: p.longitude,
+            timestamp: p.timestamp,
+            speed: p.speed,
+          })),
+        };
+
+        await supabase.from('cardio_routes').insert({
+          cardio_log_id: cardioLog.id,
+          user_id: userId,
+          route_data: routeDataToSave,
+          total_distance_km: gpsStats.totalDistanceKm,
+          average_speed_kmh: gpsStats.averageSpeedKmh,
+          max_speed_kmh: gpsStats.maxSpeedKmh,
+        });
+
+        // Store route data for showing map
+        setSavedRouteData({
+          positions: routeDataToSave.positions,
+          totalDistanceKm: gpsStats.totalDistanceKm,
+          averageSpeedKmh: gpsStats.averageSpeedKmh,
+          maxSpeedKmh: gpsStats.maxSpeedKmh,
+        });
+        setSavedDuration(durationMinutes);
+        setSavedActivityLabel(activityLabel);
+      }
 
       const xpEarned = calculateXP(durationMinutes, distance);
       
@@ -182,7 +226,6 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
           });
       }
 
-      const activityLabel = activityTypes.find(a => a.value === activeSession)?.label || activeSession;
       toast.success(`${activityLabel} loggat! +${xpEarned} XP`);
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
 
@@ -191,6 +234,11 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
       setShowFinishForm(false);
       resetStats();
       onSessionComplete();
+
+      // Show route map if GPS data was saved
+      if (hasGpsRoute) {
+        setTimeout(() => setShowRouteMap(true), 500);
+      }
     } catch (error) {
       console.error('Error saving cardio session:', error);
       toast.error('Kunde inte spara passet');
@@ -462,6 +510,15 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
           Tryck på en aktivitet för att starta med GPS-spårning
         </p>
       </CardContent>
+
+      {/* Route Map Dialog */}
+      <RouteMapDialog
+        open={showRouteMap}
+        onOpenChange={setShowRouteMap}
+        routeData={savedRouteData || undefined}
+        activityLabel={savedActivityLabel}
+        durationMinutes={savedDuration}
+      />
     </Card>
   );
 }
