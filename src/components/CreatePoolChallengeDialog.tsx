@@ -120,7 +120,7 @@ export function CreatePoolChallengeDialog({ trigger }: CreatePoolChallengeDialog
                       <SelectTrigger>
                         <SelectValue placeholder="Välj..." />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[200]" position="popper" sideOffset={4}>
                         <SelectItem value="male">Man</SelectItem>
                         <SelectItem value="female">Kvinna</SelectItem>
                         <SelectItem value="other">Annat</SelectItem>
@@ -220,7 +220,7 @@ export function CreatePoolChallengeDialog({ trigger }: CreatePoolChallengeDialog
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[200]" position="popper" sideOffset={4}>
             {durations.map((d) => (
               <SelectItem key={d.value} value={d.value.toString()}>
                 {d.label}
@@ -243,7 +243,7 @@ export function CreatePoolChallengeDialog({ trigger }: CreatePoolChallengeDialog
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[200]" position="popper" sideOffset={4}>
               <SelectItem value="any">Spelar ingen roll</SelectItem>
               <SelectItem value="male">Man</SelectItem>
               <SelectItem value="female">Kvinna</SelectItem>
