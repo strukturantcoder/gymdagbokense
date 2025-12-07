@@ -900,6 +900,42 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_wods: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration: string
+          exercises: Json
+          format: string
+          id: string
+          name: string
+          scaling: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration: string
+          exercises: Json
+          format: string
+          id?: string
+          name: string
+          scaling?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration?: string
+          exercises?: Json
+          format?: string
+          id?: string
+          name?: string
+          scaling?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string
