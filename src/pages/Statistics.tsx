@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dumbbell, ArrowLeft, Loader2, TrendingUp, Calendar, Flame, Weight, Footprints, MapPin, Timer } from 'lucide-react';
+import { Dumbbell, ArrowLeft, Loader2, TrendingUp, Calendar, Flame, Weight, Footprints, MapPin, Timer, Zap, Sparkles } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
 import {
   LineChart,
@@ -70,6 +70,15 @@ interface ExerciseProgress {
   volume: number;
 }
 
+interface WodLog {
+  id: string;
+  wod_name: string;
+  wod_format: string;
+  completed_at: string;
+}
+
+const XP_PER_WOD = 50;
+
 export default function Statistics() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -77,6 +86,7 @@ export default function Statistics() {
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   const [cardioLogs, setCardioLogs] = useState<CardioLog[]>([]);
+  const [wodLogs, setWodLogs] = useState<WodLog[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<string>('');
   const [uniqueExercises, setUniqueExercises] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -141,6 +151,16 @@ export default function Statistics() {
     
     if (cardio) {
       setCardioLogs(cardio);
+    }
+
+    // Fetch WOD logs
+    const { data: wods } = await supabase
+      .from('wod_logs')
+      .select('id, wod_name, wod_format, completed_at')
+      .order('completed_at', { ascending: true });
+    
+    if (wods) {
+      setWodLogs(wods);
     }
     
     setIsLoading(false);
@@ -246,6 +266,16 @@ export default function Statistics() {
   const totalCardioDistance = cardioLogs.reduce((sum, c) => sum + (c.distance_km || 0), 0);
   const avgCardioPerWeek = totalCardioSessions > 0 ? (totalCardioSessions / 12).toFixed(1) : '0';
 
+  // CrossFit/WOD stats
+  const totalWods = wodLogs.length;
+  const totalWodXP = totalWods * XP_PER_WOD;
+  const avgWodsPerWeek = totalWods > 0 ? (totalWods / 12).toFixed(1) : '0';
+  const wodFormats = wodLogs.reduce((acc, wod) => {
+    acc[wod.wod_format] = (acc[wod.wod_format] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const mostPopularFormat = Object.entries(wodFormats).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+
   const weeklyData = getWeeklyData();
   const cardioWeeklyData = getCardioWeeklyData();
   const exerciseProgress = getExerciseProgress();
@@ -285,7 +315,7 @@ export default function Statistics() {
         </div>
 
         <Tabs defaultValue="strength" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="strength" className="flex items-center gap-2">
               <Dumbbell className="w-4 h-4" />
               Styrka
@@ -293,6 +323,10 @@ export default function Statistics() {
             <TabsTrigger value="cardio" className="flex items-center gap-2">
               <Footprints className="w-4 h-4" />
               Kondition
+            </TabsTrigger>
+            <TabsTrigger value="crossfit" className="flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              CrossFit
             </TabsTrigger>
           </TabsList>
 
@@ -797,6 +831,127 @@ export default function Statistics() {
                 </Card>
               </motion.div>
             </div>
+          </TabsContent>
+
+          {/* CrossFit Tab */}
+          <TabsContent value="crossfit" className="space-y-6">
+            {/* CrossFit Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Zap className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{totalWods}</p>
+                        <p className="text-xs text-muted-foreground">Totala WODs</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-yellow-500/10 rounded-lg">
+                        <Sparkles className="w-5 h-5 text-yellow-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{totalWodXP}</p>
+                        <p className="text-xs text-muted-foreground">Total XP</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gym-orange/10 rounded-lg">
+                        <Flame className="w-5 h-5 text-gym-orange" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{avgWodsPerWeek}</p>
+                        <p className="text-xs text-muted-foreground">WODs/vecka</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-500/10 rounded-lg">
+                        <TrendingUp className="w-5 h-5 text-purple-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-display font-bold">{mostPopularFormat}</p>
+                        <p className="text-xs text-muted-foreground">Favoritformat</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* WOD Format Distribution */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>WOD-format</CardTitle>
+                  <CardDescription>Fördelning av dina loggade WODs per format</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {Object.keys(wodFormats).length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={Object.entries(wodFormats).map(([format, count]) => ({ format, count }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis 
+                          dataKey="format" 
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                        />
+                        <YAxis 
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                          allowDecimals={false}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
+                          }}
+                          labelStyle={{ color: 'hsl(var(--foreground))' }}
+                        />
+                        <Bar 
+                          dataKey="count" 
+                          fill="hsl(var(--primary))" 
+                          radius={[4, 4, 0, 0]}
+                          name="Antal"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                      Logga WODs för att se din fördelning
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
           </TabsContent>
         </Tabs>
         
