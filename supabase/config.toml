@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.refine-wod]
 verify_jwt = true
+
+[functions.notify-app-update]
+verify_jwt = true
