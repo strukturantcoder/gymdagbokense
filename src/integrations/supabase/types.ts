@@ -1031,6 +1031,51 @@ export type Database = {
         }
         Relationships: []
       }
+      wod_logs: {
+        Row: {
+          completed_at: string
+          completion_time: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          reps_completed: number | null
+          rounds_completed: number | null
+          user_id: string
+          wod_duration: string
+          wod_exercises: Json
+          wod_format: string
+          wod_name: string
+        }
+        Insert: {
+          completed_at?: string
+          completion_time?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reps_completed?: number | null
+          rounds_completed?: number | null
+          user_id: string
+          wod_duration: string
+          wod_exercises: Json
+          wod_format: string
+          wod_name: string
+        }
+        Update: {
+          completed_at?: string
+          completion_time?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reps_completed?: number | null
+          rounds_completed?: number | null
+          user_id?: string
+          wod_duration?: string
+          wod_exercises?: Json
+          wod_format?: string
+          wod_name?: string
+        }
+        Relationships: []
+      }
       workout_logs: {
         Row: {
           completed_at: string
