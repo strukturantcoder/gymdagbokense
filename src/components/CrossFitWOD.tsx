@@ -5,13 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Zap, RefreshCw, Timer, Dumbbell, Heart, Trash2, ChevronDown, ChevronUp, CheckCircle, History, Trophy } from 'lucide-react';
+import { Loader2, Zap, RefreshCw, Timer, Dumbbell, Heart, Trash2, ChevronDown, ChevronUp, CheckCircle, History, Trophy, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-
+import confetti from 'canvas-confetti';
 interface WODExercise {
   name: string;
   reps: string;
@@ -263,7 +263,20 @@ export default function CrossFitWOD() {
           });
       }
 
-      toast.success(`WOD loggad! +${XP_PER_WOD} XP 💪`);
+      // Trigger confetti celebration
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FFD700', '#FFA500', '#FF6347', '#00FF00', '#1E90FF']
+      });
+
+      toast.success(
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-yellow-500" />
+          <span>WOD loggad! +{XP_PER_WOD} XP</span>
+        </div>
+      );
       setShowLogDialog(false);
       fetchWodLogs();
     } catch (error) {
