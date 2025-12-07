@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dumbbell, Footprints, ArrowLeft } from 'lucide-react';
+import { Dumbbell, Footprints, ArrowLeft, Zap } from 'lucide-react';
 import WorkoutLogContent from '@/components/training/WorkoutLogContent';
 import CardioLogContent from '@/components/training/CardioLogContent';
+import CrossFitWOD from '@/components/CrossFitWOD';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -44,10 +45,14 @@ export default function Training() {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="strength" className="flex items-center gap-2">
               <Dumbbell className="w-4 h-4" />
               Styrka
+            </TabsTrigger>
+            <TabsTrigger value="crossfit" className="flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              CrossFit
             </TabsTrigger>
             <TabsTrigger value="cardio" className="flex items-center gap-2">
               <Footprints className="w-4 h-4" />
@@ -57,6 +62,10 @@ export default function Training() {
           
           <TabsContent value="strength" className="mt-0">
             <WorkoutLogContent />
+          </TabsContent>
+
+          <TabsContent value="crossfit" className="mt-0">
+            <CrossFitWOD />
           </TabsContent>
           
           <TabsContent value="cardio" className="mt-0">
