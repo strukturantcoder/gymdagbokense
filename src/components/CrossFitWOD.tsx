@@ -217,6 +217,8 @@ export default function CrossFitWOD() {
     if (!wod || !user) return;
     
     setIsLogging(true);
+    const XP_PER_WOD = 50;
+    
     try {
       const exercisesJson = JSON.parse(JSON.stringify(wod.exercises));
       
@@ -236,7 +238,32 @@ export default function CrossFitWOD() {
 
       if (error) throw error;
 
-      toast.success('WOD loggad! 💪');
+      // Award XP for completing WOD
+      const { data: currentStats } = await supabase
+        .from('user_stats')
+        .select('total_xp, total_workouts')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (currentStats) {
+        await supabase
+          .from('user_stats')
+          .update({
+            total_xp: currentStats.total_xp + XP_PER_WOD,
+            total_workouts: currentStats.total_workouts + 1
+          })
+          .eq('user_id', user.id);
+      } else {
+        await supabase
+          .from('user_stats')
+          .insert({
+            user_id: user.id,
+            total_xp: XP_PER_WOD,
+            total_workouts: 1
+          });
+      }
+
+      toast.success(`WOD loggad! +${XP_PER_WOD} XP 💪`);
       setShowLogDialog(false);
       fetchWodLogs();
     } catch (error) {
