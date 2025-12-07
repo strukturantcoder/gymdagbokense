@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { PWAUpdateNotification } from "@/components/PWAUpdateNotification";
 
 // Lazy load all route components to reduce initial bundle size
 const Index = lazy(() => import("./pages/Index"));
@@ -41,6 +42,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <InstallPrompt />
+        <PWAUpdateNotification />
         <BrowserRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>

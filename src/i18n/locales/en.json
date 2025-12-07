@@ -369,5 +369,10 @@
     "soundOff": "Sound off",
     "timeUp": "Time's up!",
     "rest": "Rest"
+  },
+  "update": {
+    "available": "New version available!",
+    "clickToUpdate": "Click to update the app",
+    "update": "Update"
   }
 }

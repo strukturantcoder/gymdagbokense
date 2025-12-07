@@ -369,5 +369,10 @@
     "soundOff": "Ljud av",
     "timeUp": "Tiden är ute!",
     "rest": "Vila"
+  },
+  "update": {
+    "available": "Ny version tillgänglig!",
+    "clickToUpdate": "Klicka för att uppdatera appen",
+    "update": "Uppdatera"
   }
 }
