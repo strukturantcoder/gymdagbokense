@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dumbbell, Footprints, ArrowLeft, Zap } from 'lucide-react';
 import WorkoutLogContent from '@/components/training/WorkoutLogContent';
@@ -6,7 +6,7 @@ import CardioLogContent from '@/components/training/CardioLogContent';
 import CrossFitWOD from '@/components/CrossFitWOD';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
