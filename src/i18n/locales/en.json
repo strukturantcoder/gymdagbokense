@@ -373,6 +373,8 @@
   "update": {
     "available": "New version available!",
     "clickToUpdate": "Click to update the app",
-    "update": "Update"
+    "update": "Update",
+    "updating": "Updating app...",
+    "updated": "App updated!"
   }
 }

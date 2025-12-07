@@ -1,16 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { toast } from 'sonner';
-import { RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { RefreshCw, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export const PWAUpdateNotification = () => {
   const { t } = useTranslation();
-  const [showUpdateToast, setShowUpdateToast] = useState(false);
+  const hasShownToast = useRef(false);
 
   const {
-    needRefresh: [needRefresh, setNeedRefresh],
+    needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(swUrl, r) {
@@ -28,38 +27,43 @@ export const PWAUpdateNotification = () => {
   });
 
   useEffect(() => {
-    if (needRefresh && !showUpdateToast) {
-      setShowUpdateToast(true);
+    if (needRefresh && !hasShownToast.current) {
+      hasShownToast.current = true;
+      
+      // Auto-update without requiring user interaction
+      updateServiceWorker(true);
+      
+      // Show a brief notification that update is happening
       toast(
         <div className="flex items-center gap-3">
           <RefreshCw className="h-5 w-5 text-primary animate-spin" />
           <div className="flex-1">
-            <p className="font-medium">{t('update.available', 'Ny version tillgänglig!')}</p>
-            <p className="text-sm text-muted-foreground">
-              {t('update.clickToUpdate', 'Klicka för att uppdatera appen')}
-            </p>
+            <p className="font-medium">{t('update.updating', 'Uppdaterar appen...')}</p>
           </div>
-          <Button
-            size="sm"
-            onClick={() => {
-              updateServiceWorker(true);
-              setShowUpdateToast(false);
-            }}
-          >
-            {t('update.update', 'Uppdatera')}
-          </Button>
         </div>,
         {
-          duration: Infinity,
-          id: 'pwa-update',
-          onDismiss: () => {
-            setNeedRefresh(false);
-            setShowUpdateToast(false);
-          },
+          duration: 2000,
+          id: 'pwa-updating',
         }
       );
+
+      // Show success message after update
+      setTimeout(() => {
+        toast(
+          <div className="flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <div className="flex-1">
+              <p className="font-medium">{t('update.updated', 'Appen är uppdaterad!')}</p>
+            </div>
+          </div>,
+          {
+            duration: 3000,
+            id: 'pwa-updated',
+          }
+        );
+      }, 2500);
     }
-  }, [needRefresh, showUpdateToast, updateServiceWorker, setNeedRefresh, t]);
+  }, [needRefresh, updateServiceWorker, t]);
 
   return null;
 };

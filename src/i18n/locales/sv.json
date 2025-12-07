@@ -373,6 +373,8 @@
   "update": {
     "available": "Ny version tillgänglig!",
     "clickToUpdate": "Klicka för att uppdatera appen",
-    "update": "Uppdatera"
+    "update": "Uppdatera",
+    "updating": "Uppdaterar appen...",
+    "updated": "Appen är uppdaterad!"
   }
 }
