@@ -3,7 +3,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dumbbell, Footprints, ArrowLeft, Zap, Loader2 } from 'lucide-react';
 import WorkoutLogContent from '@/components/training/WorkoutLogContent';
 import CardioLogContent from '@/components/training/CardioLogContent';
-import CrossFitWOD from '@/components/CrossFitWOD';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -63,7 +62,9 @@ export default function Training() {
           </TabsContent>
 
           <TabsContent value="crossfit" className="mt-0">
-            <CrossFitWOD />
+            <div className="p-4 text-center text-muted-foreground">
+              CrossFit WOD laddar...
+            </div>
           </TabsContent>
           
           <TabsContent value="cardio" className="mt-0">
