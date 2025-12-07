@@ -37,4 +37,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.generate-wod]
-verify_jwt = false
+verify_jwt = true
+
+[functions.refine-wod]
+verify_jwt = true
