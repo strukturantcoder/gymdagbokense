@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import type { Json } from '@/integrations/supabase/types';
 
 interface WODExercise {
   name: string;
@@ -49,7 +50,10 @@ export default function CrossFitWOD() {
         name: w.name,
         format: w.format,
         duration: w.duration,
-        exercises: w.exercises as unknown as WODExercise[],
+        exercises: (w.exercises as Json[]).map((ex: Json) => {
+          const exercise = ex as { name: string; reps: string };
+          return { name: exercise.name, reps: exercise.reps };
+        }),
         description: w.description || '',
         scaling: w.scaling || ''
       })));
@@ -84,6 +88,8 @@ export default function CrossFitWOD() {
     
     setIsSaving(true);
     try {
+      const exercisesJson = wod.exercises.map(ex => ({ name: ex.name, reps: ex.reps }));
+      
       const { error } = await supabase
         .from('saved_wods')
         .insert([{
@@ -91,7 +97,7 @@ export default function CrossFitWOD() {
           name: wod.name,
           format: wod.format,
           duration: wod.duration,
-          exercises: JSON.parse(JSON.stringify(wod.exercises)),
+          exercises: exercisesJson,
           description: wod.description,
           scaling: wod.scaling
         }]);
@@ -129,56 +135,6 @@ export default function CrossFitWOD() {
     setWod(savedWod);
     setShowSaved(false);
   };
-
-  const WODDisplay = ({ wodData, showSaveButton = false }: { wodData: WOD; showSaveButton?: boolean }) => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="font-bold text-lg">{wodData.name}</h3>
-          <Badge variant="secondary">{wodData.format}</Badge>
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Timer className="w-3 h-3" />
-            {wodData.duration}
-          </Badge>
-        </div>
-        {showSaveButton && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={saveWod}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <Heart className="w-4 h-4 mr-1" />
-                Spara
-              </>
-            )}
-          </Button>
-        )}
-      </div>
-
-      <p className="text-sm text-muted-foreground">{wodData.description}</p>
-
-      <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-        {wodData.exercises.map((exercise, index) => (
-          <div key={index} className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Dumbbell className="w-4 h-4 text-primary" />
-              <span className="font-medium">{exercise.name}</span>
-            </div>
-            <Badge variant="outline">{exercise.reps}</Badge>
-          </div>
-        ))}
-      </div>
-
-      <div className="text-xs text-muted-foreground bg-primary/5 rounded p-2">
-        <strong>Skalning:</strong> {wodData.scaling}
-      </div>
-    </div>
-  );
 
   return (
     <div className="space-y-4">
@@ -226,7 +182,53 @@ export default function CrossFitWOD() {
           )}
 
           {wod && !isLoading && (
-            <WODDisplay wodData={wod} showSaveButton={!wod.id} />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-bold text-lg">{wod.name}</h3>
+                  <Badge variant="secondary">{wod.format}</Badge>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Timer className="w-3 h-3" />
+                    {wod.duration}
+                  </Badge>
+                </div>
+                {!wod.id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={saveWod}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Heart className="w-4 h-4 mr-1" />
+                        Spara
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+
+              <p className="text-sm text-muted-foreground">{wod.description}</p>
+
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                {wod.exercises.map((exercise, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Dumbbell className="w-4 h-4 text-primary" />
+                      <span className="font-medium">{exercise.name}</span>
+                    </div>
+                    <Badge variant="outline">{exercise.reps}</Badge>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-xs text-muted-foreground bg-primary/5 rounded p-2">
+                <strong>Skalning:</strong> {wod.scaling}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
