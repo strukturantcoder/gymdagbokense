@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { toast } from 'sonner';
 import { RefreshCw, CheckCircle } from 'lucide-react';
@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 export const PWAUpdateNotification = () => {
   const { t } = useTranslation();
   const hasShownToast = useRef(false);
+  const swRegistration = useRef<ServiceWorkerRegistration | null>(null);
 
   const {
     needRefresh: [needRefresh],
@@ -14,17 +15,52 @@ export const PWAUpdateNotification = () => {
   } = useRegisterSW({
     onRegisteredSW(swUrl, r) {
       console.log('SW registered:', swUrl);
-      // Check for updates every 60 seconds
+      swRegistration.current = r || null;
+      
       if (r) {
+        // Check for updates immediately on registration
+        r.update();
+        
+        // Check for updates every 30 seconds when app is active
         setInterval(() => {
           r.update();
-        }, 60 * 1000);
+        }, 30 * 1000);
       }
     },
     onRegisterError(error) {
       console.error('SW registration error:', error);
     },
   });
+
+  // Check for updates when app becomes visible (user returns to app)
+  const handleVisibilityChange = useCallback(() => {
+    if (document.visibilityState === 'visible' && swRegistration.current) {
+      console.log('App became visible, checking for updates...');
+      swRegistration.current.update();
+    }
+  }, []);
+
+  // Check for updates when coming back online
+  const handleOnline = useCallback(() => {
+    if (swRegistration.current) {
+      console.log('Back online, checking for updates...');
+      swRegistration.current.update();
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+    
+    // Also check on focus (covers more cases)
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [handleVisibilityChange, handleOnline]);
 
   useEffect(() => {
     if (needRefresh && !hasShownToast.current) {
