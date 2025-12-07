@@ -223,11 +223,28 @@ export function usePoolChallenges() {
       throw error;
     }
 
-    toast.success('Utmaningsförfrågan skapad! Du matchas automatiskt när någon passar.');
+    toast.success('Söker efter motståndare...');
     await fetchMyEntries();
 
-    // Note: Matching is handled by scheduled cron job for security
-    // No direct client invocation of match-pool-challenges
+    // Trigger matching immediately after creating entry
+    try {
+      const { data: matchResult, error: matchError } = await supabase.functions.invoke('match-pool-challenges', {
+        body: { entryId: data.id }
+      });
+
+      if (matchError) {
+        console.error('Match error:', matchError);
+      } else if (matchResult?.matched > 0) {
+        toast.success('Matchad! Din utmaning har startat! 🎯');
+        await fetchMyChallenges();
+        await fetchMyEntries();
+      } else {
+        toast.info('Väntar på matchning - du meddelas när någon passar.');
+      }
+    } catch (matchErr) {
+      console.error('Error triggering match:', matchErr);
+      // Don't show error to user - entry is still created
+    }
 
     return data;
   };
