@@ -25,13 +25,11 @@ export default function InviteFriends({ userId, compact = false }: InviteFriends
   }, [userId]);
 
   const generateCode = () => {
-    // Generate a short, readable invite code
+    // Generate a cryptographically secure invite code
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let code = '';
-    for (let i = 0; i < 8; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
+    const array = new Uint8Array(8);
+    crypto.getRandomValues(array);
+    return Array.from(array, byte => chars[byte % chars.length]).join('');
   };
 
   const fetchOrCreateInviteCode = async () => {
