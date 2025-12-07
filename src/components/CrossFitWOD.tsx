@@ -7,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import type { Json } from '@/integrations/supabase/types';
 
 interface WODExercise {
   name: string;
@@ -39,24 +38,35 @@ export default function CrossFitWOD() {
   }, [user]);
 
   const fetchSavedWods = async () => {
-    const { data, error } = await supabase
-      .from('saved_wods')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('saved_wods')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setSavedWods(data.map(w => ({
-        id: w.id,
-        name: w.name,
-        format: w.format,
-        duration: w.duration,
-        exercises: (w.exercises as Json[]).map((ex: Json) => {
-          const exercise = ex as { name: string; reps: string };
-          return { name: exercise.name, reps: exercise.reps };
-        }),
-        description: w.description || '',
-        scaling: w.scaling || ''
-      })));
+      if (!error && data) {
+        const mapped = data.map(w => {
+          const exercisesArray = Array.isArray(w.exercises) ? w.exercises : [];
+          return {
+            id: w.id,
+            name: w.name,
+            format: w.format,
+            duration: w.duration,
+            exercises: exercisesArray.map((ex: unknown) => {
+              const exercise = ex as { name?: string; reps?: string };
+              return { 
+                name: exercise.name || '', 
+                reps: exercise.reps || '' 
+              };
+            }),
+            description: w.description || '',
+            scaling: w.scaling || ''
+          };
+        });
+        setSavedWods(mapped);
+      }
+    } catch (err) {
+      console.error('Error fetching saved WODs:', err);
     }
   };
 
@@ -65,13 +75,8 @@ export default function CrossFitWOD() {
     try {
       const { data, error } = await supabase.functions.invoke('generate-wod');
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
 
       setWod(data);
       toast.success('WOD genererad!');
@@ -88,7 +93,7 @@ export default function CrossFitWOD() {
     
     setIsSaving(true);
     try {
-      const exercisesJson = wod.exercises.map(ex => ({ name: ex.name, reps: ex.reps }));
+      const exercisesJson = JSON.parse(JSON.stringify(wod.exercises));
       
       const { error } = await supabase
         .from('saved_wods')
