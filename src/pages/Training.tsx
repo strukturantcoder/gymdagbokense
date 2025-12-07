@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dumbbell, Footprints, ArrowLeft, Zap, Loader2 } from 'lucide-react';
 import WorkoutLogContent from '@/components/training/WorkoutLogContent';
@@ -6,6 +6,8 @@ import CardioLogContent from '@/components/training/CardioLogContent';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+
+const CrossFitWOD = lazy(() => import('@/components/CrossFitWOD'));
 
 export default function Training() {
   const { user, loading } = useAuth();
@@ -62,9 +64,13 @@ export default function Training() {
           </TabsContent>
 
           <TabsContent value="crossfit" className="mt-0">
-            <div className="p-4 text-center text-muted-foreground">
-              CrossFit WOD laddar...
-            </div>
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            }>
+              <CrossFitWOD />
+            </Suspense>
           </TabsContent>
           
           <TabsContent value="cardio" className="mt-0">
