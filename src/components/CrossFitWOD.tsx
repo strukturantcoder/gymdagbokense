@@ -5,13 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Zap, RefreshCw, Timer, Dumbbell, Heart, Trash2, ChevronDown, ChevronUp, CheckCircle, History, Trophy, Sparkles } from 'lucide-react';
+import { Loader2, Zap, RefreshCw, Timer, Dumbbell, Heart, Trash2, ChevronDown, ChevronUp, CheckCircle, History, Trophy, Sparkles, Pencil } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import confetti from 'canvas-confetti';
+import WODRefineDialog from './WODRefineDialog';
 interface WODExercise {
   name: string;
   reps: string;
@@ -59,6 +60,9 @@ export default function CrossFitWOD() {
     repsCompleted: '',
     notes: ''
   });
+  
+  // Refine dialog state
+  const [showRefineDialog, setShowRefineDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -388,6 +392,14 @@ export default function CrossFitWOD() {
                     </Button>
                   )}
                   <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowRefineDialog(true)}
+                  >
+                    <Pencil className="w-4 h-4 mr-1" />
+                    Finjustera
+                  </Button>
+                  <Button
                     variant="default"
                     size="sm"
                     onClick={openLogDialog}
@@ -628,6 +640,17 @@ export default function CrossFitWOD() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* WOD Refine Dialog */}
+      {wod && (
+        <WODRefineDialog
+          open={showRefineDialog}
+          onOpenChange={setShowRefineDialog}
+          wod={wod}
+          onWodUpdate={(updatedWod) => setWod(updatedWod)}
+          onComplete={() => setShowRefineDialog(false)}
+        />
+      )}
     </div>
   );
 }
