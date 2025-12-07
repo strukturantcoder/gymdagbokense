@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell } from "lucide-react";
 import { AdminStats } from "@/components/AdminStats";
+import { AdminPushNotification } from "@/components/AdminPushNotification";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -308,7 +309,7 @@ export default function AdminChallenges() {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <Tabs defaultValue="stats" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg">
             <TabsTrigger value="stats" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               Statistik
@@ -317,10 +318,18 @@ export default function AdminChallenges() {
               <Trophy className="h-4 w-4" />
               Tävlingar
             </TabsTrigger>
+            <TabsTrigger value="notifications" className="gap-2">
+              <Bell className="h-4 w-4" />
+              Notiser
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats" className="mt-6">
             <AdminStats />
+          </TabsContent>
+
+          <TabsContent value="notifications" className="mt-6">
+            <AdminPushNotification />
           </TabsContent>
 
           <TabsContent value="challenges" className="mt-6 space-y-6">
