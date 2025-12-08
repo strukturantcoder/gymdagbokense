@@ -11,6 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, WifiOff, Trash2 } from 'lucide-react';
@@ -111,6 +121,7 @@ export default function WorkoutLogContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [showDeleteDraftDialog, setShowDeleteDraftDialog] = useState(false);
   
   // New workout form
   const [selectedProgram, setSelectedProgram] = useState<string>('');
@@ -749,10 +760,7 @@ export default function WorkoutLogContent() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => {
-                  discardDraft();
-                  toast.success('Sparat utkast borttaget');
-                }}
+                onClick={() => setShowDeleteDraftDialog(true)}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="w-4 h-4" />
@@ -1124,6 +1132,30 @@ export default function WorkoutLogContent() {
           </div>
         )}
       </div>
+
+      {/* Delete draft confirmation dialog */}
+      <AlertDialog open={showDeleteDraftDialog} onOpenChange={setShowDeleteDraftDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ta bort utkast?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill ta bort det sparade passet? Detta kan inte ångras.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                discardDraft();
+                toast.success('Sparat utkast borttaget');
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Ta bort
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
