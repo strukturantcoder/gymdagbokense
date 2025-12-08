@@ -32,6 +32,7 @@ import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import confetti from 'canvas-confetti';
+import ExerciseListSkeleton from './ExerciseListSkeleton';
 
 interface Exercise {
   name: string;
@@ -973,10 +974,7 @@ export default function WorkoutLogContent() {
               </div>
 
               {autoSuggestLoading && exerciseLogs.length === 0 && (
-                <div className="flex items-center justify-center py-8 text-muted-foreground">
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  <span>Laddar övningar...</span>
-                </div>
+                <ExerciseListSkeleton />
               )}
 
               {exerciseLogs.length > 0 && (
