@@ -579,7 +579,7 @@ export default function CardioLogContent() {
             <GenerateCardioPlanDialog />
             <Button variant="hero" size="sm" onClick={() => setShowForm(true)} className="shrink-0">
               <Plus className="w-4 h-4 mr-2" />
-              Logga
+              Starta pass
             </Button>
           </div>
           <div className="absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />

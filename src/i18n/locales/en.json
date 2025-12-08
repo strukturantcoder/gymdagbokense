@@ -260,7 +260,7 @@
     "cardio": "Cardio",
     "startWorkout": "Start workout",
     "endWorkout": "End workout",
-    "logWorkout": "Log workout",
+    "logWorkout": "Start workout",
     "workoutHistory": "Workout history",
     "noWorkouts": "No logged workouts",
     "exercise": "Exercise",
