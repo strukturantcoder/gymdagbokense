@@ -26,7 +26,8 @@ import {
   Weight,
   Repeat,
   Sparkles,
-  ChevronsUpDown
+  ChevronsUpDown,
+  Instagram
 } from 'lucide-react';
 import {
   Select,
@@ -46,6 +47,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
 
 interface SetDetail {
   reps: number;
@@ -101,6 +103,8 @@ export default function WorkoutSession() {
   const [personalBests, setPersonalBests] = useState<Map<string, PersonalBest>>(new Map());
   const [exerciseGoals, setExerciseGoals] = useState<Map<string, ExerciseGoal>>(new Map());
   const [showSummary, setShowSummary] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [savedSessionName, setSavedSessionName] = useState('');
   const [summaryData, setSummaryData] = useState<{
     totalSets: number;
     totalReps: number;
@@ -359,7 +363,8 @@ export default function WorkoutSession() {
         });
       }
 
-      // Clear session and show summary
+      // Save session name for sharing and clear session
+      setSavedSessionName(sessionData.dayName);
       localStorage.removeItem(SESSION_STORAGE_KEY);
       setShowSummary(true);
       
@@ -489,12 +494,22 @@ export default function WorkoutSession() {
               </Card>
             </motion.div>
 
-            {/* Action Button */}
+            {/* Action Buttons */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.6 }}
+              className="space-y-3"
             >
+              <Button 
+                variant="outline"
+                className="w-full" 
+                size="lg"
+                onClick={() => setShowShareDialog(true)}
+              >
+                <Instagram className="w-4 h-4 mr-2" />
+                Dela på Instagram
+              </Button>
               <Button 
                 className="w-full" 
                 size="lg"
@@ -505,6 +520,18 @@ export default function WorkoutSession() {
             </motion.div>
           </motion.div>
         </main>
+
+        <ShareToInstagramDialog
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          workoutData={{
+            dayName: savedSessionName || 'Träningspass',
+            duration: summaryData.durationMinutes,
+            exerciseCount: summaryData.exerciseCount,
+            totalSets: summaryData.totalSets,
+            newPBs: summaryData.newPBs
+          }}
+        />
       </div>
     );
   }
