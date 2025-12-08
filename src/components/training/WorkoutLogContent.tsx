@@ -136,6 +136,7 @@ export default function WorkoutLogContent() {
     const { data, error } = await supabase
       .from('workout_programs')
       .select('id, name, program_data')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
     
     if (!error && data) {
@@ -419,17 +420,53 @@ export default function WorkoutLogContent() {
         );
       }
 
+      // Update user stats
+      const totalSets = exerciseLogs.reduce((sum, log) => sum + log.sets_completed, 0);
+      const durationMins = duration ? parseInt(duration) : 0;
+      const xpEarned = 50 + totalSets * 2 + Math.floor(durationMins / 5);
+      
+      const { data: currentStats } = await supabase
+        .from('user_stats')
+        .select('*')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      if (currentStats) {
+        await supabase
+          .from('user_stats')
+          .update({
+            total_workouts: currentStats.total_workouts + 1,
+            total_sets: currentStats.total_sets + totalSets,
+            total_minutes: currentStats.total_minutes + durationMins,
+            total_xp: currentStats.total_xp + xpEarned,
+            level: Math.floor((currentStats.total_xp + xpEarned) / 1000) + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user!.id);
+      } else {
+        await supabase
+          .from('user_stats')
+          .insert({
+            user_id: user!.id,
+            total_workouts: 1,
+            total_sets: totalSets,
+            total_minutes: durationMins,
+            total_xp: xpEarned,
+            level: 1
+          });
+      }
+
       const shareProgram = programs.find(p => p.id === selectedProgram);
       setShareData({
         dayName,
         duration: duration ? parseInt(duration) : undefined,
         exerciseCount: exerciseLogs.length,
-        totalSets: exerciseLogs.reduce((sum, log) => sum + log.sets_completed, 0),
+        totalSets,
         newPBs: newPBsList.length > 0 ? newPBsList : undefined,
         programName: shareProgram?.name
       });
 
-      toast.success('Träningspass sparat!');
+      toast.success(`Träningspass sparat! +${xpEarned} XP`);
       setIsLogging(false);
       
       setTimeout(() => {
