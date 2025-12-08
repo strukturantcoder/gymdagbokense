@@ -3,10 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PWAUpdateNotification } from "@/components/PWAUpdateNotification";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 // Lazy load all route components to reduce initial bundle size
 const Index = lazy(() => import("./pages/Index"));
@@ -35,6 +36,44 @@ const PageLoader = () => (
   </div>
 );
 
+// Pages that should show bottom nav
+const pagesWithBottomNav = ["/dashboard", "/training", "/stats", "/social", "/account"];
+
+const AppContent = () => {
+  const location = useLocation();
+  const showBottomNav = pagesWithBottomNav.includes(location.pathname);
+
+  return (
+    <>
+      <Suspense fallback={<PageLoader />}>
+        <div className={showBottomNav ? "pb-16 md:pb-0" : ""}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/training" element={<Training />} />
+            <Route path="/log" element={<Training />} />
+            <Route path="/cardio" element={<Training />} />
+            <Route path="/stats" element={<Statistics />} />
+            <Route path="/social" element={<Social />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/cookies" element={<Cookies />} />
+            <Route path="/admin/challenges" element={<AdminChallenges />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-canceled" element={<PaymentCanceled />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </Suspense>
+      {showBottomNav && <MobileBottomNav />}
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -44,28 +83,7 @@ const App = () => (
         <InstallPrompt />
         <PWAUpdateNotification />
         <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/training" element={<Training />} />
-              <Route path="/log" element={<Training />} />
-              <Route path="/cardio" element={<Training />} />
-              <Route path="/stats" element={<Statistics />} />
-              <Route path="/social" element={<Social />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/cookies" element={<Cookies />} />
-              <Route path="/admin/challenges" element={<AdminChallenges />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/payment-success" element={<PaymentSuccess />} />
-              <Route path="/payment-canceled" element={<PaymentCanceled />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <AppContent />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
