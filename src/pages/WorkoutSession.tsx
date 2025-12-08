@@ -100,6 +100,16 @@ export default function WorkoutSession() {
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [personalBests, setPersonalBests] = useState<Map<string, PersonalBest>>(new Map());
   const [exerciseGoals, setExerciseGoals] = useState<Map<string, ExerciseGoal>>(new Map());
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryData, setSummaryData] = useState<{
+    totalSets: number;
+    totalReps: number;
+    durationMinutes: number;
+    xpEarned: number;
+    newPBs: string[];
+    totalWeight: number;
+    exerciseCount: number;
+  } | null>(null);
 
   // Load session from storage
   useEffect(() => {
@@ -323,20 +333,35 @@ export default function WorkoutSession() {
           .eq('user_id', user.id);
       }
 
+      // Calculate summary stats
+      const totalReps = sessionData.exercises.reduce((sum, ex) => {
+        return sum + ex.set_details.reduce((setSum, set) => setSum + (set.reps || 0), 0);
+      }, 0);
+      const totalWeight = sessionData.exercises.reduce((sum, ex) => {
+        return sum + ex.set_details.reduce((setSum, set) => setSum + ((set.weight || 0) * (set.reps || 0)), 0);
+      }, 0);
+
+      setSummaryData({
+        totalSets,
+        totalReps,
+        durationMinutes,
+        xpEarned,
+        newPBs: newPBsList,
+        totalWeight,
+        exerciseCount: sessionData.exercises.length
+      });
+
       if (newPBsList.length > 0) {
         confetti({
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 }
         });
-        toast.success(`🎉 NYTT PERSONBÄSTA! ${newPBsList.join(', ')}`, { duration: 5000 });
-      } else {
-        toast.success('Träningspass sparat!');
       }
 
-      // Clear session
+      // Clear session and show summary
       localStorage.removeItem(SESSION_STORAGE_KEY);
-      navigate('/training');
+      setShowSummary(true);
       
     } catch (error) {
       console.error('Error saving workout:', error);
@@ -350,6 +375,139 @@ export default function WorkoutSession() {
     localStorage.removeItem(SESSION_STORAGE_KEY);
     navigate('/training');
   };
+
+  if (!sessionData && !showSummary) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Laddar...</div>
+      </div>
+    );
+  }
+
+  // Summary Screen
+  if (showSummary && summaryData) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+          <div className="flex items-center justify-center p-4">
+            <h1 className="font-display font-bold text-lg">Träningspass avslutat!</h1>
+          </div>
+        </header>
+
+        <main className="flex-1 p-4 flex flex-col items-center justify-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-md space-y-6"
+          >
+            {/* Success icon */}
+            <div className="flex justify-center">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center"
+              >
+                <Check className="w-10 h-10 text-green-500" />
+              </motion.div>
+            </div>
+
+            {/* XP Earned */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-center"
+            >
+              <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span className="text-2xl font-bold text-primary">+{summaryData.xpEarned} XP</span>
+              </div>
+            </motion.div>
+
+            {/* New PBs */}
+            {summaryData.newPBs.length > 0 && (
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="border-gym-orange bg-gym-orange/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Trophy className="w-5 h-5 text-gym-orange" />
+                      <h3 className="font-bold text-gym-orange">Nya personbästa!</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {summaryData.newPBs.map((pb, idx) => (
+                        <Badge key={idx} variant="secondary" className="bg-gym-orange/20 text-gym-orange border-0">
+                          {pb}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Stats Grid */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Card>
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-secondary/50 rounded-lg">
+                      <Clock className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+                      <p className="text-2xl font-bold">{summaryData.durationMinutes}</p>
+                      <p className="text-xs text-muted-foreground">minuter</p>
+                    </div>
+                    <div className="text-center p-3 bg-secondary/50 rounded-lg">
+                      <Dumbbell className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+                      <p className="text-2xl font-bold">{summaryData.exerciseCount}</p>
+                      <p className="text-xs text-muted-foreground">övningar</p>
+                    </div>
+                    <div className="text-center p-3 bg-secondary/50 rounded-lg">
+                      <Repeat className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+                      <p className="text-2xl font-bold">{summaryData.totalSets}</p>
+                      <p className="text-xs text-muted-foreground">set</p>
+                    </div>
+                    <div className="text-center p-3 bg-secondary/50 rounded-lg">
+                      <Weight className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+                      <p className="text-2xl font-bold">{Math.round(summaryData.totalWeight)}</p>
+                      <p className="text-xs text-muted-foreground">kg totalt</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-center p-3 bg-primary/5 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Totalt antal reps</p>
+                    <p className="text-3xl font-bold text-primary">{summaryData.totalReps}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Action Button */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Button 
+                className="w-full" 
+                size="lg"
+                onClick={() => navigate('/training')}
+              >
+                Tillbaka till träning
+              </Button>
+            </motion.div>
+          </motion.div>
+        </main>
+      </div>
+    );
+  }
 
   if (!sessionData) {
     return (
