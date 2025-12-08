@@ -715,20 +715,15 @@ export default function WorkoutLogContent() {
 
   const currentProgram = programs.find(p => p.id === selectedProgram);
 
-  const startNewWorkout = () => {
+  const startNewWorkout = async () => {
     // Immediately show the workout form
     setIsLogging(true);
     setWorkoutStartTime(Date.now());
     setElapsedTime(0);
-    
-    // Auto-suggest program/day in background (don't block UI)
-    autoSuggestWorkout();
-  };
-
-  const autoSuggestWorkout = async () => {
     setAutoSuggestLoading(true);
     
     try {
+      // If only one program, auto-select it and first/next day immediately
       if (programs.length === 1) {
         const program = programs[0];
         setSelectedProgram(program.id);
@@ -752,6 +747,8 @@ export default function WorkoutLogContent() {
             toast.info(`Föreslår: ${program.program_data.days[nextDayIndex].day}`, {
               description: 'Baserat på ditt senaste pass'
             });
+          } else {
+            await handleDayChange('0');
           }
         } else if (program.program_data.days?.length > 0) {
           await handleDayChange('0');
@@ -782,6 +779,8 @@ export default function WorkoutLogContent() {
               toast.info(`Föreslår: ${program.program_data.days[nextDayIndex].day}`, {
                 description: `Program: ${program.name}`
               });
+            } else if (program.program_data.days?.length > 0) {
+              await handleDayChange('0');
             }
           }
         }
@@ -953,6 +952,13 @@ export default function WorkoutLogContent() {
                   />
                 </div>
               </div>
+
+              {autoSuggestLoading && exerciseLogs.length === 0 && (
+                <div className="flex items-center justify-center py-8 text-muted-foreground">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  <span>Laddar övningar...</span>
+                </div>
+              )}
 
               {exerciseLogs.length > 0 && (
                 <div className="space-y-2">
