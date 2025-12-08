@@ -341,9 +341,10 @@ export default function WorkoutLogContent() {
     setExerciseLogs([]);
   };
 
-  const handleDayChange = async (dayIndex: string) => {
+  const handleDayChange = async (dayIndex: string, programIdOverride?: string) => {
     setSelectedDay(dayIndex);
-    const program = programs.find(p => p.id === selectedProgram);
+    const programId = programIdOverride || selectedProgram;
+    const program = programs.find(p => p.id === programId);
     if (program) {
       const day = program.program_data.days[parseInt(dayIndex)];
       if (day) {
@@ -744,15 +745,15 @@ export default function WorkoutLogContent() {
           
           if (lastDayIndex !== -1) {
             const nextDayIndex = (lastDayIndex + 1) % program.program_data.days.length;
-            await handleDayChange(nextDayIndex.toString());
+            await handleDayChange(nextDayIndex.toString(), program.id);
             toast.info(`Föreslår: ${program.program_data.days[nextDayIndex].day}`, {
               description: 'Baserat på ditt senaste pass'
             });
           } else {
-            await handleDayChange('0');
+            await handleDayChange('0', program.id);
           }
         } else if (program.program_data.days?.length > 0) {
-          await handleDayChange('0');
+          await handleDayChange('0', program.id);
           toast.info(`Föreslår: ${program.program_data.days[0].day}`, {
             description: 'Starta från början!'
           });
@@ -776,12 +777,12 @@ export default function WorkoutLogContent() {
             
             if (lastDayIndex !== -1 && program.program_data.days) {
               const nextDayIndex = (lastDayIndex + 1) % program.program_data.days.length;
-              await handleDayChange(nextDayIndex.toString());
+              await handleDayChange(nextDayIndex.toString(), program.id);
               toast.info(`Föreslår: ${program.program_data.days[nextDayIndex].day}`, {
                 description: `Program: ${program.name}`
               });
             } else if (program.program_data.days?.length > 0) {
-              await handleDayChange('0');
+              await handleDayChange('0', program.id);
             }
           }
         }
