@@ -25,12 +25,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [checkingSubscription, setCheckingSubscription] = useState(false);
 
-  const checkSubscription = useCallback(async (accessToken?: string) => {
+  const checkSubscription = useCallback(async (accessToken?: string, forceRefresh = false) => {
     const token = accessToken || session?.access_token;
     if (!token) {
       setIsPremium(false);
       setSubscriptionEnd(null);
+      localStorage.removeItem('premium_cache');
       return;
+    }
+
+    // Check cache first (valid for 5 minutes)
+    if (!forceRefresh) {
+      const cachedData = localStorage.getItem('premium_cache');
+      if (cachedData) {
+        try {
+          const { subscribed, subscription_end, timestamp } = JSON.parse(cachedData);
+          const cacheAge = Date.now() - timestamp;
+          // Cache is valid for 5 minutes (300000ms)
+          if (cacheAge < 300000) {
+            setIsPremium(subscribed);
+            setSubscriptionEnd(subscription_end);
+            setCheckingSubscription(false);
+            return;
+          }
+        } catch {
+          localStorage.removeItem('premium_cache');
+        }
+      }
     }
 
     setCheckingSubscription(true);
@@ -48,14 +69,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setIsPremium(false);
         setSubscriptionEnd(null);
+        localStorage.removeItem('premium_cache');
       } else {
-        setIsPremium(data?.subscribed || false);
-        setSubscriptionEnd(data?.subscription_end || null);
+        const subscribed = data?.subscribed || false;
+        const subscription_end = data?.subscription_end || null;
+        
+        setIsPremium(subscribed);
+        setSubscriptionEnd(subscription_end);
+        
+        // Cache the result
+        localStorage.setItem('premium_cache', JSON.stringify({
+          subscribed,
+          subscription_end,
+          timestamp: Date.now(),
+        }));
       }
     } catch (error) {
       // Silent fail for auth issues - user just isn't subscribed
       setIsPremium(false);
       setSubscriptionEnd(null);
+      localStorage.removeItem('premium_cache');
     } finally {
       setCheckingSubscription(false);
     }
@@ -131,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setIsPremium(false);
     setSubscriptionEnd(null);
+    localStorage.removeItem('premium_cache');
   };
 
   return (

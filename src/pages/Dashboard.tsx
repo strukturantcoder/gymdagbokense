@@ -23,6 +23,7 @@ import WelcomeGuide from '@/components/WelcomeGuide';
 import ProgramRefineDialog from '@/components/ProgramRefineDialog';
 import SortableExercise from '@/components/SortableExercise';
 import { NotificationBell } from '@/components/NotificationBell';
+import QuickActions from '@/components/QuickActions';
 import {
   DndContext,
   closestCenter,
@@ -486,6 +487,9 @@ export default function Dashboard() {
       <main className="container px-4 py-8">
         {/* Ad Banner */}
         <AdBanner className="mb-6" />
+
+        {/* Quick Actions with Streak and Weekly Stats */}
+        <QuickActions />
         
         {/* Quick link to challenges */}
         <Card 
