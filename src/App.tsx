@@ -8,7 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PWAUpdateNotification } from "@/components/PWAUpdateNotification";
 import MobileBottomNav from "@/components/MobileBottomNav";
-
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 // Lazy load all route components to reduce initial bundle size
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -45,6 +45,7 @@ const AppContent = () => {
 
   return (
     <>
+      <OfflineIndicator />
       <Suspense fallback={<PageLoader />}>
         <div className={showBottomNav ? "pb-16 md:pb-0" : ""}>
           <Routes>
