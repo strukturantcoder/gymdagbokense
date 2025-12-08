@@ -716,9 +716,10 @@ export default function WorkoutLogContent() {
   const currentProgram = programs.find(p => p.id === selectedProgram);
 
   const startNewWorkout = async () => {
-    // Immediately show the workout form
+    // Immediately show the workout form but DON'T start timer yet
     setIsLogging(true);
-    setWorkoutStartTime(Date.now());
+    // Don't set workoutStartTime here - timer starts when user manually starts it
+    setWorkoutStartTime(null);
     setElapsedTime(0);
     setAutoSuggestLoading(true);
     
@@ -790,6 +791,11 @@ export default function WorkoutLogContent() {
     } finally {
       setAutoSuggestLoading(false);
     }
+  };
+
+  const startWorkoutTimer = () => {
+    setWorkoutStartTime(Date.now());
+    toast.success('Timer startad!');
   };
 
   return (
@@ -896,14 +902,26 @@ export default function WorkoutLogContent() {
                   <CardTitle>Logga träningspass</CardTitle>
                   <CardDescription>Välj program och fyll i dina vikter</CardDescription>
                 </div>
-                {workoutStartTime && (
-                  <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg">
-                    <Timer className="w-4 h-4 text-primary animate-pulse" />
-                    <span className="font-mono font-bold text-lg text-primary">
-                      {formatElapsedTime(elapsedTime)}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {!workoutStartTime ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={startWorkoutTimer}
+                      className="gap-2"
+                    >
+                      <Timer className="w-4 h-4" />
+                      Starta timer
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg">
+                      <Timer className="w-4 h-4 text-primary animate-pulse" />
+                      <span className="font-mono font-bold text-lg text-primary">
+                        {formatElapsedTime(elapsedTime)}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
