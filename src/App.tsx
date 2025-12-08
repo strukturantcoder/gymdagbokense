@@ -17,6 +17,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Training = lazy(() => import("./pages/Training"));
+const WorkoutSession = lazy(() => import("./pages/WorkoutSession"));
 const Statistics = lazy(() => import("./pages/Statistics"));
 const Social = lazy(() => import("./pages/Social"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -53,6 +54,7 @@ const AppContent = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/training" element={<Training />} />
+            <Route path="/training/session" element={<WorkoutSession />} />
             <Route path="/log" element={<Training />} />
             <Route path="/cardio" element={<Training />} />
             <Route path="/stats" element={<Statistics />} />
