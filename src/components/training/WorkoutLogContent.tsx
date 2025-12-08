@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, WifiOff, Trash2 } from 'lucide-react';
+import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, WifiOff, Trash2, Copy } from 'lucide-react';
 import RestTimer from '@/components/RestTimer';
 import ExerciseInfo from '@/components/ExerciseInfo';
 import AdBanner from '@/components/AdBanner';
@@ -1020,44 +1020,78 @@ export default function WorkoutLogContent() {
 
                                 {/* Per-set input */}
                                 <div className="space-y-1.5">
-                                  {log.set_details.map((setDetail, setIndex) => (
-                                    <div key={setIndex} className="flex items-center gap-2 bg-background/50 rounded-md p-2">
-                                      <span className="text-xs font-medium w-10 text-muted-foreground shrink-0">
-                                        Set {setIndex + 1}
-                                      </span>
-                                      <div className="flex-1 flex items-center gap-2">
-                                        <div className="flex items-center gap-1 flex-1">
-                                          <Input
-                                            type="number"
-                                            value={setDetail.reps === 0 ? '' : setDetail.reps}
-                                            onChange={(e) => {
-                                              e.stopPropagation();
-                                              updateSetDetail(index, setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value));
-                                            }}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="h-8 text-center"
-                                            placeholder="0"
-                                          />
-                                          <span className="text-xs text-muted-foreground shrink-0">reps</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 flex-1">
-                                          <Input
-                                            type="number"
-                                            step="0.5"
-                                            value={setDetail.weight === 0 ? '' : setDetail.weight}
-                                            onChange={(e) => {
-                                              e.stopPropagation();
-                                              updateSetDetail(index, setIndex, 'weight', e.target.value === '' ? 0 : parseFloat(e.target.value));
-                                            }}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="h-8 text-center"
-                                            placeholder="0"
-                                          />
-                                          <span className="text-xs text-muted-foreground shrink-0">kg</span>
+                                  {log.set_details.map((setDetail, setIndex) => {
+                                    const prevSet = setIndex > 0 ? log.set_details[setIndex - 1] : null;
+                                    const canCopyWeight = prevSet && prevSet.weight > 0 && setDetail.weight !== prevSet.weight;
+                                    const canCopyReps = prevSet && prevSet.reps > 0 && setDetail.reps !== prevSet.reps;
+                                    
+                                    return (
+                                      <div key={setIndex} className="flex items-center gap-2 bg-background/50 rounded-md p-2">
+                                        <span className="text-xs font-medium w-10 text-muted-foreground shrink-0">
+                                          Set {setIndex + 1}
+                                        </span>
+                                        <div className="flex-1 flex items-center gap-2">
+                                          <div className="flex items-center gap-1 flex-1">
+                                            <Input
+                                              type="number"
+                                              value={setDetail.reps === 0 ? '' : setDetail.reps}
+                                              onChange={(e) => {
+                                                e.stopPropagation();
+                                                updateSetDetail(index, setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value));
+                                              }}
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="h-8 text-center"
+                                              placeholder="0"
+                                            />
+                                            <span className="text-xs text-muted-foreground shrink-0">reps</span>
+                                            {canCopyReps && (
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  updateSetDetail(index, setIndex, 'reps', prevSet.reps);
+                                                }}
+                                                title={`Kopiera ${prevSet.reps} reps`}
+                                              >
+                                                <Copy className="w-3 h-3" />
+                                              </Button>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-1 flex-1">
+                                            <Input
+                                              type="number"
+                                              step="0.5"
+                                              value={setDetail.weight === 0 ? '' : setDetail.weight}
+                                              onChange={(e) => {
+                                                e.stopPropagation();
+                                                updateSetDetail(index, setIndex, 'weight', e.target.value === '' ? 0 : parseFloat(e.target.value));
+                                              }}
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="h-8 text-center"
+                                              placeholder="0"
+                                            />
+                                            <span className="text-xs text-muted-foreground shrink-0">kg</span>
+                                            {canCopyWeight && (
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  updateSetDetail(index, setIndex, 'weight', prevSet.weight);
+                                                }}
+                                                title={`Kopiera ${prevSet.weight} kg`}
+                                              >
+                                                <Copy className="w-3 h-3" />
+                                              </Button>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </div>
                             </motion.div>
