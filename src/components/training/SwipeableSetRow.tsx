@@ -7,6 +7,7 @@ import { Check, Copy, RotateCcw } from 'lucide-react';
 interface SetDetail {
   reps: number;
   weight: number;
+  completed?: boolean;
 }
 
 interface SwipeableSetRowProps {
