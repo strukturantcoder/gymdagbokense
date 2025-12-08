@@ -715,10 +715,17 @@ export default function WorkoutLogContent() {
 
   const currentProgram = programs.find(p => p.id === selectedProgram);
 
-  const startNewWorkout = async () => {
+  const startNewWorkout = () => {
+    // Immediately show the workout form
     setIsLogging(true);
     setWorkoutStartTime(Date.now());
     setElapsedTime(0);
+    
+    // Auto-suggest program/day in background (don't block UI)
+    autoSuggestWorkout();
+  };
+
+  const autoSuggestWorkout = async () => {
     setAutoSuggestLoading(true);
     
     try {
@@ -732,7 +739,7 @@ export default function WorkoutLogContent() {
           .eq('program_id', program.id)
           .order('completed_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
         
         if (lastWorkout && program.program_data.days) {
           const lastDayIndex = program.program_data.days.findIndex(
@@ -758,7 +765,7 @@ export default function WorkoutLogContent() {
           .select('workout_day, program_id')
           .order('completed_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
         
         if (lastWorkout?.program_id) {
           const program = programs.find(p => p.id === lastWorkout.program_id);
