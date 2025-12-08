@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,11 +9,21 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { 
   Plus, Trash2, Loader2,
-  Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles, Map
+  Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles, Map, Play
 } from 'lucide-react';
 import ActiveCardioPlanSession from '@/components/ActiveCardioPlanSession';
 import QuickStartCardio from '@/components/QuickStartCardio';
@@ -24,6 +34,19 @@ import RouteMapDialog from '@/components/RouteMapDialog';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import confetti from 'canvas-confetti';
+
+const CARDIO_DRAFT_KEY = 'gymdagboken_cardio_draft';
+const DRAFT_EXPIRY_HOURS = 24;
+
+interface CardioDraft {
+  activityType: string;
+  durationMinutes: string;
+  distanceKm: string;
+  caloriesBurned: string;
+  notes: string;
+  userId: string;
+  createdAt: string;
+}
 
 interface CardioLog {
   id: string;
@@ -99,11 +122,91 @@ export default function CardioLogContent() {
   const [selectedLogLabel, setSelectedLogLabel] = useState('');
   const [logsWithRoutes, setLogsWithRoutes] = useState<Set<string>>(new Set());
 
+  // Draft state
+  const [hasDraft, setHasDraft] = useState(false);
+  const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [showDeleteDraftDialog, setShowDeleteDraftDialog] = useState(false);
+
+  // Save draft to localStorage
+  const saveDraft = useCallback(() => {
+    if (!user || !showForm) return;
+    
+    const draft: CardioDraft = {
+      activityType,
+      durationMinutes,
+      distanceKm,
+      caloriesBurned,
+      notes,
+      userId: user.id,
+      createdAt: new Date().toISOString()
+    };
+    localStorage.setItem(CARDIO_DRAFT_KEY, JSON.stringify(draft));
+  }, [user, showForm, activityType, durationMinutes, distanceKm, caloriesBurned, notes]);
+
+  // Load draft from localStorage
+  const loadDraft = useCallback(() => {
+    const saved = localStorage.getItem(CARDIO_DRAFT_KEY);
+    if (!saved || !user) return null;
+    
+    try {
+      const draft: CardioDraft = JSON.parse(saved);
+      
+      // Check if draft belongs to current user
+      if (draft.userId !== user.id) return null;
+      
+      // Check if draft is expired
+      const createdAt = new Date(draft.createdAt);
+      const now = new Date();
+      const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      if (hoursDiff > DRAFT_EXPIRY_HOURS) {
+        localStorage.removeItem(CARDIO_DRAFT_KEY);
+        return null;
+      }
+      
+      return draft;
+    } catch {
+      return null;
+    }
+  }, [user]);
+
+  // Discard draft
+  const discardDraft = useCallback(() => {
+    localStorage.removeItem(CARDIO_DRAFT_KEY);
+    setHasDraft(false);
+  }, []);
+
+  // Resume draft
+  const resumeDraft = useCallback(() => {
+    const draft = loadDraft();
+    if (draft) {
+      setActivityType(draft.activityType);
+      setDurationMinutes(draft.durationMinutes);
+      setDistanceKm(draft.distanceKm);
+      setCaloriesBurned(draft.caloriesBurned);
+      setNotes(draft.notes);
+      setShowForm(true);
+      setShowDraftDialog(false);
+    }
+  }, [loadDraft]);
+
   useEffect(() => {
     if (user) {
       fetchData();
+      
+      const draft = loadDraft();
+      if (draft) {
+        setHasDraft(true);
+        setShowDraftDialog(true);
+      }
     }
-  }, [user]);
+  }, [user, loadDraft]);
+
+  // Auto-save draft when form changes
+  useEffect(() => {
+    if (showForm && (activityType || durationMinutes)) {
+      saveDraft();
+    }
+  }, [showForm, activityType, durationMinutes, distanceKm, caloriesBurned, notes, saveDraft]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -314,6 +417,7 @@ export default function CardioLogContent() {
     setCaloriesBurned('');
     setNotes('');
     setShowForm(false);
+    discardDraft();
   };
 
   const getGoalProgress = (goal: CardioGoal) => {
@@ -369,6 +473,34 @@ export default function CardioLogContent() {
           cardioLogId={selectedLogId}
           activityLabel={selectedLogLabel}
         />
+      )}
+
+      {/* Draft Resume Card */}
+      {hasDraft && !showForm && (
+        <Card className="border-primary/50 bg-gradient-to-r from-primary/10 to-transparent mb-6">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Timer className="w-4 h-4 text-primary" />
+                <span>Du har ett påbörjat konditionspass</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="default" size="sm" onClick={resumeDraft}>
+                  <Play className="w-4 h-4 mr-1" />
+                  Fortsätt
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowDeleteDraftDialog(true)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <AdBanner className="mb-6" />
@@ -742,6 +874,61 @@ export default function CardioLogContent() {
           </div>
         )}
       </div>
+
+      {/* Draft Resume Dialog */}
+      <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Timer className="w-5 h-5 text-primary" />
+              Fortsätt konditionspass?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Du har ett påbörjat konditionspass sparat. Vill du fortsätta där du slutade?
+          </p>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                discardDraft();
+                setShowDraftDialog(false);
+                toast.success('Utkast borttaget');
+              }}
+            >
+              Kasta
+            </Button>
+            <Button onClick={resumeDraft}>
+              <Play className="w-4 h-4 mr-1" />
+              Fortsätt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete draft confirmation dialog */}
+      <AlertDialog open={showDeleteDraftDialog} onOpenChange={setShowDeleteDraftDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ta bort utkast?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill ta bort det påbörjade konditionspasset? Detta kan inte ångras.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                discardDraft();
+                toast.success('Sparat utkast borttaget');
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Ta bort
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
