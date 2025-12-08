@@ -191,20 +191,20 @@ export default function QuickActions() {
         <Button
           variant="hero"
           size="lg"
-          className="h-16 text-lg"
+          className="h-16 text-base sm:text-lg"
           onClick={() => navigate("/training")}
         >
           <Dumbbell className="w-5 h-5 mr-2" />
-          Starta styrkepass
+          Starta styrka
         </Button>
         <Button
           variant="outline"
           size="lg"
-          className="h-16 text-lg border-gym-orange/50 hover:bg-gym-orange/10"
+          className="h-16 text-base sm:text-lg border-gym-orange/50 hover:bg-gym-orange/10"
           onClick={() => navigate("/training?tab=cardio")}
         >
           <Footprints className="w-5 h-5 mr-2" />
-          Starta konditionspass
+          Starta kondition
         </Button>
       </div>
 
