@@ -850,8 +850,13 @@ export default function WorkoutLogContent() {
               </div>
 
               {exerciseLogs.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="font-display font-bold">Övningar</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-display font-bold text-sm">Övningar ({exerciseLogs.length})</h3>
+                    <span className="text-xs text-muted-foreground">
+                      Tryck för detaljer
+                    </span>
+                  </div>
                   {exerciseLogs.map((log, index) => {
                     const pb = personalBests.get(log.exercise_name);
                     const goal = exerciseGoals.get(log.exercise_name);
@@ -862,189 +867,202 @@ export default function WorkoutLogContent() {
                     return (
                       <div 
                         key={index} 
-                        className={`rounded-lg p-4 transition-all ${
-                          isNewPB ? 'bg-gym-orange/20 border-2 border-gym-orange' : 
-                          isGoalReached ? 'bg-green-500/20 border-2 border-green-500' : 
-                          'bg-secondary/50'
-                        }`}
+                        className={`rounded-lg transition-all ${
+                          isNewPB ? 'bg-gym-orange/20 border border-gym-orange' : 
+                          isGoalReached ? 'bg-green-500/20 border border-green-500' : 
+                          'bg-secondary/30 border border-border/50'
+                        } ${log.expanded ? 'p-3' : 'p-2'}`}
                       >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <ExerciseInfo exerciseName={log.exercise_name}>
-                              <h4 className="font-medium">{log.exercise_name}</h4>
-                            </ExerciseInfo>
-                            {isNewPB && (
-                              <Badge className="bg-gym-orange text-white animate-pulse">
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                Nytt PB!
-                              </Badge>
-                            )}
-                            {isGoalReached && !isNewPB && (
-                              <Badge className="bg-green-500 text-white">
-                                <Trophy className="w-3 h-3 mr-1" />
-                                Mål!
-                              </Badge>
-                            )}
+                        {/* Compact header - always visible */}
+                        <div 
+                          className="flex items-center justify-between cursor-pointer"
+                          onClick={() => toggleExpanded(index)}
+                        >
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <ExerciseInfo exerciseName={log.exercise_name}>
+                                <h4 className="font-medium text-sm truncate">{log.exercise_name}</h4>
+                              </ExerciseInfo>
+                              {isNewPB && (
+                                <Badge className="bg-gym-orange text-white text-[10px] px-1.5 py-0 h-5 animate-pulse">
+                                  <Sparkles className="w-2.5 h-2.5 mr-0.5" />
+                                  PB!
+                                </Badge>
+                              )}
+                              {isGoalReached && !isNewPB && (
+                                <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0 h-5">
+                                  <Trophy className="w-2.5 h-2.5 mr-0.5" />
+                                  Mål!
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            {pb && (
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Trophy className="w-3 h-3 text-gym-orange" />
-                                PB: {pb.best_weight_kg} kg
-                              </span>
-                            )}
-                            {goal?.target_weight_kg && (
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Target className="w-3 h-3 text-green-500" />
-                                Mål: {goal.target_weight_kg} kg
-                              </span>
-                            )}
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingGoal(log.exercise_name);
-                                    setGoalWeight(goal?.target_weight_kg?.toString() || '');
-                                  }}
-                                >
-                                  <Target className="w-4 h-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Sätt mål för {log.exercise_name}</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4 pt-4">
-                                  {pb && (
-                                    <p className="text-sm text-muted-foreground">
-                                      Ditt nuvarande PB: <span className="font-bold text-gym-orange">{pb.best_weight_kg} kg</span>
-                                    </p>
-                                  )}
-                                  <div className="space-y-2">
-                                    <Label>Målvikt (kg)</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.5"
-                                      value={goalWeight}
-                                      onChange={(e) => setGoalWeight(e.target.value)}
-                                      placeholder={pb ? `${pb.best_weight_kg + 2.5}` : '50'}
-                                    />
-                                  </div>
-                                  <Button 
-                                    variant="hero" 
-                                    className="w-full"
-                                    onClick={() => saveExerciseGoal(log.exercise_name, parseFloat(goalWeight))}
-                                    disabled={!goalWeight}
-                                  >
-                                    <Target className="w-4 h-4 mr-2" />
-                                    Spara mål
-                                  </Button>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 mb-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs text-muted-foreground hover:text-foreground"
-                            onClick={() => toggleExpanded(index)}
-                          >
-                            {log.expanded ? (
-                              <>
-                                <ChevronUp className="w-4 h-4 mr-1" />
-                                Dölj set-detaljer
-                              </>
-                            ) : (
-                              <>
-                                <ChevronDown className="w-4 h-4 mr-1" />
-                                Visa per set ({log.sets_completed} sets)
-                              </>
-                            )}
-                          </Button>
-                          {!log.expanded && log.weight_kg && (
-                            <span className="text-xs text-muted-foreground">
-                              Max: {log.weight_kg} kg
-                            </span>
+                          
+                          {/* Quick stats when collapsed */}
+                          {!log.expanded && (
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span className="font-medium">{log.sets_completed}×</span>
+                              {log.weight_kg && (
+                                <span className="font-medium text-foreground">{log.weight_kg} kg</span>
+                              )}
+                              <ChevronDown className="w-4 h-4 shrink-0" />
+                            </div>
+                          )}
+                          {log.expanded && (
+                            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
                           )}
                         </div>
+                        
+                        {/* Expanded details */}
+                        <AnimatePresence>
+                          {log.expanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="pt-3 space-y-3">
+                                {/* PB and Goal info */}
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  {pb && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Trophy className="w-3 h-3 text-gym-orange" />
+                                      PB: {pb.best_weight_kg} kg
+                                    </span>
+                                  )}
+                                  {goal?.target_weight_kg && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Target className="w-3 h-3 text-green-500" />
+                                      Mål: {goal.target_weight_kg} kg
+                                    </span>
+                                  )}
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        className="h-6 px-2 text-xs"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingGoal(log.exercise_name);
+                                          setGoalWeight(goal?.target_weight_kg?.toString() || '');
+                                        }}
+                                      >
+                                        <Target className="w-3 h-3 mr-1" />
+                                        Sätt mål
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent onClick={(e) => e.stopPropagation()}>
+                                      <DialogHeader>
+                                        <DialogTitle>Sätt mål för {log.exercise_name}</DialogTitle>
+                                      </DialogHeader>
+                                      <div className="space-y-4 pt-4">
+                                        {pb && (
+                                          <p className="text-sm text-muted-foreground">
+                                            Ditt nuvarande PB: <span className="font-bold text-gym-orange">{pb.best_weight_kg} kg</span>
+                                          </p>
+                                        )}
+                                        <div className="space-y-2">
+                                          <Label>Målvikt (kg)</Label>
+                                          <Input
+                                            type="number"
+                                            step="0.5"
+                                            value={goalWeight}
+                                            onChange={(e) => setGoalWeight(e.target.value)}
+                                            placeholder={pb ? `${pb.best_weight_kg + 2.5}` : '50'}
+                                          />
+                                        </div>
+                                        <Button 
+                                          variant="hero" 
+                                          className="w-full"
+                                          onClick={() => saveExerciseGoal(log.exercise_name, parseFloat(goalWeight))}
+                                          disabled={!goalWeight}
+                                        >
+                                          <Target className="w-4 h-4 mr-2" />
+                                          Spara mål
+                                        </Button>
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+                                </div>
 
-                        {log.expanded ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Label className="text-xs">Antal sets:</Label>
-                              <Input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={log.sets_completed}
-                                onChange={(e) => handleSetsChange(index, parseInt(e.target.value) || 1)}
-                                className="w-16 h-8"
-                              />
-                            </div>
-                            {log.set_details.map((setDetail, setIndex) => (
-                              <div key={setIndex} className="flex items-center gap-2 bg-background/50 rounded p-2">
-                                <span className="text-xs font-medium w-12 text-muted-foreground">
-                                  Set {setIndex + 1}
-                                </span>
-                                <div className="flex-1 grid grid-cols-2 gap-2">
+                                {/* Set details toggle */}
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-xs">Sets:</Label>
                                   <div className="flex items-center gap-1">
-                                    <Input
-                                      type="number"
-                                      value={setDetail.reps === 0 ? '' : setDetail.reps}
-                                      onChange={(e) => updateSetDetail(index, setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value))}
-                                      className="h-8"
-                                      placeholder="0"
-                                    />
-                                    <span className="text-xs text-muted-foreground">reps</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Input
-                                      type="number"
-                                      step="0.5"
-                                      value={setDetail.weight === 0 ? '' : setDetail.weight}
-                                      onChange={(e) => updateSetDetail(index, setIndex, 'weight', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                                      className="h-8"
-                                      placeholder="0"
-                                    />
-                                    <span className="text-xs text-muted-foreground">kg</span>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 w-7 p-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (log.sets_completed > 1) handleSetsChange(index, log.sets_completed - 1);
+                                      }}
+                                    >
+                                      -
+                                    </Button>
+                                    <span className="w-6 text-center text-sm font-medium">{log.sets_completed}</span>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 w-7 p-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (log.sets_completed < 10) handleSetsChange(index, log.sets_completed + 1);
+                                      }}
+                                    >
+                                      +
+                                    </Button>
                                   </div>
                                 </div>
+
+                                {/* Per-set input */}
+                                <div className="space-y-1.5">
+                                  {log.set_details.map((setDetail, setIndex) => (
+                                    <div key={setIndex} className="flex items-center gap-2 bg-background/50 rounded-md p-2">
+                                      <span className="text-xs font-medium w-10 text-muted-foreground shrink-0">
+                                        Set {setIndex + 1}
+                                      </span>
+                                      <div className="flex-1 flex items-center gap-2">
+                                        <div className="flex items-center gap-1 flex-1">
+                                          <Input
+                                            type="number"
+                                            value={setDetail.reps === 0 ? '' : setDetail.reps}
+                                            onChange={(e) => {
+                                              e.stopPropagation();
+                                              updateSetDetail(index, setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value));
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="h-8 text-center"
+                                            placeholder="0"
+                                          />
+                                          <span className="text-xs text-muted-foreground shrink-0">reps</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 flex-1">
+                                          <Input
+                                            type="number"
+                                            step="0.5"
+                                            value={setDetail.weight === 0 ? '' : setDetail.weight}
+                                            onChange={(e) => {
+                                              e.stopPropagation();
+                                              updateSetDetail(index, setIndex, 'weight', e.target.value === '' ? 0 : parseFloat(e.target.value));
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="h-8 text-center"
+                                            placeholder="0"
+                                          />
+                                          <span className="text-xs text-muted-foreground shrink-0">kg</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="space-y-1">
-                              <Label className="text-xs">Sets</Label>
-                              <Input
-                                type="number"
-                                value={log.sets_completed}
-                                onChange={(e) => handleSetsChange(index, parseInt(e.target.value) || 1)}
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Reps</Label>
-                              <Input
-                                value={log.reps_completed}
-                                onChange={(e) => updateExerciseLog(index, 'reps_completed', e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Vikt (kg)</Label>
-                              <Input
-                                type="number"
-                                step="0.5"
-                                value={log.weight_kg}
-                                onChange={(e) => updateExerciseLog(index, 'weight_kg', e.target.value)}
-                              />
-                            </div>
-                          </div>
-                        )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     );
                   })}
