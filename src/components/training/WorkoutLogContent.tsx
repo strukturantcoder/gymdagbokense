@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, WifiOff } from 'lucide-react';
 import RestTimer from '@/components/RestTimer';
 import ExerciseInfo from '@/components/ExerciseInfo';
 import AdBanner from '@/components/AdBanner';
@@ -90,6 +91,7 @@ interface ExerciseGoal {
 export default function WorkoutLogContent() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isOnline, addPendingLog } = useOfflineSync();
   
   const [programs, setPrograms] = useState<WorkoutProgram[]>([]);
   const [recentLogs, setRecentLogs] = useState<WorkoutLogEntry[]>([]);
@@ -328,10 +330,51 @@ export default function WorkoutLogContent() {
     }
 
     setIsSaving(true);
-    try {
-      const program = programs.find(p => p.id === selectedProgram);
-      const dayName = program?.program_data.days[parseInt(selectedDay)]?.day || `Dag ${parseInt(selectedDay) + 1}`;
+    
+    const program = programs.find(p => p.id === selectedProgram);
+    const dayName = program?.program_data.days[parseInt(selectedDay)]?.day || `Dag ${parseInt(selectedDay) + 1}`;
 
+    // If offline, save to pending queue
+    if (!isOnline) {
+      const exerciseData = exerciseLogs.map(log => ({
+        exercise_name: log.exercise_name,
+        sets_completed: log.sets_completed,
+        reps_completed: log.reps_completed,
+        weight_kg: log.weight_kg ? parseFloat(log.weight_kg) : undefined,
+        notes: log.notes || undefined,
+        set_details: log.set_details.length > 0 ? log.set_details : undefined
+      }));
+
+      addPendingLog({
+        type: 'workout',
+        id: `workout_${Date.now()}`,
+        data: {
+          user_id: user!.id,
+          workout_day: dayName,
+          program_id: selectedProgram,
+          duration_minutes: duration ? parseInt(duration) : undefined,
+          notes: workoutNotes || undefined,
+          completed_at: new Date().toISOString()
+        },
+        exercises: exerciseData
+      });
+
+      const shareProgram = programs.find(p => p.id === selectedProgram);
+      setShareData({
+        dayName,
+        duration: duration ? parseInt(duration) : undefined,
+        exerciseCount: exerciseLogs.length,
+        totalSets: exerciseLogs.reduce((sum, log) => sum + log.sets_completed, 0),
+        programName: shareProgram?.name
+      });
+
+      setIsLogging(false);
+      setIsSaving(false);
+      resetForm();
+      return;
+    }
+
+    try {
       const { data: workoutLog, error: workoutError } = await supabase
         .from('workout_logs')
         .insert([{
