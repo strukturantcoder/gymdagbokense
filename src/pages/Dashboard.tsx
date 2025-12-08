@@ -797,7 +797,7 @@ export default function Dashboard() {
                 <CardContent className="space-y-6">
                   {(isEditing ? editedProgram : selectedProgram)?.program_data.days.map((day, dayIndex) => (
                     <div key={dayIndex} className="border border-border rounded-lg p-4">
-                      <h3 className="font-display font-bold text-lg mb-1">{day.day}</h3>
+                      <h3 className="font-display font-bold text-base sm:text-lg mb-1 break-words">{day.day}</h3>
                       <p className="text-sm text-gym-orange mb-4">{day.focus}</p>
                       
                       {isEditing ? (
