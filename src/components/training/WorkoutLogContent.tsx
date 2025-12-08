@@ -831,7 +831,7 @@ export default function WorkoutLogContent() {
       
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-display font-bold">Logga styrketräning</h1>
+          <h1 className="text-2xl font-display font-bold">Styrketräning</h1>
           <p className="text-muted-foreground text-sm">Spåra dina pass och vikter</p>
         </div>
         <div className="flex gap-2">
@@ -867,7 +867,7 @@ export default function WorkoutLogContent() {
               ) : (
                 <Plus className="w-4 h-4 mr-2" />
               )}
-              Nytt Pass
+              Starta pass
             </Button>
           )}
         </div>

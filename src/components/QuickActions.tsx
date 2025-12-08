@@ -195,7 +195,7 @@ export default function QuickActions() {
           onClick={() => navigate("/training")}
         >
           <Dumbbell className="w-5 h-5 mr-2" />
-          Logga styrka
+          Starta styrkepass
         </Button>
         <Button
           variant="outline"
@@ -204,7 +204,7 @@ export default function QuickActions() {
           onClick={() => navigate("/training?tab=cardio")}
         >
           <Footprints className="w-5 h-5 mr-2" />
-          Logga kondition
+          Starta konditionspass
         </Button>
       </div>
 
