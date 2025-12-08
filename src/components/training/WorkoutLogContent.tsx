@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, WifiOff } from 'lucide-react';
+import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, WifiOff, Trash2 } from 'lucide-react';
 import RestTimer from '@/components/RestTimer';
 import ExerciseInfo from '@/components/ExerciseInfo';
 import AdBanner from '@/components/AdBanner';
@@ -741,10 +741,23 @@ export default function WorkoutLogContent() {
             Vila
           </Button>
           {!isLogging && hasDraft && (
-            <Button variant="outline" size="sm" onClick={() => setShowDraftDialog(true)}>
-              <Dumbbell className="w-4 h-4 mr-2" />
-              Fortsätt pass
-            </Button>
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" onClick={() => setShowDraftDialog(true)}>
+                <Dumbbell className="w-4 h-4 mr-2" />
+                Fortsätt pass
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  discardDraft();
+                  toast.success('Sparat utkast borttaget');
+                }}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
           )}
           {!isLogging && (
             <Button variant="hero" size="sm" onClick={startNewWorkout} disabled={autoSuggestLoading}>
