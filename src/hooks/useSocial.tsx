@@ -231,6 +231,32 @@ export function useSocial() {
     }
   }, [user, fetchUserStats, fetchFriends, fetchChallenges, fetchAchievements]);
 
+  // Realtime subscription for challenge progress updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('challenge-progress-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'challenge_progress'
+        },
+        (payload) => {
+          console.log('Challenge progress update:', payload);
+          // Refetch challenges to get updated progress
+          fetchChallenges();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchChallenges]);
+
   const searchUsers = async (query: string): Promise<UserProfile[]> => {
     if (!query || query.length < 2) return [];
     
