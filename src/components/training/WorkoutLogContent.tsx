@@ -783,9 +783,10 @@ export default function WorkoutLogContent() {
                                   <div className="flex items-center gap-1">
                                     <Input
                                       type="number"
-                                      value={setDetail.reps}
-                                      onChange={(e) => updateSetDetail(index, setIndex, 'reps', parseInt(e.target.value) || 0)}
+                                      value={setDetail.reps === 0 ? '' : setDetail.reps}
+                                      onChange={(e) => updateSetDetail(index, setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value))}
                                       className="h-8"
+                                      placeholder="0"
                                     />
                                     <span className="text-xs text-muted-foreground">reps</span>
                                   </div>
@@ -793,8 +794,8 @@ export default function WorkoutLogContent() {
                                     <Input
                                       type="number"
                                       step="0.5"
-                                      value={setDetail.weight || ''}
-                                      onChange={(e) => updateSetDetail(index, setIndex, 'weight', parseFloat(e.target.value) || 0)}
+                                      value={setDetail.weight === 0 ? '' : setDetail.weight}
+                                      onChange={(e) => updateSetDetail(index, setIndex, 'weight', e.target.value === '' ? 0 : parseFloat(e.target.value))}
                                       className="h-8"
                                       placeholder="0"
                                     />
