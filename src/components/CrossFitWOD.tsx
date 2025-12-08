@@ -1,18 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Zap, RefreshCw, Timer, Dumbbell, Heart, Trash2, ChevronDown, ChevronUp, CheckCircle, History, Trophy, Sparkles, Pencil } from 'lucide-react';
+import { Loader2, Zap, RefreshCw, Timer, Dumbbell, Heart, Trash2, ChevronDown, ChevronUp, CheckCircle, History, Trophy, Sparkles, Pencil, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import confetti from 'canvas-confetti';
 import WODRefineDialog from './WODRefineDialog';
+
+const WOD_DRAFT_KEY = 'gymdagboken_wod_draft';
+const DRAFT_EXPIRY_HOURS = 24;
+
+interface WODDraft {
+  wod: WOD;
+  logForm: {
+    completionTime: string;
+    roundsCompleted: string;
+    repsCompleted: string;
+    notes: string;
+  };
+  userId: string;
+  createdAt: string;
+}
 interface WODExercise {
   name: string;
   reps: string;
@@ -63,13 +88,88 @@ export default function CrossFitWOD() {
   
   // Refine dialog state
   const [showRefineDialog, setShowRefineDialog] = useState(false);
+  
+  // Draft state
+  const [hasDraft, setHasDraft] = useState(false);
+  const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [showDeleteDraftDialog, setShowDeleteDraftDialog] = useState(false);
 
+  // Save draft to localStorage
+  const saveDraft = useCallback(() => {
+    if (!wod || !user) return;
+    
+    const draft: WODDraft = {
+      wod,
+      logForm,
+      userId: user.id,
+      createdAt: new Date().toISOString()
+    };
+    localStorage.setItem(WOD_DRAFT_KEY, JSON.stringify(draft));
+  }, [wod, logForm, user]);
+
+  // Load draft from localStorage
+  const loadDraft = useCallback(() => {
+    const saved = localStorage.getItem(WOD_DRAFT_KEY);
+    if (!saved || !user) return null;
+    
+    try {
+      const draft: WODDraft = JSON.parse(saved);
+      
+      // Check if draft belongs to current user
+      if (draft.userId !== user.id) return null;
+      
+      // Check if draft is expired
+      const createdAt = new Date(draft.createdAt);
+      const now = new Date();
+      const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      if (hoursDiff > DRAFT_EXPIRY_HOURS) {
+        localStorage.removeItem(WOD_DRAFT_KEY);
+        return null;
+      }
+      
+      return draft;
+    } catch {
+      return null;
+    }
+  }, [user]);
+
+  // Discard draft
+  const discardDraft = useCallback(() => {
+    localStorage.removeItem(WOD_DRAFT_KEY);
+    setHasDraft(false);
+  }, []);
+
+  // Resume draft
+  const resumeDraft = useCallback(() => {
+    const draft = loadDraft();
+    if (draft) {
+      setWod(draft.wod);
+      setLogForm(draft.logForm);
+      setShowLogDialog(true);
+      setShowDraftDialog(false);
+    }
+  }, [loadDraft]);
+
+  // Check for drafts on mount
   useEffect(() => {
     if (user) {
       fetchSavedWods();
       fetchWodLogs();
+      
+      const draft = loadDraft();
+      if (draft) {
+        setHasDraft(true);
+        setShowDraftDialog(true);
+      }
     }
-  }, [user]);
+  }, [user, loadDraft]);
+
+  // Auto-save draft when log form changes
+  useEffect(() => {
+    if (showLogDialog && wod) {
+      saveDraft();
+    }
+  }, [showLogDialog, wod, logForm, saveDraft]);
 
   const fetchSavedWods = async () => {
     try {
@@ -275,6 +375,9 @@ export default function CrossFitWOD() {
         colors: ['#FFD700', '#FFA500', '#FF6347', '#00FF00', '#1E90FF']
       });
 
+      // Clear draft after successful log
+      discardDraft();
+
       toast.success(
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-yellow-500" />
@@ -319,6 +422,34 @@ export default function CrossFitWOD() {
 
   return (
     <div className="space-y-4">
+      {/* Draft Resume Card */}
+      {hasDraft && !showLogDialog && (
+        <Card className="border-primary/50 bg-gradient-to-r from-primary/10 to-transparent">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Zap className="w-4 h-4 text-primary" />
+                <span>Du har ett påbörjat WOD-pass</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="default" size="sm" onClick={resumeDraft}>
+                  <Play className="w-4 h-4 mr-1" />
+                  Fortsätt
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowDeleteDraftDialog(true)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -651,6 +782,61 @@ export default function CrossFitWOD() {
           onComplete={() => setShowRefineDialog(false)}
         />
       )}
+
+      {/* Draft Resume Dialog */}
+      <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-primary" />
+              Fortsätt WOD-pass?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Du har ett påbörjat WOD-pass sparat. Vill du fortsätta där du slutade?
+          </p>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                discardDraft();
+                setShowDraftDialog(false);
+                toast.success('Utkast borttaget');
+              }}
+            >
+              Kasta
+            </Button>
+            <Button onClick={resumeDraft}>
+              <Play className="w-4 h-4 mr-1" />
+              Fortsätt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete draft confirmation dialog */}
+      <AlertDialog open={showDeleteDraftDialog} onOpenChange={setShowDeleteDraftDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ta bort utkast?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill ta bort det påbörjade WOD-passet? Detta kan inte ångras.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                discardDraft();
+                toast.success('Sparat utkast borttaget');
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Ta bort
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
