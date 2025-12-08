@@ -137,6 +137,8 @@ export default function WorkoutLogContent() {
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLogEntry[]>([]);
   const [showTimer, setShowTimer] = useState(false);
   const [autoSuggestLoading, setAutoSuggestLoading] = useState(false);
+  const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   
   // Personal bests and goals
   const [personalBests, setPersonalBests] = useState<Map<string, PersonalBest>>(new Map());
@@ -186,12 +188,27 @@ export default function WorkoutLogContent() {
         duration,
         workoutNotes,
         exerciseLogs,
-        startedAt: Date.now(),
+        startedAt: workoutStartTime || Date.now(),
         userId: user.id
       };
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
     }
-  }, [isLogging, selectedProgram, selectedDay, duration, workoutNotes, exerciseLogs, user]);
+  }, [isLogging, selectedProgram, selectedDay, duration, workoutNotes, exerciseLogs, user, workoutStartTime]);
+
+  // Workout timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (isLogging && workoutStartTime) {
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - workoutStartTime) / 1000));
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isLogging, workoutStartTime]);
 
   const restoreDraft = () => {
     const storedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
@@ -203,6 +220,7 @@ export default function WorkoutLogContent() {
         setDuration(draft.duration);
         setWorkoutNotes(draft.workoutNotes);
         setExerciseLogs(draft.exerciseLogs);
+        setWorkoutStartTime(draft.startedAt);
         setIsLogging(true);
         toast.success('Pågående pass återställt');
       } catch (e) {
@@ -217,6 +235,8 @@ export default function WorkoutLogContent() {
     localStorage.removeItem(DRAFT_STORAGE_KEY);
     setShowDraftDialog(false);
     setHasDraft(false);
+    setWorkoutStartTime(null);
+    setElapsedTime(0);
   };
 
   const clearDraft = () => {
@@ -491,7 +511,7 @@ export default function WorkoutLogContent() {
           user_id: user!.id,
           program_id: selectedProgram,
           workout_day: dayName,
-          duration_minutes: duration ? parseInt(duration) : null,
+          duration_minutes: duration ? parseInt(duration) : getElapsedMinutes() || null,
           notes: workoutNotes || null
         }])
         .select()
@@ -644,8 +664,22 @@ export default function WorkoutLogContent() {
     setWorkoutNotes('');
     setExerciseLogs([]);
     setNewPBs([]);
+    setWorkoutStartTime(null);
+    setElapsedTime(0);
     clearDraft();
   };
+
+  const formatElapsedTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getElapsedMinutes = () => Math.floor(elapsedTime / 60);
 
   const handleDeleteLog = async () => {
     if (!selectedLog) return;
@@ -683,6 +717,8 @@ export default function WorkoutLogContent() {
 
   const startNewWorkout = async () => {
     setIsLogging(true);
+    setWorkoutStartTime(Date.now());
+    setElapsedTime(0);
     setAutoSuggestLoading(true);
     
     try {
@@ -849,8 +885,20 @@ export default function WorkoutLogContent() {
         >
           <Card className="border-primary/50">
             <CardHeader>
-              <CardTitle>Logga träningspass</CardTitle>
-              <CardDescription>Välj program och fyll i dina vikter</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Logga träningspass</CardTitle>
+                  <CardDescription>Välj program och fyll i dina vikter</CardDescription>
+                </div>
+                {workoutStartTime && (
+                  <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg">
+                    <Timer className="w-4 h-4 text-primary animate-pulse" />
+                    <span className="font-mono font-bold text-lg text-primary">
+                      {formatElapsedTime(elapsedTime)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid md:grid-cols-3 gap-4">
