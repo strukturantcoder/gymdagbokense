@@ -276,7 +276,7 @@ export default function TabataWorkout() {
           {phase === 'idle' ? (
             <>
               {/* Config Section */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <Label className="text-xs">Rundor</Label>
                   <Input
@@ -305,6 +305,26 @@ export default function TabataWorkout() {
                     max={60}
                     value={config.restTime}
                     onChange={(e) => setConfig(prev => ({ ...prev, restTime: parseInt(e.target.value) || 10 }))}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Antal övningar</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={ALL_EXERCISES.length}
+                    value={config.exercises.length}
+                    onChange={(e) => {
+                      const count = Math.max(1, Math.min(ALL_EXERCISES.length, parseInt(e.target.value) || 4));
+                      const currentCount = config.exercises.length;
+                      if (count > currentCount) {
+                        const available = ALL_EXERCISES.filter(ex => !config.exercises.includes(ex));
+                        const toAdd = available.slice(0, count - currentCount);
+                        setConfig(prev => ({ ...prev, exercises: [...prev.exercises, ...toAdd] }));
+                      } else if (count < currentCount) {
+                        setConfig(prev => ({ ...prev, exercises: prev.exercises.slice(0, count) }));
+                      }
+                    }}
                   />
                 </div>
               </div>
