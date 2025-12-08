@@ -20,14 +20,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   Plus, Trash2, Loader2,
-  Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles, Map, Play
+  Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles, Map, Play, Zap
 } from 'lucide-react';
 import ActiveCardioPlanSession from '@/components/ActiveCardioPlanSession';
 import QuickStartCardio from '@/components/QuickStartCardio';
 import GenerateCardioPlanDialog from '@/components/GenerateCardioPlanDialog';
+import TabataWorkout from '@/components/TabataWorkout';
 import AdBanner from '@/components/AdBanner';
 import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
 import RouteMapDialog from '@/components/RouteMapDialog';
@@ -592,6 +594,11 @@ export default function CardioLogContent() {
           onSessionComplete={fetchLogs}
         />
       )}
+
+      {/* Tabata Section */}
+      <div className="mb-8">
+        <TabataWorkout />
+      </div>
 
       <div className="mb-8">
         <ActiveCardioPlanSession 
