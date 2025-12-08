@@ -25,8 +25,16 @@ import {
   ChevronLeft,
   Weight,
   Repeat,
-  Sparkles
+  Sparkles,
+  ChevronsUpDown
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import confetti from 'canvas-confetti';
 import {
   AlertDialog,
@@ -411,9 +419,46 @@ export default function WorkoutSession() {
             transition={{ duration: 0.2 }}
             className="space-y-4"
           >
-            {/* Exercise name and badges */}
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-display font-bold">{currentExercise.exercise_name}</h2>
+            {/* Exercise dropdown and badges */}
+            <div className="text-center space-y-3">
+              <Select
+                value={currentExerciseIndex.toString()}
+                onValueChange={(value) => setCurrentExerciseIndex(parseInt(value))}
+              >
+                <SelectTrigger className="mx-auto w-auto min-w-[200px] max-w-full text-center">
+                  <div className="flex items-center gap-2">
+                    <Dumbbell className="w-4 h-4 text-muted-foreground" />
+                    <SelectValue>
+                      <span className="text-lg font-display font-bold">{currentExercise.exercise_name}</span>
+                    </SelectValue>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {sessionData.exercises.map((ex, idx) => {
+                    const exCompletedSets = ex.set_details.filter(s => s.completed).length;
+                    const exTotalSets = ex.set_details.length;
+                    const isComplete = exCompletedSets === exTotalSets && exTotalSets > 0;
+                    return (
+                      <SelectItem key={idx} value={idx.toString()}>
+                        <div className="flex items-center gap-2">
+                          {isComplete ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <span className="w-4 h-4 flex items-center justify-center text-xs text-muted-foreground">
+                              {idx + 1}
+                            </span>
+                          )}
+                          <span className={isComplete ? 'text-muted-foreground' : ''}>{ex.exercise_name}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            ({exCompletedSets}/{exTotalSets})
+                          </span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              
               <div className="flex items-center justify-center gap-2 flex-wrap">
                 {currentExercise.programSets && currentExercise.programReps && (
                   <Badge variant="outline" className="text-xs">
