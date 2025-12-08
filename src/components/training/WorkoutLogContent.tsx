@@ -718,46 +718,32 @@ export default function WorkoutLogContent() {
   const currentProgram = programs.find(p => p.id === selectedProgram);
 
   const startNewWorkout = async () => {
-    // Immediately show the workout form but DON'T start timer yet
-    setIsLogging(true);
-    // Don't set workoutStartTime here - timer starts when user manually starts it
-    setWorkoutStartTime(null);
-    setElapsedTime(0);
     setAutoSuggestLoading(true);
     
     try {
-      // If only one program, auto-select it and first/next day immediately
+      let targetProgram: WorkoutProgram | null = null;
+      let targetDayIndex = 0;
+      
+      // Find the best program and day to suggest
       if (programs.length === 1) {
-        const program = programs[0];
-        setSelectedProgram(program.id);
+        targetProgram = programs[0];
         
         const { data: lastWorkout } = await supabase
           .from('workout_logs')
           .select('workout_day, program_id')
-          .eq('program_id', program.id)
+          .eq('program_id', targetProgram.id)
           .order('completed_at', { ascending: false })
           .limit(1)
           .maybeSingle();
         
-        if (lastWorkout && program.program_data.days) {
-          const lastDayIndex = program.program_data.days.findIndex(
+        if (lastWorkout && targetProgram.program_data.days) {
+          const lastDayIndex = targetProgram.program_data.days.findIndex(
             d => d.day === lastWorkout.workout_day
           );
           
           if (lastDayIndex !== -1) {
-            const nextDayIndex = (lastDayIndex + 1) % program.program_data.days.length;
-            await handleDayChange(nextDayIndex.toString(), program.id);
-            toast.info(`Föreslår: ${program.program_data.days[nextDayIndex].day}`, {
-              description: 'Baserat på ditt senaste pass'
-            });
-          } else {
-            await handleDayChange('0', program.id);
+            targetDayIndex = (lastDayIndex + 1) % targetProgram.program_data.days.length;
           }
-        } else if (program.program_data.days?.length > 0) {
-          await handleDayChange('0', program.id);
-          toast.info(`Föreslår: ${program.program_data.days[0].day}`, {
-            description: 'Starta från början!'
-          });
         }
       } else if (programs.length > 1) {
         const { data: lastWorkout } = await supabase
@@ -770,26 +756,97 @@ export default function WorkoutLogContent() {
         if (lastWorkout?.program_id) {
           const program = programs.find(p => p.id === lastWorkout.program_id);
           if (program) {
-            setSelectedProgram(program.id);
+            targetProgram = program;
             
             const lastDayIndex = program.program_data.days?.findIndex(
               d => d.day === lastWorkout.workout_day
             ) ?? -1;
             
             if (lastDayIndex !== -1 && program.program_data.days) {
-              const nextDayIndex = (lastDayIndex + 1) % program.program_data.days.length;
-              await handleDayChange(nextDayIndex.toString(), program.id);
-              toast.info(`Föreslår: ${program.program_data.days[nextDayIndex].day}`, {
-                description: `Program: ${program.name}`
-              });
-            } else if (program.program_data.days?.length > 0) {
-              await handleDayChange('0', program.id);
+              targetDayIndex = (lastDayIndex + 1) % program.program_data.days.length;
             }
+          }
+        } else {
+          targetProgram = programs[0];
+        }
+      }
+
+      if (!targetProgram || !targetProgram.program_data.days?.length) {
+        toast.error('Skapa ett träningsprogram först');
+        setAutoSuggestLoading(false);
+        return;
+      }
+
+      const day = targetProgram.program_data.days[targetDayIndex];
+      if (!day) {
+        toast.error('Kunde inte hitta träningsdag');
+        setAutoSuggestLoading(false);
+        return;
+      }
+
+      // Fetch last weights for exercises
+      const exerciseNames = day.exercises.map(ex => ex.name);
+      const { data: lastWeights } = await supabase
+        .from('exercise_logs')
+        .select('exercise_name, weight_kg, sets_completed, reps_completed')
+        .in('exercise_name', exerciseNames)
+        .order('created_at', { ascending: false });
+      
+      const lastValuesMap = new Map<string, { weight: string; sets: number; reps: string }>();
+      if (lastWeights) {
+        for (const log of lastWeights) {
+          if (!lastValuesMap.has(log.exercise_name) && log.weight_kg !== null) {
+            lastValuesMap.set(log.exercise_name, {
+              weight: log.weight_kg.toString(),
+              sets: log.sets_completed,
+              reps: log.reps_completed
+            });
           }
         }
       }
+      
+      // Prepare session data
+      const exercises = day.exercises.map(ex => {
+        const lastValues = lastValuesMap.get(ex.name);
+        const numSets = lastValues?.sets ?? ex.sets;
+        const defaultWeight = lastValues?.weight ? parseFloat(lastValues.weight) : 0;
+        const defaultReps = parseInt(ex.reps.split('-')[0]) || 10;
+        
+        const setDetails: SetDetail[] = Array.from({ length: numSets }, () => ({
+          reps: defaultReps,
+          weight: defaultWeight,
+          completed: false
+        }));
+        
+        return {
+          exercise_name: ex.name,
+          sets_completed: numSets,
+          reps_completed: lastValues?.reps ?? ex.reps,
+          weight_kg: lastValues?.weight ?? '',
+          notes: '',
+          set_details: setDetails,
+          expanded: false,
+          programSets: ex.sets,
+          programReps: ex.reps
+        };
+      });
+
+      // Store session data and navigate
+      const sessionData = {
+        programId: targetProgram.id,
+        programName: targetProgram.name,
+        dayIndex: targetDayIndex.toString(),
+        dayName: day.day,
+        exercises,
+        startedAt: Date.now()
+      };
+      
+      localStorage.setItem('active_workout_session', JSON.stringify(sessionData));
+      navigate('/training/session');
+      
     } catch (error) {
-      console.error('Error auto-suggesting workout:', error);
+      console.error('Error starting workout:', error);
+      toast.error('Kunde inte starta passet');
     } finally {
       setAutoSuggestLoading(false);
     }
@@ -798,6 +855,30 @@ export default function WorkoutLogContent() {
   const startWorkoutTimer = () => {
     setWorkoutStartTime(Date.now());
     toast.success('Timer startad!');
+  };
+
+  // Check if there's an active session and offer to resume
+  useEffect(() => {
+    const activeSession = localStorage.getItem('active_workout_session');
+    if (activeSession && !isLogging) {
+      try {
+        const session = JSON.parse(activeSession);
+        const sessionAge = Date.now() - session.startedAt;
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        
+        if (sessionAge < maxAge) {
+          setHasDraft(true);
+        } else {
+          localStorage.removeItem('active_workout_session');
+        }
+      } catch {
+        localStorage.removeItem('active_workout_session');
+      }
+    }
+  }, [isLogging]);
+
+  const resumeSession = () => {
+    navigate('/training/session');
   };
 
   return (
@@ -853,14 +934,18 @@ export default function WorkoutLogContent() {
           </Button>
           {!isLogging && hasDraft && (
             <div className="flex gap-1">
-              <Button variant="outline" size="sm" onClick={() => setShowDraftDialog(true)}>
+              <Button variant="outline" size="sm" onClick={resumeSession}>
                 <Dumbbell className="w-4 h-4 mr-2" />
                 Fortsätt pass
               </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => setShowDeleteDraftDialog(true)}
+                onClick={() => {
+                  localStorage.removeItem('active_workout_session');
+                  setHasDraft(false);
+                  toast.success('Pågående pass borttaget');
+                }}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="w-4 h-4" />
