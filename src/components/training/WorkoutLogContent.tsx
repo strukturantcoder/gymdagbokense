@@ -88,6 +88,18 @@ interface ExerciseGoal {
   target_reps: number | null;
 }
 
+const DRAFT_STORAGE_KEY = 'gymdagboken_workout_draft';
+
+interface WorkoutDraft {
+  selectedProgram: string;
+  selectedDay: string;
+  duration: string;
+  workoutNotes: string;
+  exerciseLogs: ExerciseLogEntry[];
+  startedAt: number;
+  userId: string;
+}
+
 export default function WorkoutLogContent() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -97,6 +109,8 @@ export default function WorkoutLogContent() {
   const [recentLogs, setRecentLogs] = useState<WorkoutLogEntry[]>([]);
   const [isLogging, setIsLogging] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [showDraftDialog, setShowDraftDialog] = useState(false);
   
   // New workout form
   const [selectedProgram, setSelectedProgram] = useState<string>('');
@@ -124,6 +138,73 @@ export default function WorkoutLogContent() {
     newPBs?: string[];
     programName?: string;
   } | null>(null);
+
+  // Check for saved draft on mount
+  useEffect(() => {
+    if (user) {
+      const storedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (storedDraft) {
+        try {
+          const draft: WorkoutDraft = JSON.parse(storedDraft);
+          // Only show draft if it belongs to current user and is less than 24 hours old
+          if (draft.userId === user.id && Date.now() - draft.startedAt < 24 * 60 * 60 * 1000) {
+            setHasDraft(true);
+            setShowDraftDialog(true);
+          } else {
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
+          }
+        } catch (e) {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+      }
+    }
+  }, [user]);
+
+  // Auto-save draft when logging
+  useEffect(() => {
+    if (isLogging && user && (selectedProgram || exerciseLogs.length > 0)) {
+      const draft: WorkoutDraft = {
+        selectedProgram,
+        selectedDay,
+        duration,
+        workoutNotes,
+        exerciseLogs,
+        startedAt: Date.now(),
+        userId: user.id
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    }
+  }, [isLogging, selectedProgram, selectedDay, duration, workoutNotes, exerciseLogs, user]);
+
+  const restoreDraft = () => {
+    const storedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (storedDraft) {
+      try {
+        const draft: WorkoutDraft = JSON.parse(storedDraft);
+        setSelectedProgram(draft.selectedProgram);
+        setSelectedDay(draft.selectedDay);
+        setDuration(draft.duration);
+        setWorkoutNotes(draft.workoutNotes);
+        setExerciseLogs(draft.exerciseLogs);
+        setIsLogging(true);
+        toast.success('Pågående pass återställt');
+      } catch (e) {
+        toast.error('Kunde inte återställa passet');
+      }
+    }
+    setShowDraftDialog(false);
+    setHasDraft(false);
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    setShowDraftDialog(false);
+    setHasDraft(false);
+  };
+
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+  };
 
   useEffect(() => {
     if (user) {
@@ -534,6 +615,7 @@ export default function WorkoutLogContent() {
     setWorkoutNotes('');
     setExerciseLogs([]);
     setNewPBs([]);
+    clearDraft();
   };
 
   const currentProgram = programs.find(p => p.id === selectedProgram);
@@ -619,6 +701,29 @@ export default function WorkoutLogContent() {
       )}
 
       <AdBanner className="mb-6" />
+
+      {/* Draft restore dialog */}
+      <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 text-primary" />
+              Pågående pass hittat
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground">
+            Du har ett osparat träningspass. Vill du fortsätta där du slutade?
+          </p>
+          <div className="flex gap-3 mt-4">
+            <Button variant="outline" onClick={discardDraft} className="flex-1">
+              Kasta bort
+            </Button>
+            <Button onClick={restoreDraft} className="flex-1">
+              Fortsätt
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -635,6 +740,12 @@ export default function WorkoutLogContent() {
             <Timer className="w-4 h-4 mr-2" />
             Vila
           </Button>
+          {!isLogging && hasDraft && (
+            <Button variant="outline" size="sm" onClick={() => setShowDraftDialog(true)}>
+              <Dumbbell className="w-4 h-4 mr-2" />
+              Fortsätt pass
+            </Button>
+          )}
           {!isLogging && (
             <Button variant="hero" size="sm" onClick={startNewWorkout} disabled={autoSuggestLoading}>
               {autoSuggestLoading ? (
