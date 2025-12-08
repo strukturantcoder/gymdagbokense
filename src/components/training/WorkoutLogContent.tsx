@@ -124,6 +124,10 @@ export default function WorkoutLogContent() {
   const [hasDraft, setHasDraft] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [showDeleteDraftDialog, setShowDeleteDraftDialog] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<WorkoutLogEntry | null>(null);
+  const [showLogDetails, setShowLogDetails] = useState(false);
+  const [showDeleteLogDialog, setShowDeleteLogDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // New workout form
   const [selectedProgram, setSelectedProgram] = useState<string>('');
@@ -643,6 +647,38 @@ export default function WorkoutLogContent() {
     clearDraft();
   };
 
+  const handleDeleteLog = async () => {
+    if (!selectedLog) return;
+    
+    setIsDeleting(true);
+    try {
+      // Delete exercise logs first (cascade would handle this but being explicit)
+      await supabase
+        .from('exercise_logs')
+        .delete()
+        .eq('workout_log_id', selectedLog.id);
+      
+      // Delete the workout log
+      const { error } = await supabase
+        .from('workout_logs')
+        .delete()
+        .eq('id', selectedLog.id);
+      
+      if (error) throw error;
+      
+      toast.success('Träningspass borttaget');
+      setShowDeleteLogDialog(false);
+      setShowLogDetails(false);
+      setSelectedLog(null);
+      fetchRecentLogs();
+    } catch (error) {
+      console.error('Error deleting workout:', error);
+      toast.error('Kunde inte ta bort passet');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const currentProgram = programs.find(p => p.id === selectedProgram);
 
   const startNewWorkout = async () => {
@@ -1111,7 +1147,14 @@ export default function WorkoutLogContent() {
         ) : (
           <div className="space-y-3">
             {recentLogs.map((log) => (
-              <Card key={log.id}>
+              <Card 
+                key={log.id} 
+                className="cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => {
+                  setSelectedLog(log);
+                  setShowLogDetails(true);
+                }}
+              >
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -1125,18 +1168,21 @@ export default function WorkoutLogContent() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      {log.duration_minutes && (
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 justify-end">
-                          <Clock className="w-3 h-3" />
-                          {log.duration_minutes} min
-                        </p>
-                      )}
-                      {log.exercise_logs && (
-                        <p className="text-xs text-muted-foreground">
-                          {log.exercise_logs.length} övningar
-                        </p>
-                      )}
+                    <div className="text-right flex items-center gap-3">
+                      <div>
+                        {log.duration_minutes && (
+                          <p className="text-sm text-muted-foreground flex items-center gap-1 justify-end">
+                            <Clock className="w-3 h-3" />
+                            {log.duration_minutes} min
+                          </p>
+                        )}
+                        {log.exercise_logs && (
+                          <p className="text-xs text-muted-foreground">
+                            {log.exercise_logs.length} övningar
+                          </p>
+                        )}
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
                     </div>
                   </div>
                 </CardContent>
@@ -1145,6 +1191,98 @@ export default function WorkoutLogContent() {
           </div>
         )}
       </div>
+
+      {/* Log details dialog */}
+      <Dialog open={showLogDetails} onOpenChange={setShowLogDetails}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 text-primary" />
+              {selectedLog?.workout_day}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedLog && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  {format(new Date(selectedLog.completed_at), 'd MMMM yyyy', { locale: sv })}
+                </span>
+                {selectedLog.duration_minutes && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {selectedLog.duration_minutes} min
+                  </span>
+                )}
+              </div>
+              
+              {selectedLog.exercise_logs && selectedLog.exercise_logs.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Övningar</h4>
+                  <div className="space-y-2">
+                    {selectedLog.exercise_logs.map((exercise, idx) => (
+                      <div key={idx} className="bg-secondary/30 rounded-lg p-3">
+                        <p className="font-medium text-sm">{exercise.exercise_name}</p>
+                        <div className="flex gap-4 text-xs text-muted-foreground mt-1">
+                          <span>{exercise.sets_completed} set</span>
+                          <span>{exercise.reps_completed} reps</span>
+                          {exercise.weight_kg && <span>{exercise.weight_kg} kg</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {selectedLog.notes && (
+                <div className="space-y-1">
+                  <h4 className="font-medium text-sm">Anteckningar</h4>
+                  <p className="text-sm text-muted-foreground">{selectedLog.notes}</p>
+                </div>
+              )}
+              
+              <div className="pt-4 border-t">
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={() => setShowDeleteLogDialog(true)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Ta bort pass
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete log confirmation dialog */}
+      <AlertDialog open={showDeleteLogDialog} onOpenChange={setShowDeleteLogDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ta bort träningspass?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill ta bort detta träningspass? Detta kan inte ångras.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteLog}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Ta bort
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete draft confirmation dialog */}
       <AlertDialog open={showDeleteDraftDialog} onOpenChange={setShowDeleteDraftDialog}>
