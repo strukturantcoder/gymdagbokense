@@ -1295,9 +1295,9 @@ export default function WorkoutLogContent() {
                 )}
               </div>
               
-              {selectedLog.exercise_logs && selectedLog.exercise_logs.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Övningar</h4>
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">Övningar</h4>
+                {selectedLog.exercise_logs && selectedLog.exercise_logs.length > 0 ? (
                   <div className="space-y-2">
                     {selectedLog.exercise_logs.map((exercise, idx) => (
                       <div key={idx} className="bg-secondary/30 rounded-lg p-3">
@@ -1310,8 +1310,12 @@ export default function WorkoutLogContent() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    Inga övningar loggades för detta pass
+                  </p>
+                )}
+              </div>
               
               {selectedLog.notes && (
                 <div className="space-y-1">
