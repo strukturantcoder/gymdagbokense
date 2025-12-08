@@ -27,7 +27,10 @@ import {
   Repeat,
   Sparkles,
   ChevronsUpDown,
-  Instagram
+  Instagram,
+  TrendingUp,
+  TrendingDown,
+  Minus
 } from 'lucide-react';
 import {
   Select,
@@ -89,6 +92,36 @@ interface WorkoutSessionData {
 
 const SESSION_STORAGE_KEY = 'active_workout_session';
 
+// Helper component for comparison display
+function ComparisonItem({ label, current, previous, unit = '' }: { 
+  label: string; 
+  current: number; 
+  previous: number; 
+  unit?: string;
+}) {
+  const diff = current - previous;
+  const isPositive = diff > 0;
+  const isNegative = diff < 0;
+  
+  return (
+    <div className="flex items-center justify-between p-2 bg-background/50 rounded">
+      <span className="text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1">
+        {isPositive && <TrendingUp className="w-3 h-3 text-green-500" />}
+        {isNegative && <TrendingDown className="w-3 h-3 text-red-500" />}
+        {diff === 0 && <Minus className="w-3 h-3 text-muted-foreground" />}
+        <span className={
+          isPositive ? 'text-green-500 font-medium' : 
+          isNegative ? 'text-red-500 font-medium' : 
+          'text-muted-foreground'
+        }>
+          {isPositive ? '+' : ''}{diff}{unit ? ` ${unit}` : ''}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function WorkoutSession() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -113,6 +146,13 @@ export default function WorkoutSession() {
     newPBs: string[];
     totalWeight: number;
     exerciseCount: number;
+    comparison: {
+      prevTotalSets: number;
+      prevTotalReps: number;
+      prevDurationMinutes: number;
+      prevTotalWeight: number;
+      prevDate: string;
+    } | null;
   } | null>(null);
 
   // Load session from storage
@@ -345,6 +385,48 @@ export default function WorkoutSession() {
         return sum + ex.set_details.reduce((setSum, set) => setSum + ((set.weight || 0) * (set.reps || 0)), 0);
       }, 0);
 
+      // Fetch previous workout for comparison (skip the one we just created)
+      let comparison = null;
+      const { data: prevWorkout } = await supabase
+        .from('workout_logs')
+        .select('id, duration_minutes, completed_at')
+        .eq('user_id', user.id)
+        .eq('program_id', sessionData.programId)
+        .eq('workout_day', sessionData.dayName)
+        .neq('id', workoutLog.id)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (prevWorkout) {
+        const { data: prevExercises } = await supabase
+          .from('exercise_logs')
+          .select('sets_completed, set_details')
+          .eq('workout_log_id', prevWorkout.id);
+
+        if (prevExercises) {
+          const prevTotalSets = prevExercises.reduce((sum, ex) => sum + ex.sets_completed, 0);
+          const prevTotalReps = prevExercises.reduce((sum, ex) => {
+            const details = ex.set_details as unknown as SetDetail[] | null;
+            if (!details || !Array.isArray(details)) return sum;
+            return sum + details.reduce((setSum, set) => setSum + (set.reps || 0), 0);
+          }, 0);
+          const prevTotalWeight = prevExercises.reduce((sum, ex) => {
+            const details = ex.set_details as unknown as SetDetail[] | null;
+            if (!details || !Array.isArray(details)) return sum;
+            return sum + details.reduce((setSum, set) => setSum + ((set.weight || 0) * (set.reps || 0)), 0);
+          }, 0);
+
+          comparison = {
+            prevTotalSets,
+            prevTotalReps,
+            prevDurationMinutes: prevWorkout.duration_minutes || 0,
+            prevTotalWeight,
+            prevDate: new Date(prevWorkout.completed_at).toLocaleDateString('sv-SE')
+          };
+        }
+      }
+
       setSummaryData({
         totalSets,
         totalReps,
@@ -352,7 +434,8 @@ export default function WorkoutSession() {
         xpEarned,
         newPBs: newPBsList,
         totalWeight,
-        exerciseCount: sessionData.exercises.length
+        exerciseCount: sessionData.exercises.length,
+        comparison
       });
 
       if (newPBsList.length > 0) {
@@ -456,11 +539,53 @@ export default function WorkoutSession() {
               </motion.div>
             )}
 
+            {/* Comparison with previous workout */}
+            {summaryData.comparison && (
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingUp className="w-4 h-4 text-primary" />
+                      <h3 className="font-medium text-sm">Jämfört med {summaryData.comparison.prevDate}</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <ComparisonItem 
+                        label="Tid" 
+                        current={summaryData.durationMinutes} 
+                        previous={summaryData.comparison.prevDurationMinutes}
+                        unit="min"
+                      />
+                      <ComparisonItem 
+                        label="Set" 
+                        current={summaryData.totalSets} 
+                        previous={summaryData.comparison.prevTotalSets}
+                      />
+                      <ComparisonItem 
+                        label="Reps" 
+                        current={summaryData.totalReps} 
+                        previous={summaryData.comparison.prevTotalReps}
+                      />
+                      <ComparisonItem 
+                        label="Total vikt" 
+                        current={Math.round(summaryData.totalWeight)} 
+                        previous={Math.round(summaryData.comparison.prevTotalWeight)}
+                        unit="kg"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
             {/* Stats Grid */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: summaryData.comparison ? 0.6 : 0.5 }}
             >
               <Card>
                 <CardContent className="p-4">
