@@ -262,36 +262,63 @@ export default function QuickActions() {
 
       {/* Recent Activity */}
       {recentActivity && (
-        <Card className="bg-secondary/30">
-          <CardContent className="py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  recentActivity.type === "workout" 
-                    ? "bg-primary/10" 
-                    : "bg-green-500/10"
-                }`}>
-                  {recentActivity.type === "workout" ? (
-                    <Dumbbell className="w-5 h-5 text-primary" />
-                  ) : (
-                    <Footprints className="w-5 h-5 text-green-500" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium text-sm">
-                    {recentActivity.type === "workout" 
-                      ? recentActivity.name 
-                      : activityTypeLabels[recentActivity.name] || recentActivity.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(recentActivity.date), "EEEE d MMM", { locale: sv })}
-                    {recentActivity.duration && ` • ${recentActivity.duration} min`}
-                  </p>
+        <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardContent className="p-0">
+            <div className="flex items-stretch">
+              {/* Left accent bar */}
+              <div className={`w-1.5 ${
+                recentActivity.type === "workout" 
+                  ? "bg-gradient-to-b from-primary to-primary/50" 
+                  : "bg-gradient-to-b from-green-500 to-green-500/50"
+              }`} />
+              
+              <div className="flex-1 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-sm ${
+                      recentActivity.type === "workout" 
+                        ? "bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20" 
+                        : "bg-gradient-to-br from-green-500/20 to-green-500/5 ring-1 ring-green-500/20"
+                    }`}>
+                      {recentActivity.type === "workout" ? (
+                        <Dumbbell className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Footprints className="w-5 h-5 text-green-500" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm">
+                          {recentActivity.type === "workout" 
+                            ? recentActivity.name 
+                            : activityTypeLabels[recentActivity.name] || recentActivity.name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                        <Calendar className="w-3 h-3" />
+                        <span className="capitalize">
+                          {format(new Date(recentActivity.date), "EEEE d MMM", { locale: sv })}
+                        </span>
+                        {recentActivity.duration && (
+                          <>
+                            <span className="text-muted-foreground/50">•</span>
+                            <Clock className="w-3 h-3" />
+                            <span>{recentActivity.duration} min</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge 
+                      variant="outline" 
+                      className="text-[10px] font-medium border-primary/30 text-primary bg-primary/5"
+                    >
+                      Senaste
+                    </Badge>
+                  </div>
                 </div>
               </div>
-              <Badge variant="secondary" className="text-xs">
-                Senaste pass
-              </Badge>
             </div>
           </CardContent>
         </Card>
