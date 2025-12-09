@@ -521,21 +521,39 @@ export default function WorkoutLogContent() {
 
       if (workoutError) throw workoutError;
 
-      const exerciseLogData = exerciseLogs.map(log => ({
-        workout_log_id: workoutLog.id,
-        exercise_name: log.exercise_name,
-        sets_completed: log.sets_completed,
-        reps_completed: log.reps_completed,
-        weight_kg: log.weight_kg ? parseFloat(log.weight_kg) : null,
-        notes: log.notes || null,
-        set_details: log.set_details.length > 0 ? JSON.parse(JSON.stringify(log.set_details)) : null
-      }));
+      const exerciseLogData = exerciseLogs.map(log => {
+        // Parse weight safely - handle empty strings and invalid values
+        let weightKg: number | null = null;
+        if (log.weight_kg && log.weight_kg.trim() !== '') {
+          const parsed = parseFloat(log.weight_kg);
+          if (!isNaN(parsed)) {
+            weightKg = parsed;
+          }
+        }
+        
+        return {
+          workout_log_id: workoutLog.id,
+          exercise_name: log.exercise_name,
+          sets_completed: log.sets_completed,
+          reps_completed: log.reps_completed || '0',
+          weight_kg: weightKg,
+          notes: log.notes || null,
+          set_details: log.set_details && log.set_details.length > 0 ? JSON.parse(JSON.stringify(log.set_details)) : null
+        };
+      });
+
+      console.log('Saving exercise logs:', exerciseLogData);
 
       const { error: exerciseError } = await supabase
         .from('exercise_logs')
         .insert(exerciseLogData);
 
-      if (exerciseError) throw exerciseError;
+      if (exerciseError) {
+        console.error('Exercise log error:', exerciseError);
+        // If exercise logs fail, delete the workout log to maintain consistency
+        await supabase.from('workout_logs').delete().eq('id', workoutLog.id);
+        throw exerciseError;
+      }
 
       const newPBsList: string[] = [];
       const goalsAchieved: string[] = [];
