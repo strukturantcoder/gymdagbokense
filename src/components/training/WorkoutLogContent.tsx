@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, WifiOff, Trash2 } from 'lucide-react';
+import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, WifiOff, Trash2, Share2 } from 'lucide-react';
 import SwipeableSetRow from './SwipeableSetRow';
 import RestTimer from '@/components/RestTimer';
 import ExerciseInfo from '@/components/ExerciseInfo';
@@ -1427,7 +1427,26 @@ export default function WorkoutLogContent() {
                 </div>
               )}
               
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    if (selectedLog) {
+                      setShareData({
+                        dayName: selectedLog.workout_day,
+                        duration: selectedLog.duration_minutes || undefined,
+                        exerciseCount: selectedLog.exercise_logs?.length || 0,
+                        totalSets: selectedLog.exercise_logs?.reduce((sum, ex) => sum + ex.sets_completed, 0) || 0,
+                      });
+                      setShowLogDetails(false);
+                      setShowShareDialog(true);
+                    }
+                  }}
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Dela på Instagram
+                </Button>
                 <Button
                   variant="destructive"
                   className="w-full"
