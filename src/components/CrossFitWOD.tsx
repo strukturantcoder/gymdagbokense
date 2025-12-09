@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import confetti from 'canvas-confetti';
 import WODRefineDialog from './WODRefineDialog';
+import AdBanner from '@/components/AdBanner';
 
 const WOD_DRAFT_KEY = 'gymdagboken_wod_draft';
 const DRAFT_EXPIRY_HOURS = 24;
@@ -495,6 +496,9 @@ export default function CrossFitWOD() {
 
           {wod && !isLoading && (
             <div className="space-y-4">
+              {/* Ad when WOD is displayed */}
+              <AdBanner size="horizontal" />
+              
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-bold text-lg">{wod.name}</h3>
@@ -710,6 +714,9 @@ export default function CrossFitWOD() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {/* Ad in log dialog */}
+            <AdBanner size="horizontal" />
+            
             <div className="space-y-2">
               <Label htmlFor="completionTime">Tid (mm:ss eller total tid)</Label>
               <Input
