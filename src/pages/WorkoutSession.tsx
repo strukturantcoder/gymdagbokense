@@ -132,6 +132,8 @@ export default function WorkoutSession() {
   const [isPaused, setIsPaused] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showDurationDialog, setShowDurationDialog] = useState(false);
+  const [confirmedDuration, setConfirmedDuration] = useState<number | null>(null);
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [personalBests, setPersonalBests] = useState<Map<string, PersonalBest>>(new Map());
   const [exerciseGoals, setExerciseGoals] = useState<Map<string, ExerciseGoal>>(new Map());
@@ -295,7 +297,7 @@ export default function WorkoutSession() {
     });
   }, [sessionData, currentExerciseIndex]);
 
-  const handleSaveWorkout = async () => {
+  const handleSaveClick = () => {
     if (!sessionData || !user) return;
     
     // Validate exercises exist before saving
@@ -304,7 +306,18 @@ export default function WorkoutSession() {
       return;
     }
     
+    // Initialize confirmed duration with current elapsed time
+    setConfirmedDuration(Math.round(elapsedTime / 60));
+    setShowDurationDialog(true);
+  };
+
+  const handleSaveWorkout = async () => {
+    if (!sessionData || !user) return;
+    
+    setShowDurationDialog(false);
     setIsSaving(true);
+    
+    const durationMinutes = confirmedDuration || Math.round(elapsedTime / 60);
     
     try {
       const { data: workoutLog, error: workoutError } = await supabase
@@ -313,7 +326,7 @@ export default function WorkoutSession() {
           user_id: user.id,
           program_id: sessionData.programId,
           workout_day: sessionData.dayName,
-          duration_minutes: Math.round(elapsedTime / 60) || null,
+          duration_minutes: durationMinutes || null,
           notes: workoutNotes || null
         }])
         .select()
@@ -379,7 +392,6 @@ export default function WorkoutSession() {
 
       // Update user stats
       const totalSets = sessionData.exercises.reduce((sum, ex) => sum + ex.sets_completed, 0);
-      const durationMinutes = Math.round(elapsedTime / 60);
       const xpEarned = 50 + totalSets * 2 + Math.floor(durationMinutes / 5) * 5;
 
       const { data: currentStats } = await supabase
@@ -948,7 +960,7 @@ export default function WorkoutSession() {
             <Button
               variant="hero"
               className="flex-1"
-              onClick={handleSaveWorkout}
+              onClick={handleSaveClick}
               disabled={isSaving}
             >
               {isSaving ? (
@@ -989,6 +1001,38 @@ export default function WorkoutSession() {
           </motion.div>
         )}
       </footer>
+
+      {/* Duration confirmation dialog */}
+      <AlertDialog open={showDurationDialog} onOpenChange={setShowDurationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bekräfta träningstid</AlertDialogTitle>
+            <AlertDialogDescription>
+              Din uppmätta träningstid är {Math.round(elapsedTime / 60)} minuter. 
+              Om du fyllde i passet i efterhand kan du justera tiden nedan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-foreground">Tid (minuter):</label>
+              <Input
+                type="number"
+                value={confirmedDuration || ''}
+                onChange={(e) => setConfirmedDuration(parseInt(e.target.value) || 0)}
+                min={1}
+                max={300}
+                className="w-24"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSaveWorkout} disabled={!confirmedDuration || confirmedDuration < 1}>
+              Spara pass
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Exit confirmation dialog */}
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
