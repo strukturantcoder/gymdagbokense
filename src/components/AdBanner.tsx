@@ -38,7 +38,7 @@ const AdBanner = ({ size = "horizontal", className = "" }: AdBannerProps) => {
   }
 
   const sizeClasses = {
-    horizontal: "w-full h-24 md:h-28",
+    horizontal: "w-full h-16 sm:h-20 md:h-28",
     square: "w-full aspect-square max-w-[300px]",
     vertical: "w-full max-w-[160px] h-[600px]",
   };
