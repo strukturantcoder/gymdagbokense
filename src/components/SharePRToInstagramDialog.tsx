@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Instagram, Copy, Download, Share2, Trophy, Loader2, Dumbbell } from 'lucide-react';
+import { Copy, Download, Share2, Trophy, Loader2, Dumbbell, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PRShareData {
@@ -80,102 +80,228 @@ export default function SharePRToInstagramDialog({
       canvas.width = 1080;
       canvas.height = 1920;
 
-      // Gold/trophy gradient background
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, '#f59e0b'); // amber
-      gradient.addColorStop(0.3, '#fbbf24'); // yellow
-      gradient.addColorStop(0.7, '#f59e0b'); // amber
-      gradient.addColorStop(1, '#d97706'); // darker amber
-      ctx.fillStyle = gradient;
+      // Premium dark background with golden accents
+      const bgGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      bgGradient.addColorStop(0, '#0a0a0a');
+      bgGradient.addColorStop(0.3, '#1a1a1a');
+      bgGradient.addColorStop(0.7, '#0f0f0f');
+      bgGradient.addColorStop(1, '#050505');
+      ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Add subtle pattern overlay for depth
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
-      for (let i = 0; i < canvas.height; i += 8) {
-        ctx.fillRect(0, i, canvas.width, 4);
+      // Add subtle noise texture
+      for (let i = 0; i < 8000; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const opacity = Math.random() * 0.03;
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.fillRect(x, y, 1, 1);
       }
 
-      // Add radial glow effect
-      const radialGradient = ctx.createRadialGradient(
-        canvas.width / 2, canvas.height / 2 - 200, 0,
-        canvas.width / 2, canvas.height / 2 - 200, 600
+      // Large golden radial glow at top
+      const topGlow = ctx.createRadialGradient(
+        canvas.width / 2, 300, 0,
+        canvas.width / 2, 300, 500
       );
-      radialGradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
-      radialGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = radialGradient;
+      topGlow.addColorStop(0, 'rgba(251, 191, 36, 0.25)');
+      topGlow.addColorStop(0.5, 'rgba(245, 158, 11, 0.08)');
+      topGlow.addColorStop(1, 'rgba(245, 158, 11, 0)');
+      ctx.fillStyle = topGlow;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Secondary glow at center
+      const centerGlow = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2 - 100, 0,
+        canvas.width / 2, canvas.height / 2 - 100, 600
+      );
+      centerGlow.addColorStop(0, 'rgba(251, 191, 36, 0.12)');
+      centerGlow.addColorStop(1, 'rgba(251, 191, 36, 0)');
+      ctx.fillStyle = centerGlow;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Geometric accent lines
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.1)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, 200 + i * 400);
+        ctx.lineTo(canvas.width, 250 + i * 400);
+        ctx.stroke();
+      }
+
+      // Decorative corner elements
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.3)';
+      ctx.lineWidth = 3;
+      
+      // Top left corner
+      ctx.beginPath();
+      ctx.moveTo(60, 150);
+      ctx.lineTo(60, 60);
+      ctx.lineTo(150, 60);
+      ctx.stroke();
+      
+      // Top right corner
+      ctx.beginPath();
+      ctx.moveTo(canvas.width - 60, 150);
+      ctx.lineTo(canvas.width - 60, 60);
+      ctx.lineTo(canvas.width - 150, 60);
+      ctx.stroke();
+      
+      // Bottom corners
+      ctx.beginPath();
+      ctx.moveTo(60, canvas.height - 150);
+      ctx.lineTo(60, canvas.height - 60);
+      ctx.lineTo(150, canvas.height - 60);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(canvas.width - 60, canvas.height - 150);
+      ctx.lineTo(canvas.width - 60, canvas.height - 60);
+      ctx.lineTo(canvas.width - 150, canvas.height - 60);
+      ctx.stroke();
 
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+
+      // Small label at top
+      ctx.font = 'bold 28px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(251, 191, 36, 0.8)';
+      ctx.letterSpacing = '8px';
+      ctx.fillText('★ ACHIEVEMENT UNLOCKED ★', canvas.width / 2, 200);
       
-      // Trophy emoji - large
-      ctx.font = '180px Arial, sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText('🏆', canvas.width / 2, 380);
+      // Trophy with glow effect
+      const trophyY = 420;
       
-      // "NYTT PERSONBÄSTA!" header with shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-      ctx.font = 'bold 68px Arial, sans-serif';
-      ctx.fillText('NYTT PERSONBÄSTA!', canvas.width / 2 + 4, 564);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText('NYTT PERSONBÄSTA!', canvas.width / 2, 560);
-      
-      // Stats container with dark overlay
-      const boxY = 680;
-      const boxHeight = prData.previousWeight ? 500 : 380;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+      // Trophy glow
+      const trophyGlow = ctx.createRadialGradient(
+        canvas.width / 2, trophyY, 0,
+        canvas.width / 2, trophyY, 200
+      );
+      trophyGlow.addColorStop(0, 'rgba(251, 191, 36, 0.4)');
+      trophyGlow.addColorStop(0.5, 'rgba(251, 191, 36, 0.1)');
+      trophyGlow.addColorStop(1, 'rgba(251, 191, 36, 0)');
+      ctx.fillStyle = trophyGlow;
       ctx.beginPath();
-      ctx.roundRect(100, boxY, canvas.width - 200, boxHeight, 50);
+      ctx.arc(canvas.width / 2, trophyY, 200, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = '200px Arial, sans-serif';
+      ctx.fillText('🏆', canvas.width / 2, trophyY);
+
+      // "NYTT PERSONBÄSTA" with gradient text effect
+      const headerY = 620;
+      ctx.font = 'bold 72px system-ui, -apple-system, sans-serif';
+      
+      // Text shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillText('NYTT PERSONBÄSTA', canvas.width / 2 + 4, headerY + 4);
+      
+      // Main text with golden gradient
+      const textGradient = ctx.createLinearGradient(200, headerY - 40, canvas.width - 200, headerY + 40);
+      textGradient.addColorStop(0, '#fbbf24');
+      textGradient.addColorStop(0.3, '#fef3c7');
+      textGradient.addColorStop(0.5, '#fbbf24');
+      textGradient.addColorStop(0.7, '#fef3c7');
+      textGradient.addColorStop(1, '#f59e0b');
+      ctx.fillStyle = textGradient;
+      ctx.fillText('NYTT PERSONBÄSTA', canvas.width / 2, headerY);
+
+      // Main content card with glassmorphism effect
+      const cardY = 720;
+      const cardHeight = prData.previousWeight ? 550 : 450;
+      
+      // Card background
+      const cardGradient = ctx.createLinearGradient(100, cardY, canvas.width - 100, cardY + cardHeight);
+      cardGradient.addColorStop(0, 'rgba(251, 191, 36, 0.15)');
+      cardGradient.addColorStop(0.5, 'rgba(251, 191, 36, 0.08)');
+      cardGradient.addColorStop(1, 'rgba(251, 191, 36, 0.12)');
+      
+      ctx.fillStyle = cardGradient;
+      ctx.beginPath();
+      ctx.roundRect(100, cardY, canvas.width - 200, cardHeight, 30);
       ctx.fill();
       
+      // Card border
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
       // Exercise name
-      const exerciseName = prData.exerciseName.length > 18 
-        ? prData.exerciseName.substring(0, 16) + '...' 
+      const exerciseName = prData.exerciseName.length > 20 
+        ? prData.exerciseName.substring(0, 18) + '...' 
         : prData.exerciseName;
-      ctx.font = 'bold 56px Arial, sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(exerciseName, canvas.width / 2, boxY + 80);
+      ctx.font = 'bold 52px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillText(exerciseName.toUpperCase(), canvas.width / 2, cardY + 80);
+
+      // Divider line
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(200, cardY + 130);
+      ctx.lineTo(canvas.width - 200, cardY + 130);
+      ctx.stroke();
+
+      // Weight - super prominent
+      ctx.font = 'bold 140px system-ui, -apple-system, sans-serif';
+      const weightGradient = ctx.createLinearGradient(300, cardY + 180, canvas.width - 300, cardY + 300);
+      weightGradient.addColorStop(0, '#ffffff');
+      weightGradient.addColorStop(0.5, '#fef3c7');
+      weightGradient.addColorStop(1, '#ffffff');
+      ctx.fillStyle = weightGradient;
+      ctx.fillText(`${prData.newWeight}`, canvas.width / 2, cardY + 250);
       
-      // Dumbbell icon line
-      ctx.font = '48px Arial, sans-serif';
-      ctx.fillText('💪', canvas.width / 2, boxY + 160);
-      
-      // NEW WEIGHT - Big and prominent
-      ctx.font = 'bold 120px Arial, sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(`${prData.newWeight} kg`, canvas.width / 2, boxY + 280);
-      
+      // "KG" label
+      ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(251, 191, 36, 0.9)';
+      ctx.fillText('KG', canvas.width / 2, cardY + 330);
+
       // Reps if available
+      let nextY = cardY + 400;
       if (prData.reps) {
-        ctx.font = '44px Arial, sans-serif';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillText(`${prData.reps} reps`, canvas.width / 2, boxY + 360);
+        ctx.font = '40px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillText(`${prData.reps} repetitioner`, canvas.width / 2, nextY);
+        nextY += 70;
       }
-      
+
       // Improvement badge
       if (prData.previousWeight) {
         const improvement = prData.newWeight - prData.previousWeight;
-        const improvementY = boxY + (prData.reps ? 440 : 380);
         
-        ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+        // Badge background
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.2)';
         ctx.beginPath();
-        ctx.roundRect(280, improvementY - 35, canvas.width - 560, 70, 35);
+        ctx.roundRect(250, nextY - 35, canvas.width - 500, 70, 35);
         ctx.fill();
         
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
         ctx.fillStyle = '#86efac';
-        ctx.font = 'bold 40px Arial, sans-serif';
-        ctx.fillText(`📈 +${improvement.toFixed(1)} kg från förra`, canvas.width / 2, improvementY);
+        ctx.font = 'bold 36px system-ui, -apple-system, sans-serif';
+        ctx.fillText(`↑ +${improvement.toFixed(1)} KG FÖRBÄTTRING`, canvas.width / 2, nextY);
       }
-      
-      // Motivational text
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.font = '36px Arial, sans-serif';
-      ctx.fillText('Nya mål krossas varje dag! 💥', canvas.width / 2, canvas.height - 280);
 
-      // Branding at bottom
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-      ctx.font = 'bold 52px Arial, sans-serif';
-      ctx.fillText('GYMDAGBOKEN.SE', canvas.width / 2, canvas.height - 160);
+      // Motivational text
+      ctx.font = '36px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.fillText('Nya mål krossas varje dag', canvas.width / 2, canvas.height - 300);
+
+      // Sparkle decorations
+      ctx.font = '40px Arial, sans-serif';
+      ctx.fillText('✨', 180, canvas.height - 300);
+      ctx.fillText('✨', canvas.width - 180, canvas.height - 300);
+
+      // Branding with premium styling
+      ctx.fillStyle = 'rgba(251, 191, 36, 0.8)';
+      ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+      ctx.fillText('POWERED BY', canvas.width / 2, canvas.height - 200);
+      
+      ctx.font = 'bold 56px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('GYMDAGBOKEN', canvas.width / 2, canvas.height - 140);
 
       // Convert to blob
       canvas.toBlob((blob) => {
@@ -210,7 +336,6 @@ export default function SharePRToInstagramDialog({
       const blob = await generateShareImage();
       const file = new File([blob], 'gymdagboken-pr.png', { type: 'image/png' });
 
-      // Check if native sharing with files is supported
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -220,7 +345,6 @@ export default function SharePRToInstagramDialog({
         toast.success('Delat!');
         onOpenChange(false);
       } else {
-        // Fallback: download image and copy caption
         await navigator.clipboard.writeText(caption);
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -257,32 +381,43 @@ export default function SharePRToInstagramDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Preview card */}
-          <div className="bg-gradient-to-br from-amber-500 via-yellow-400 to-amber-600 rounded-lg p-6 text-center text-white">
-            <div className="space-y-3">
-              <div className="text-5xl">🏆</div>
-              <p className="font-bold text-lg opacity-90">NYTT PERSONBÄSTA!</p>
+          {/* Preview card - Premium dark design */}
+          <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 rounded-xl p-6 text-center border border-amber-500/20 relative overflow-hidden">
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-t from-amber-500/10 via-transparent to-amber-500/5" />
+            
+            <div className="relative space-y-3">
+              <div className="flex items-center justify-center gap-2 text-amber-400/80 text-xs font-medium tracking-widest">
+                <Sparkles className="h-3 w-3" />
+                ACHIEVEMENT UNLOCKED
+                <Sparkles className="h-3 w-3" />
+              </div>
               
-              <div className="bg-black/20 rounded-lg p-4 space-y-2">
-                <p className="font-bold text-xl flex items-center justify-center gap-2">
-                  <Dumbbell className="h-5 w-5" />
+              <div className="text-5xl py-2">🏆</div>
+              
+              <p className="font-bold text-amber-400 text-sm tracking-wide">NYTT PERSONBÄSTA</p>
+              
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 space-y-2">
+                <p className="font-bold text-white/90 flex items-center justify-center gap-2">
+                  <Dumbbell className="h-4 w-4 text-amber-400" />
                   {prData.exerciseName}
                 </p>
-                <p className="text-4xl font-bold">{prData.newWeight} kg</p>
+                <p className="text-4xl font-bold text-white">{prData.newWeight} <span className="text-amber-400 text-xl">KG</span></p>
                 {prData.reps && (
-                  <p className="text-sm opacity-90">{prData.reps} reps</p>
+                  <p className="text-sm text-white/60">{prData.reps} reps</p>
                 )}
               </div>
               
               {improvement !== null && improvement > 0 && (
-                <div className="bg-green-500/30 rounded-lg px-4 py-2 inline-flex items-center gap-2">
-                  <span className="text-green-100 font-medium text-sm">
-                    📈 +{improvement.toFixed(1)} kg från förra
+                <div className="bg-green-500/20 border border-green-500/30 rounded-full px-4 py-1.5 inline-flex items-center gap-2">
+                  <span className="text-green-400 font-medium text-sm">
+                    ↑ +{improvement.toFixed(1)} kg
                   </span>
                 </div>
               )}
             </div>
-            <p className="text-xs opacity-80 mt-4 font-bold">GYMDAGBOKEN.SE</p>
+            
+            <p className="text-xs text-white/40 mt-4 font-bold tracking-wider">GYMDAGBOKEN</p>
           </div>
 
           {/* Caption editor */}
@@ -306,7 +441,7 @@ export default function SharePRToInstagramDialog({
               <Download className="h-4 w-4 mr-2" />
               Ladda ner
             </Button>
-            <Button onClick={shareNative} className="flex-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:opacity-90" disabled={isSharing}>
+            <Button onClick={shareNative} className="flex-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:opacity-90 text-black font-semibold" disabled={isSharing}>
               {isSharing ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
@@ -326,7 +461,6 @@ export default function SharePRToInstagramDialog({
           </Button>
         </div>
 
-        {/* Hidden canvas for image generation */}
         <canvas ref={canvasRef} className="hidden" />
       </DialogContent>
     </Dialog>

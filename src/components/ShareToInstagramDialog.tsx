@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Instagram, Copy, Download, Share2, Timer, Trophy, Loader2 } from 'lucide-react';
+import { Instagram, Copy, Download, Share2, Timer, Trophy, Loader2, Flame, Target } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface WorkoutShareData {
@@ -110,85 +110,194 @@ export default function ShareToInstagramDialog({
         return;
       }
 
-      // Set canvas size for Instagram story (9:16 aspect ratio)
       canvas.width = 1080;
       canvas.height = 1920;
 
-      // Orange gradient background (hardcoded for reliability)
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, '#f97316'); // primary orange
-      gradient.addColorStop(0.5, '#fb923c'); // lighter orange
-      gradient.addColorStop(1, '#f59e0b'); // amber
-      ctx.fillStyle = gradient;
+      // Premium dark background
+      const bgGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      bgGradient.addColorStop(0, '#0a0a0a');
+      bgGradient.addColorStop(0.4, '#171717');
+      bgGradient.addColorStop(0.6, '#0f0f0f');
+      bgGradient.addColorStop(1, '#050505');
+      ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Add subtle pattern overlay for depth
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      for (let i = 0; i < canvas.height; i += 6) {
-        ctx.fillRect(0, i, canvas.width, 3);
+      // Noise texture
+      for (let i = 0; i < 6000; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.025})`;
+        ctx.fillRect(x, y, 1, 1);
       }
+
+      // Determine accent color based on content type
+      const isCardio = !!cardioData;
+      const accentColor = isCardio ? { r: 249, g: 115, b: 22 } : { r: 249, g: 115, b: 22 }; // Orange for both
+      const accentRgba = (alpha: number) => `rgba(${accentColor.r}, ${accentColor.g}, ${accentColor.b}, ${alpha})`;
+
+      // Large radial glow at top
+      const topGlow = ctx.createRadialGradient(
+        canvas.width / 2, 350, 0,
+        canvas.width / 2, 350, 500
+      );
+      topGlow.addColorStop(0, accentRgba(0.3));
+      topGlow.addColorStop(0.4, accentRgba(0.1));
+      topGlow.addColorStop(1, accentRgba(0));
+      ctx.fillStyle = topGlow;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Secondary ambient glow
+      const ambientGlow = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0,
+        canvas.width / 2, canvas.height / 2, 700
+      );
+      ambientGlow.addColorStop(0, accentRgba(0.08));
+      ambientGlow.addColorStop(1, accentRgba(0));
+      ctx.fillStyle = ambientGlow;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Geometric accent lines
+      ctx.strokeStyle = accentRgba(0.08);
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 8; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, 100 + i * 250);
+        ctx.lineTo(canvas.width, 150 + i * 250);
+        ctx.stroke();
+      }
+
+      // Corner decorations
+      ctx.strokeStyle = accentRgba(0.25);
+      ctx.lineWidth = 3;
+      
+      const corners = [
+        { x1: 60, y1: 150, x2: 60, y2: 60, x3: 150, y3: 60 },
+        { x1: canvas.width - 60, y1: 150, x2: canvas.width - 60, y2: 60, x3: canvas.width - 150, y3: 60 },
+        { x1: 60, y1: canvas.height - 150, x2: 60, y2: canvas.height - 60, x3: 150, y3: canvas.height - 60 },
+        { x1: canvas.width - 60, y1: canvas.height - 150, x2: canvas.width - 60, y2: canvas.height - 60, x3: canvas.width - 150, y3: canvas.height - 60 }
+      ];
+      
+      corners.forEach(c => {
+        ctx.beginPath();
+        ctx.moveTo(c.x1, c.y1);
+        ctx.lineTo(c.x2, c.y2);
+        ctx.lineTo(c.x3, c.y3);
+        ctx.stroke();
+      });
 
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      
+
+      // Top label
+      ctx.font = 'bold 26px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = accentRgba(0.7);
+      ctx.fillText('★ WORKOUT COMPLETE ★', canvas.width / 2, 200);
+
       if (workoutData) {
-        // Emoji
-        ctx.font = '120px Arial, sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('💪', canvas.width / 2, 450);
-        
-        // "AVKLARAT!" header
-        ctx.font = 'bold 52px Arial, sans-serif';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillText('AVKLARAT!', canvas.width / 2, 560);
-        
-        // Day name - truncate if too long
-        const dayName = workoutData.dayName.length > 20 
-          ? workoutData.dayName.substring(0, 18) + '...' 
-          : workoutData.dayName;
-        ctx.font = 'bold 72px Arial, sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(dayName, canvas.width / 2, 680);
-        
-        // Stats container with dark overlay
-        const boxY = 780;
-        const boxHeight = workoutData.newPBs && workoutData.newPBs.length > 0 ? 480 : 360;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        // Main emoji with glow
+        const emojiY = 420;
+        const emojiGlow = ctx.createRadialGradient(
+          canvas.width / 2, emojiY, 0,
+          canvas.width / 2, emojiY, 180
+        );
+        emojiGlow.addColorStop(0, accentRgba(0.35));
+        emojiGlow.addColorStop(0.5, accentRgba(0.1));
+        emojiGlow.addColorStop(1, accentRgba(0));
+        ctx.fillStyle = emojiGlow;
         ctx.beginPath();
-        ctx.roundRect(120, boxY, canvas.width - 240, boxHeight, 40);
+        ctx.arc(canvas.width / 2, emojiY, 180, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font = '180px Arial, sans-serif';
+        ctx.fillText('💪', canvas.width / 2, emojiY);
+
+        // "AVKLARAT" header with gradient
+        const headerY = 620;
+        ctx.font = 'bold 80px system-ui, -apple-system, sans-serif';
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillText('AVKLARAT!', canvas.width / 2 + 4, headerY + 4);
+        
+        const textGrad = ctx.createLinearGradient(200, headerY - 50, canvas.width - 200, headerY + 50);
+        textGrad.addColorStop(0, '#f97316');
+        textGrad.addColorStop(0.3, '#fed7aa');
+        textGrad.addColorStop(0.5, '#f97316');
+        textGrad.addColorStop(0.7, '#fed7aa');
+        textGrad.addColorStop(1, '#ea580c');
+        ctx.fillStyle = textGrad;
+        ctx.fillText('AVKLARAT!', canvas.width / 2, headerY);
+
+        // Day name
+        const dayName = workoutData.dayName.length > 22 
+          ? workoutData.dayName.substring(0, 20) + '...' 
+          : workoutData.dayName;
+        ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillText(dayName.toUpperCase(), canvas.width / 2, 720);
+
+        // Stats card
+        const cardY = 800;
+        const hasPBs = workoutData.newPBs && workoutData.newPBs.length > 0;
+        const cardHeight = hasPBs ? 480 : 380;
+        
+        // Card background
+        const cardGrad = ctx.createLinearGradient(100, cardY, canvas.width - 100, cardY + cardHeight);
+        cardGrad.addColorStop(0, accentRgba(0.12));
+        cardGrad.addColorStop(0.5, accentRgba(0.06));
+        cardGrad.addColorStop(1, accentRgba(0.1));
+        
+        ctx.fillStyle = cardGrad;
+        ctx.beginPath();
+        ctx.roundRect(100, cardY, canvas.width - 200, cardHeight, 30);
         ctx.fill();
         
+        ctx.strokeStyle = accentRgba(0.3);
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
         // Stats
-        ctx.font = '44px Arial, sans-serif';
-        ctx.fillStyle = '#ffffff';
-        
-        let yPos = boxY + 90;
+        let yPos = cardY + 90;
+        ctx.font = '42px system-ui, -apple-system, sans-serif';
         
         if (workoutData.duration) {
-          ctx.fillText(`⏱️  ${workoutData.duration} minuter`, canvas.width / 2, yPos);
-          yPos += 90;
+          ctx.fillStyle = accentRgba(0.9);
+          ctx.fillText('⏱', canvas.width / 2 - 140, yPos);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(`${workoutData.duration} minuter`, canvas.width / 2 + 30, yPos);
+          yPos += 85;
         }
-        
-        ctx.fillText(`🎯  ${workoutData.exerciseCount} övningar`, canvas.width / 2, yPos);
-        yPos += 90;
-        
-        ctx.fillText(`📊  ${workoutData.totalSets} set totalt`, canvas.width / 2, yPos);
-        
-        // PB badge
-        if (workoutData.newPBs && workoutData.newPBs.length > 0) {
-          yPos += 110;
-          ctx.fillStyle = 'rgba(250, 204, 21, 0.3)';
+
+        ctx.fillStyle = accentRgba(0.9);
+        ctx.fillText('🎯', canvas.width / 2 - 140, yPos);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`${workoutData.exerciseCount} övningar`, canvas.width / 2 + 30, yPos);
+        yPos += 85;
+
+        ctx.fillStyle = accentRgba(0.9);
+        ctx.fillText('📊', canvas.width / 2 - 140, yPos);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`${workoutData.totalSets} set totalt`, canvas.width / 2 + 30, yPos);
+
+        // PB Badge
+        if (hasPBs) {
+          yPos += 100;
+          
+          ctx.fillStyle = 'rgba(250, 204, 21, 0.15)';
           ctx.beginPath();
-          ctx.roundRect(200, yPos - 40, canvas.width - 400, 80, 20);
+          ctx.roundRect(180, yPos - 40, canvas.width - 360, 80, 40);
           ctx.fill();
           
-          ctx.fillStyle = '#fef08a';
-          ctx.font = 'bold 40px Arial, sans-serif';
-          ctx.fillText('🏆 NYTT PERSONBÄSTA!', canvas.width / 2, yPos + 5);
+          ctx.strokeStyle = 'rgba(250, 204, 21, 0.4)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          ctx.fillStyle = '#fde047';
+          ctx.font = 'bold 38px system-ui, -apple-system, sans-serif';
+          ctx.fillText('🏆 NYTT PERSONBÄSTA!', canvas.width / 2, yPos);
         }
-        
+
       } else if (cardioData) {
-        // Activity icon
+        // Cardio version
         const emoji = {
           'Löpning': '🏃',
           'Cykling': '🚴',
@@ -197,56 +306,100 @@ export default function ShareToInstagramDialog({
           'Golf': '⛳',
           'Övrigt': '🔥'
         }[cardioData.activityType] || '🔥';
+
+        const emojiY = 420;
+        const emojiGlow = ctx.createRadialGradient(
+          canvas.width / 2, emojiY, 0,
+          canvas.width / 2, emojiY, 180
+        );
+        emojiGlow.addColorStop(0, accentRgba(0.35));
+        emojiGlow.addColorStop(0.5, accentRgba(0.1));
+        emojiGlow.addColorStop(1, accentRgba(0));
+        ctx.fillStyle = emojiGlow;
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, emojiY, 180, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font = '180px Arial, sans-serif';
+        ctx.fillText(emoji, canvas.width / 2, emojiY);
+
+        // Header
+        const headerY = 620;
+        ctx.font = 'bold 80px system-ui, -apple-system, sans-serif';
         
-        ctx.font = '120px Arial, sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(emoji, canvas.width / 2, 450);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillText('AVKLARAT!', canvas.width / 2 + 4, headerY + 4);
         
-        // "AVKLARAT!" header
-        ctx.font = 'bold 52px Arial, sans-serif';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillText('AVKLARAT!', canvas.width / 2, 560);
-        
+        const textGrad = ctx.createLinearGradient(200, headerY - 50, canvas.width - 200, headerY + 50);
+        textGrad.addColorStop(0, '#f97316');
+        textGrad.addColorStop(0.3, '#fed7aa');
+        textGrad.addColorStop(0.5, '#f97316');
+        textGrad.addColorStop(0.7, '#fed7aa');
+        textGrad.addColorStop(1, '#ea580c');
+        ctx.fillStyle = textGrad;
+        ctx.fillText('AVKLARAT!', canvas.width / 2, headerY);
+
         // Activity name
-        ctx.font = 'bold 72px Arial, sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(cardioData.activityType, canvas.width / 2, 680);
-        
-        // Stats container
-        const boxY = 780;
+        ctx.font = 'bold 56px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillText(cardioData.activityType.toUpperCase(), canvas.width / 2, 720);
+
+        // Stats card
+        const cardY = 800;
         let statCount = 1;
         if (cardioData.distance) statCount++;
         if (cardioData.calories) statCount++;
-        const boxHeight = 80 + statCount * 90;
+        const cardHeight = 100 + statCount * 85;
         
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        const cardGrad = ctx.createLinearGradient(100, cardY, canvas.width - 100, cardY + cardHeight);
+        cardGrad.addColorStop(0, accentRgba(0.12));
+        cardGrad.addColorStop(0.5, accentRgba(0.06));
+        cardGrad.addColorStop(1, accentRgba(0.1));
+        
+        ctx.fillStyle = cardGrad;
         ctx.beginPath();
-        ctx.roundRect(120, boxY, canvas.width - 240, boxHeight, 40);
+        ctx.roundRect(100, cardY, canvas.width - 200, cardHeight, 30);
         ctx.fill();
         
-        ctx.font = '44px Arial, sans-serif';
-        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = accentRgba(0.3);
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Stats
+        let yPos = cardY + 80;
+        ctx.font = '42px system-ui, -apple-system, sans-serif';
         
-        let yPos = boxY + 80;
-        ctx.fillText(`⏱️  ${cardioData.duration} minuter`, canvas.width / 2, yPos);
+        ctx.fillStyle = accentRgba(0.9);
+        ctx.fillText('⏱', canvas.width / 2 - 120, yPos);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`${cardioData.duration} minuter`, canvas.width / 2 + 40, yPos);
         
         if (cardioData.distance) {
-          yPos += 90;
-          ctx.fillText(`📍  ${cardioData.distance} km`, canvas.width / 2, yPos);
+          yPos += 85;
+          ctx.fillStyle = accentRgba(0.9);
+          ctx.fillText('📍', canvas.width / 2 - 120, yPos);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(`${cardioData.distance} km`, canvas.width / 2 + 40, yPos);
         }
         
         if (cardioData.calories) {
-          yPos += 90;
-          ctx.fillText(`🔥  ${cardioData.calories} kcal`, canvas.width / 2, yPos);
+          yPos += 85;
+          ctx.fillStyle = accentRgba(0.9);
+          ctx.fillText('🔥', canvas.width / 2 - 120, yPos);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(`${cardioData.calories} kcal`, canvas.width / 2 + 40, yPos);
         }
       }
 
-      // Branding at bottom
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.font = 'bold 48px Arial, sans-serif';
-      ctx.fillText('GYMDAGBOKEN.SE', canvas.width / 2, canvas.height - 160);
+      // Branding
+      ctx.fillStyle = accentRgba(0.7);
+      ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+      ctx.fillText('POWERED BY', canvas.width / 2, canvas.height - 200);
+      
+      ctx.font = 'bold 56px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('GYMDAGBOKEN', canvas.width / 2, canvas.height - 140);
 
-      // Convert to blob
       canvas.toBlob((blob) => {
         if (blob) {
           resolve(blob);
@@ -279,7 +432,6 @@ export default function ShareToInstagramDialog({
       const blob = await generateShareImage();
       const file = new File([blob], 'gymdagboken-share.png', { type: 'image/png' });
 
-      // Check if native sharing with files is supported
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -289,7 +441,6 @@ export default function ShareToInstagramDialog({
         toast.success('Delat!');
         onOpenChange(false);
       } else {
-        // Fallback: download image and copy caption
         await navigator.clipboard.writeText(caption);
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -308,10 +459,8 @@ export default function ShareToInstagramDialog({
     }
   };
 
-  // Auto-share when dialog opens on mobile
   useEffect(() => {
     if (open && (workoutData || cardioData)) {
-      // Small delay to ensure canvas is ready
       const timer = setTimeout(() => {
         shareNative();
       }, 100);
@@ -333,53 +482,72 @@ export default function ShareToInstagramDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Preview card */}
-          <div className="bg-gradient-to-br from-orange-500 via-orange-400 to-amber-500 rounded-lg p-6 text-center text-white">
+          {/* Preview card - Premium dark design */}
+          <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 rounded-xl p-6 text-center border border-orange-500/20 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-t from-orange-500/10 via-transparent to-orange-500/5" />
+            
             {workoutData && (
-              <div className="space-y-3">
-                <div className="text-4xl">💪</div>
-                <p className="text-sm font-medium opacity-90">AVKLARAT!</p>
-                <p className="font-bold text-xl">{workoutData.dayName}</p>
-                <div className="bg-black/20 rounded-lg p-4 space-y-2 text-sm">
+              <div className="relative space-y-3">
+                <p className="text-orange-400/70 text-xs font-medium tracking-widest">★ WORKOUT COMPLETE ★</p>
+                <div className="text-4xl py-1">💪</div>
+                <p className="font-bold text-orange-400 tracking-wide">AVKLARAT!</p>
+                <p className="font-bold text-white text-lg">{workoutData.dayName}</p>
+                
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4 space-y-2 text-sm">
                   {workoutData.duration && (
-                    <p className="flex items-center justify-center gap-2">
-                      <Timer className="h-4 w-4" />
+                    <p className="flex items-center justify-center gap-2 text-white/80">
+                      <Timer className="h-4 w-4 text-orange-400" />
                       {workoutData.duration} minuter
                     </p>
                   )}
-                  <p>🎯 {workoutData.exerciseCount} övningar</p>
-                  <p>📊 {workoutData.totalSets} set totalt</p>
+                  <p className="flex items-center justify-center gap-2 text-white/80">
+                    <Target className="h-4 w-4 text-orange-400" />
+                    {workoutData.exerciseCount} övningar
+                  </p>
+                  <p className="text-white/80">📊 {workoutData.totalSets} set totalt</p>
                 </div>
+                
                 {workoutData.newPBs && workoutData.newPBs.length > 0 && (
-                  <div className="bg-yellow-500/30 rounded-lg px-4 py-2 inline-flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-yellow-300" />
-                    <span className="text-yellow-100 font-medium text-sm">Nytt personbästa!</span>
+                  <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-full px-4 py-1.5 inline-flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-yellow-400" />
+                    <span className="text-yellow-300 font-medium text-sm">Nytt personbästa!</span>
                   </div>
                 )}
               </div>
             )}
+            
             {cardioData && (
-              <div className="space-y-3">
-                <div className="text-4xl">
+              <div className="relative space-y-3">
+                <p className="text-orange-400/70 text-xs font-medium tracking-widest">★ WORKOUT COMPLETE ★</p>
+                <div className="text-4xl py-1">
                   {cardioData.activityType === 'Löpning' ? '🏃' :
                    cardioData.activityType === 'Cykling' ? '🚴' :
                    cardioData.activityType === 'Simning' ? '🏊' :
                    cardioData.activityType === 'Promenad' ? '🚶' :
                    cardioData.activityType === 'Golf' ? '⛳' : '🔥'}
                 </div>
-                <p className="text-sm font-medium opacity-90">AVKLARAT!</p>
-                <p className="font-bold text-xl">{cardioData.activityType}</p>
-                <div className="bg-black/20 rounded-lg p-4 space-y-2 text-sm">
-                  <p className="flex items-center justify-center gap-2">
-                    <Timer className="h-4 w-4" />
+                <p className="font-bold text-orange-400 tracking-wide">AVKLARAT!</p>
+                <p className="font-bold text-white text-lg">{cardioData.activityType}</p>
+                
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4 space-y-2 text-sm">
+                  <p className="flex items-center justify-center gap-2 text-white/80">
+                    <Timer className="h-4 w-4 text-orange-400" />
                     {cardioData.duration} minuter
                   </p>
-                  {cardioData.distance && <p>📍 {cardioData.distance} km</p>}
-                  {cardioData.calories && <p>🔥 {cardioData.calories} kcal</p>}
+                  {cardioData.distance && (
+                    <p className="text-white/80">📍 {cardioData.distance} km</p>
+                  )}
+                  {cardioData.calories && (
+                    <p className="flex items-center justify-center gap-2 text-white/80">
+                      <Flame className="h-4 w-4 text-orange-400" />
+                      {cardioData.calories} kcal
+                    </p>
+                  )}
                 </div>
               </div>
             )}
-            <p className="text-xs opacity-80 mt-4 font-bold">GYMDAGBOKEN.SE</p>
+            
+            <p className="text-xs text-white/40 mt-4 font-bold tracking-wider">GYMDAGBOKEN</p>
           </div>
 
           {/* Caption editor */}
@@ -403,7 +571,7 @@ export default function ShareToInstagramDialog({
               <Download className="h-4 w-4 mr-2" />
               Ladda ner
             </Button>
-            <Button onClick={shareNative} className="flex-1" disabled={isSharing}>
+            <Button onClick={shareNative} className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-90 text-white font-semibold" disabled={isSharing}>
               {isSharing ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
@@ -414,7 +582,6 @@ export default function ShareToInstagramDialog({
           </div>
         </div>
 
-        {/* Hidden canvas for image generation */}
         <canvas ref={canvasRef} className="hidden" />
       </DialogContent>
     </Dialog>
