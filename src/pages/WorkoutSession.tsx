@@ -57,6 +57,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
+import SharePRToInstagramDialog from '@/components/SharePRToInstagramDialog';
 import AdBanner from '@/components/AdBanner';
 
 interface SetDetail {
@@ -147,6 +148,13 @@ export default function WorkoutSession() {
   const [exerciseGoals, setExerciseGoals] = useState<Map<string, ExerciseGoal>>(new Map());
   const [showSummary, setShowSummary] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showPRShareDialog, setShowPRShareDialog] = useState(false);
+  const [prShareData, setPRShareData] = useState<{
+    exerciseName: string;
+    newWeight: number;
+    previousWeight?: number;
+    reps?: number;
+  } | null>(null);
   const [savedSessionName, setSavedSessionName] = useState('');
   const [summaryData, setSummaryData] = useState<{
     totalSets: number;
@@ -378,8 +386,11 @@ export default function WorkoutSession() {
         throw exerciseError;
       }
 
-      // Check for new PBs
+      // Check for new PBs and track the best one for sharing
       const newPBsList: string[] = [];
+      let bestNewPR: { exerciseName: string; newWeight: number; previousWeight?: number; reps?: number } | null = null;
+      let bestPRImprovement = 0;
+      
       for (const log of sessionData.exercises) {
         if (!log.weight_kg) continue;
         const weight = parseFloat(log.weight_kg);
@@ -387,6 +398,18 @@ export default function WorkoutSession() {
         
         if (!currentPB || weight > currentPB.best_weight_kg) {
           newPBsList.push(log.exercise_name);
+          
+          // Track the PR with biggest improvement for sharing
+          const improvement = currentPB ? weight - currentPB.best_weight_kg : weight;
+          if (improvement > bestPRImprovement) {
+            bestPRImprovement = improvement;
+            bestNewPR = {
+              exerciseName: log.exercise_name,
+              newWeight: weight,
+              previousWeight: currentPB?.best_weight_kg,
+              reps: parseInt(log.reps_completed) || undefined
+            };
+          }
           
           await supabase
             .from('personal_bests')
@@ -398,6 +421,11 @@ export default function WorkoutSession() {
               achieved_at: new Date().toISOString()
             }, { onConflict: 'user_id,exercise_name' });
         }
+      }
+      
+      // Set PR share data if we have a new PR
+      if (bestNewPR) {
+        setPRShareData(bestNewPR);
       }
 
       // Update user stats
@@ -490,6 +518,11 @@ export default function WorkoutSession() {
           spread: 70,
           origin: { y: 0.6 }
         });
+        
+        // Automatically show PR share dialog after a short delay
+        setTimeout(() => {
+          setShowPRShareDialog(true);
+        }, 1500);
       }
 
       // Save session name for sharing and clear session
@@ -708,6 +741,14 @@ export default function WorkoutSession() {
             newPBs: summaryData.newPBs
           }}
         />
+        
+        {prShareData && (
+          <SharePRToInstagramDialog
+            open={showPRShareDialog}
+            onOpenChange={setShowPRShareDialog}
+            prData={prShareData}
+          />
+        )}
       </div>
     );
   }
