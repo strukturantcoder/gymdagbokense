@@ -34,7 +34,7 @@ export default function MobileBottomNav() {
               {isActive && (
                 <motion.div
                   layoutId="activeNavIndicator"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-gym-orange to-amber-500 rounded-b-full"
+                  className="absolute top-0 inset-x-0 mx-auto w-6 h-1 bg-gradient-to-r from-gym-orange to-amber-500 rounded-b-full"
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />
               )}
