@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       injectRegister: "auto",
       includeAssets: ["favicon.ico", "robots.txt"],
+      // Disable service worker caching for the SW file itself
+      selfDestroying: false,
       manifest: {
         name: "Gymdagboken - Din AI-drivna träningspartner",
         short_name: "Gymdagboken",
