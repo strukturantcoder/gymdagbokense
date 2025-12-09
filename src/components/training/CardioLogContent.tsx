@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   Plus, Trash2, Loader2,
-  Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles, Map, Play, Zap
+  Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles, Map, Play, Zap, Share2
 } from 'lucide-react';
 import ActiveCardioPlanSession from '@/components/ActiveCardioPlanSession';
 import QuickStartCardio from '@/components/QuickStartCardio';
@@ -855,15 +855,31 @@ export default function CardioLogContent() {
                             <Button
                               variant="ghost"
                               size="icon"
-                            onClick={() => {
-                              setSelectedLogId(log.id);
-                              setSelectedLogLabel(getActivityLabel(log.activity_type));
-                              setShowRouteMap(true);
-                            }}
+                              onClick={() => {
+                                setSelectedLogId(log.id);
+                                setSelectedLogLabel(getActivityLabel(log.activity_type));
+                                setShowRouteMap(true);
+                              }}
                             >
                               <Map className="w-4 h-4" />
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCardioShareData({
+                                activityType: getActivityLabel(log.activity_type),
+                                duration: log.duration_minutes,
+                                distance: log.distance_km || undefined,
+                                calories: log.calories_burned || undefined
+                              });
+                              setShowShareDialog(true);
+                            }}
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
