@@ -819,8 +819,10 @@ export type Database = {
           birth_year: number | null
           created_at: string
           display_name: string | null
+          facebook_url: string | null
           gender: string | null
           id: string
+          instagram_username: string | null
           updated_at: string
           user_id: string
         }
@@ -829,8 +831,10 @@ export type Database = {
           birth_year?: number | null
           created_at?: string
           display_name?: string | null
+          facebook_url?: string | null
           gender?: string | null
           id?: string
+          instagram_username?: string | null
           updated_at?: string
           user_id: string
         }
@@ -839,8 +843,10 @@ export type Database = {
           birth_year?: number | null
           created_at?: string
           display_name?: string | null
+          facebook_url?: string | null
           gender?: string | null
           id?: string
+          instagram_username?: string | null
           updated_at?: string
           user_id?: string
         }

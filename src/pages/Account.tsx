@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { 
   User, Camera, Save, Loader2, ArrowLeft, Crown, Mail, 
   Calendar, UserCircle, LogOut, Settings, Shield, Sun, Moon, Monitor,
-  Bell, Users, Trophy, Target, Dumbbell
+  Bell, Users, Trophy, Target, Dumbbell, Instagram, Facebook, Link
 } from 'lucide-react';
 
 interface Profile {
@@ -24,6 +24,8 @@ interface Profile {
   avatar_url: string | null;
   gender: string | null;
   birth_year: number | null;
+  instagram_username: string | null;
+  facebook_url: string | null;
 }
 
 interface NotificationPreferences {
@@ -43,7 +45,6 @@ const defaultPreferences: NotificationPreferences = {
   community_challenges: true,
   push_enabled: true,
 };
-
 export default function Account() {
   const { user, loading, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -62,6 +63,8 @@ export default function Account() {
   const [displayName, setDisplayName] = useState('');
   const [gender, setGender] = useState('');
   const [birthYear, setBirthYear] = useState('');
+  const [instagramUsername, setInstagramUsername] = useState('');
+  const [facebookUrl, setFacebookUrl] = useState('');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -82,7 +85,7 @@ export default function Account() {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url, gender, birth_year')
+      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url')
       .eq('user_id', user.id)
       .single();
 
@@ -95,6 +98,8 @@ export default function Account() {
       setDisplayName(data.display_name || '');
       setGender(data.gender || '');
       setBirthYear(data.birth_year?.toString() || '');
+      setInstagramUsername(data.instagram_username || '');
+      setFacebookUrl(data.facebook_url || '');
     }
     
     setIsLoading(false);
@@ -178,6 +183,8 @@ export default function Account() {
           display_name: displayName || null,
           gender: gender || null,
           birth_year: birthYear ? parseInt(birthYear) : null,
+          instagram_username: instagramUsername || null,
+          facebook_url: facebookUrl || null,
         }, { onConflict: 'user_id' });
 
       if (error) throw error;
@@ -380,6 +387,47 @@ export default function Account() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Social Media Links */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Link className="h-4 w-4" />
+                  Sociala medier
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="instagram" className="flex items-center gap-2">
+                    <Instagram className="h-4 w-4 text-pink-500" />
+                    Instagram
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-sm">@</span>
+                    <Input
+                      id="instagram"
+                      value={instagramUsername}
+                      onChange={(e) => setInstagramUsername(e.target.value.replace('@', ''))}
+                      placeholder="ditt_användarnamn"
+                      maxLength={30}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="facebook" className="flex items-center gap-2">
+                    <Facebook className="h-4 w-4 text-blue-600" />
+                    Facebook
+                  </Label>
+                  <Input
+                    id="facebook"
+                    value={facebookUrl}
+                    onChange={(e) => setFacebookUrl(e.target.value)}
+                    placeholder="https://facebook.com/ditt.namn"
+                    maxLength={100}
+                  />
                 </div>
               </div>
 
