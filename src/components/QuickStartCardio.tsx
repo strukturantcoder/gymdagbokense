@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { useGpsTracking } from '@/hooks/useGpsTracking';
 import RouteMapDialog from '@/components/RouteMapDialog';
+import AdBanner from '@/components/AdBanner';
 
 const activityTypes = [
   { value: 'running', label: 'Löpning', icon: Footprints, color: 'from-orange-500 to-red-500', gpsRecommended: true },
@@ -329,8 +330,11 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="mb-8"
+        className="mb-8 space-y-4"
       >
+        {/* Ad at start of cardio session */}
+        <AdBanner size="horizontal" />
+        
         <Card className="border-2 border-primary overflow-hidden">
           <div className={`h-2 bg-gradient-to-r ${activeActivity.color}`} />
           <CardHeader className="pb-2">
@@ -517,6 +521,9 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                     rows={2}
                   />
                 </div>
+
+                {/* Ad in finish form */}
+                <AdBanner size="horizontal" />
 
                 <div className="p-3 bg-primary/10 rounded-lg">
                   <p className="text-sm font-medium flex items-center gap-2">
