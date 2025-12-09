@@ -53,15 +53,35 @@ export default defineConfig(({ mode }) => ({
         clientsClaim: true,
         navigateFallback: "index.html",
         navigateFallbackDenylist: [/^\/api/, /^\/supabase/],
+        // Force cache invalidation on updates
+        sourcemap: false,
+        // Disable precaching revision hashing issues
+        dontCacheBustURLsMatching: /\.[a-f0-9]{8}\./,
         runtimeCaching: [
           {
+            // App shell and assets - network first to avoid stale content
+            urlPattern: ({ request }) => request.destination === 'document' || request.destination === 'script' || request.destination === 'style',
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "app-shell-cache",
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 1 day
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: "CacheFirst",
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "google-fonts-cache",
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days instead of 1 year
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -70,13 +90,20 @@ export default defineConfig(({ mode }) => ({
           },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: "NetworkFirst",
+            handler: "NetworkOnly", // Never cache Supabase responses
             options: {
-              cacheName: "supabase-cache",
-              networkTimeoutSeconds: 10,
+              cacheName: "supabase-cache"
+            }
+          },
+          {
+            // Images - stale while revalidate
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "image-cache",
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 5
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
               },
               cacheableResponse: {
                 statuses: [0, 200]

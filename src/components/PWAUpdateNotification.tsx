@@ -4,8 +4,29 @@ import { toast } from 'sonner';
 import { RefreshCw, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-// Update check interval in milliseconds (10 seconds for more aggressive updates)
-const UPDATE_CHECK_INTERVAL = 10 * 1000;
+// Update check interval in milliseconds (30 seconds)
+const UPDATE_CHECK_INTERVAL = 30 * 1000;
+
+// Clear all caches on load to fix Safari issues
+const clearOldCaches = async () => {
+  if ('caches' in window) {
+    try {
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames.map(cacheName => {
+          // Only clear old workbox caches, not current ones
+          if (cacheName.includes('workbox') || cacheName.includes('precache')) {
+            console.log('Clearing old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+          return Promise.resolve();
+        })
+      );
+    } catch (e) {
+      console.error('Failed to clear caches:', e);
+    }
+  }
+};
 
 export const PWAUpdateNotification = () => {
   const { t } = useTranslation();
@@ -21,6 +42,9 @@ export const PWAUpdateNotification = () => {
     onRegisteredSW(swUrl, r) {
       console.log('SW registered:', swUrl);
       
+      // Clear old caches on SW registration
+      clearOldCaches();
+      
       if (r) {
         // Clear any existing interval
         if (updateCheckTimer.current) {
@@ -30,7 +54,7 @@ export const PWAUpdateNotification = () => {
         // Immediately check for updates
         r.update().catch(console.error);
         
-        // Check for updates more frequently (every 10 seconds)
+        // Check for updates periodically
         updateCheckTimer.current = setInterval(() => {
           console.log('Checking for SW updates...');
           r.update().catch(console.error);
@@ -39,6 +63,8 @@ export const PWAUpdateNotification = () => {
     },
     onRegisterError(error) {
       console.error('SW registration error:', error);
+      // On Safari registration errors, try clearing caches
+      clearOldCaches();
     },
   });
 
