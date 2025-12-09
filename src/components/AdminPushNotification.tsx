@@ -3,15 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Bell, Loader2, Send, Plus, X } from "lucide-react";
+import { Bell, Loader2, Send, Plus, X, Sparkles } from "lucide-react";
 
 export const AdminPushNotification = () => {
   const [version, setVersion] = useState("");
   const [updatePoints, setUpdatePoints] = useState<string[]>([""]);
   const [sending, setSending] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
 
   const addUpdatePoint = () => {
     setUpdatePoints([...updatePoints, ""]);
@@ -29,10 +29,30 @@ export const AdminPushNotification = () => {
     setUpdatePoints(newPoints);
   };
 
+  const handleSuggest = async () => {
+    setSuggesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("suggest-update-notes", {
+        body: { lastVersion: version || null },
+      });
+
+      if (error) throw error;
+
+      if (data.suggestions && Array.isArray(data.suggestions)) {
+        setUpdatePoints(data.suggestions);
+        toast.success("Förslag genererade!");
+      }
+    } catch (error) {
+      console.error("Error getting suggestions:", error);
+      toast.error("Kunde inte generera förslag");
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Build message from update points
     const filledPoints = updatePoints.filter(p => p.trim());
     const message = filledPoints.length > 0 
       ? filledPoints.map(p => `• ${p}`).join("\n")
@@ -91,7 +111,24 @@ export const AdminPushNotification = () => {
           </div>
           
           <div className="space-y-2">
-            <Label>Nyheter i denna version</Label>
+            <div className="flex items-center justify-between">
+              <Label>Nyheter i denna version</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSuggest}
+                disabled={suggesting}
+                className="gap-1"
+              >
+                {suggesting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {suggesting ? "Genererar..." : "AI-förslag"}
+              </Button>
+            </div>
             <div className="space-y-2">
               {updatePoints.map((point, index) => (
                 <div key={index} className="flex gap-2">
