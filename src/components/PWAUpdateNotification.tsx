@@ -1,8 +1,17 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { toast } from 'sonner';
-import { RefreshCw, CheckCircle } from 'lucide-react';
+import { RefreshCw, CheckCircle, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // App version - increment this when deploying critical updates
 export const APP_VERSION = '2.0.1';
@@ -72,7 +81,9 @@ const checkVersionAndUpdate = async () => {
 
 export const PWAUpdateNotification = () => {
   const { t } = useTranslation();
-  const hasShownToast = useRef(false);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const hasShownDialog = useRef(false);
   const updateCheckTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasCheckedVersion = useRef(false);
 
@@ -121,21 +132,23 @@ export const PWAUpdateNotification = () => {
       // Check version first
       checkVersionAndUpdate();
       
-      if (needRefresh) {
-        updateServiceWorker(true);
+      if (needRefresh && !hasShownDialog.current) {
+        setShowUpdateDialog(true);
+        hasShownDialog.current = true;
       }
     }
-  }, [needRefresh, updateServiceWorker]);
+  }, [needRefresh]);
 
   // Check for updates when coming back online
   const handleOnline = useCallback(() => {
     console.log('Back online, checking for updates...');
     checkVersionAndUpdate();
     
-    if (needRefresh) {
-      updateServiceWorker(true);
+    if (needRefresh && !hasShownDialog.current) {
+      setShowUpdateDialog(true);
+      hasShownDialog.current = true;
     }
-  }, [needRefresh, updateServiceWorker]);
+  }, [needRefresh]);
 
   useEffect(() => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -152,56 +165,84 @@ export const PWAUpdateNotification = () => {
     };
   }, [handleVisibilityChange, handleOnline]);
 
-  // Handle the update when needRefresh becomes true
+  // Show dialog when needRefresh becomes true
   useEffect(() => {
-    if (needRefresh && !hasShownToast.current) {
-      hasShownToast.current = true;
-      
-      console.log('Update available, applying immediately...');
-      
-      // Show brief updating notification
-      toast(
-        <div className="flex items-center gap-3">
-          <RefreshCw className="h-5 w-5 text-primary animate-spin" />
-          <div className="flex-1">
-            <p className="font-medium">{t('update.updating', 'Uppdaterar appen...')}</p>
-          </div>
-        </div>,
-        {
-          duration: 2000,
-          id: 'pwa-updating',
-        }
-      );
-
-      // Apply the update immediately
-      updateServiceWorker(true).then(() => {
-        // Show success message
-        setTimeout(() => {
-          toast(
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <div className="flex-1">
-                <p className="font-medium">{t('update.updated', 'Appen är uppdaterad!')}</p>
-              </div>
-            </div>,
-            {
-              duration: 3000,
-              id: 'pwa-updated',
-            }
-          );
-        }, 1000);
-      });
-    }
-  }, [needRefresh, updateServiceWorker, t]);
-
-  // Reset the flag when component unmounts or needRefresh changes to false
-  useEffect(() => {
-    if (!needRefresh) {
-      hasShownToast.current = false;
+    if (needRefresh && !hasShownDialog.current) {
+      hasShownDialog.current = true;
+      setShowUpdateDialog(true);
     }
   }, [needRefresh]);
 
-  return null;
+  // Reset the flag when needRefresh changes to false
+  useEffect(() => {
+    if (!needRefresh) {
+      hasShownDialog.current = false;
+    }
+  }, [needRefresh]);
+
+  const handleUpdate = async () => {
+    setIsUpdating(true);
+    
+    try {
+      await updateServiceWorker(true);
+      
+      toast(
+        <div className="flex items-center gap-3">
+          <CheckCircle className="h-5 w-5 text-green-500" />
+          <div className="flex-1">
+            <p className="font-medium">{t('update.updated', 'Appen är uppdaterad!')}</p>
+          </div>
+        </div>,
+        {
+          duration: 3000,
+          id: 'pwa-updated',
+        }
+      );
+    } catch (error) {
+      console.error('Update failed:', error);
+      toast.error('Uppdateringen misslyckades. Försök igen.');
+    } finally {
+      setIsUpdating(false);
+      setShowUpdateDialog(false);
+    }
+  };
+
+  return (
+    <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+      <AlertDialogContent className="max-w-sm">
+        <AlertDialogHeader className="text-center">
+          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <Download className="h-8 w-8 text-primary" />
+          </div>
+          <AlertDialogTitle className="text-center">
+            {t('update.available', 'Ny version tillgänglig!')}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-center">
+            {t('update.description', 'En ny version av Gymdagboken finns tillgänglig. Uppdatera nu för att få de senaste funktionerna och förbättringarna.')}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+          <AlertDialogAction 
+            onClick={handleUpdate} 
+            disabled={isUpdating}
+            className="w-full"
+          >
+            {isUpdating ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                {t('update.updating', 'Uppdaterar...')}
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                {t('update.updateNow', 'Uppdatera nu')}
+              </>
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 };
 
 // Export utility for manual cache clearing (can be used from settings)
