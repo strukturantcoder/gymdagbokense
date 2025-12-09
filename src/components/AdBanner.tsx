@@ -23,6 +23,12 @@ const ads: Ad[] = [
     link: "https://clk.tradedoubler.com/click?p=382764&a=3465011&g=25913396",
     altText: "Annons",
   },
+  {
+    id: "tradedoubler-3",
+    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(25913398)a(3465011)",
+    link: "https://clk.tradedoubler.com/click?p=382764&a=3465011&g=25913398",
+    altText: "Annons",
+  },
 ];
 
 interface AdBannerProps {
