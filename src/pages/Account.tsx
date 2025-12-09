@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { 
   User, Camera, Save, Loader2, ArrowLeft, Crown, Mail, 
   Calendar, UserCircle, LogOut, Settings, Shield, Sun, Moon, Monitor,
-  Bell, Users, Trophy, Target, Dumbbell, Instagram, Facebook, Link
+  Bell, Users, Trophy, Target, Dumbbell, Instagram, Facebook, Link, RefreshCw
 } from 'lucide-react';
 
 interface Profile {
@@ -58,6 +58,7 @@ export default function Account() {
   const [isPremium, setIsPremium] = useState(false);
   const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>(defaultPreferences);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   
   // Form state
   const [displayName, setDisplayName] = useState('');
@@ -256,6 +257,20 @@ export default function Account() {
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
+  };
+
+  const handleForceUpdate = async () => {
+    setIsClearing(true);
+    try {
+      // Import and call the force update function
+      const { forceAppUpdate } = await import('@/components/PWAUpdateNotification');
+      toast.info('Rensar cache och uppdaterar...');
+      await forceAppUpdate();
+    } catch (error) {
+      console.error('Error forcing update:', error);
+      toast.error('Kunde inte rensa cachen');
+      setIsClearing(false);
+    }
   };
 
   // Generate year options (current year - 100 to current year - 13)
@@ -649,6 +664,37 @@ export default function Account() {
                 disabled={isSavingPrefs}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* App Maintenance */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5" />
+              Underhåll
+            </CardTitle>
+            <CardDescription>
+              Felsökning och uppdateringar
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              variant="outline" 
+              onClick={handleForceUpdate} 
+              disabled={isClearing}
+              className="w-full"
+            >
+              {isClearing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Rensa cache och uppdatera
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2">
+              Använd detta om appen inte uppdateras automatiskt
+            </p>
           </CardContent>
         </Card>
 
