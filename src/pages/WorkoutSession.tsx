@@ -9,7 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { sv } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -30,7 +35,8 @@ import {
   Instagram,
   TrendingUp,
   TrendingDown,
-  Minus
+  Minus,
+  CalendarIcon
 } from 'lucide-react';
 import {
   Select,
@@ -134,6 +140,7 @@ export default function WorkoutSession() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showDurationDialog, setShowDurationDialog] = useState(false);
   const [confirmedDuration, setConfirmedDuration] = useState<number | null>(null);
+  const [confirmedDate, setConfirmedDate] = useState<Date>(new Date());
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [personalBests, setPersonalBests] = useState<Map<string, PersonalBest>>(new Map());
   const [exerciseGoals, setExerciseGoals] = useState<Map<string, ExerciseGoal>>(new Map());
@@ -306,8 +313,9 @@ export default function WorkoutSession() {
       return;
     }
     
-    // Initialize confirmed duration with current elapsed time
+    // Initialize confirmed duration with current elapsed time and date to today
     setConfirmedDuration(Math.round(elapsedTime / 60));
+    setConfirmedDate(new Date());
     setShowDurationDialog(true);
   };
 
@@ -327,7 +335,8 @@ export default function WorkoutSession() {
           program_id: sessionData.programId,
           workout_day: sessionData.dayName,
           duration_minutes: durationMinutes || null,
-          notes: workoutNotes || null
+          notes: workoutNotes || null,
+          completed_at: confirmedDate.toISOString()
         }])
         .select()
         .single();
@@ -1007,15 +1016,14 @@ export default function WorkoutSession() {
       <AlertDialog open={showDurationDialog} onOpenChange={setShowDurationDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Bekräfta träningstid</AlertDialogTitle>
+            <AlertDialogTitle>Bekräfta träningspass</AlertDialogTitle>
             <AlertDialogDescription>
-              Din uppmätta träningstid är {Math.round(elapsedTime / 60)} minuter. 
-              Om du fyllde i passet i efterhand kan du justera tiden nedan.
+              Om du fyllde i passet i efterhand kan du justera tid och datum nedan.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-4">
             <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-foreground">Tid (minuter):</label>
+              <label className="text-sm font-medium text-foreground w-24">Tid (min):</label>
               <Input
                 type="number"
                 value={confirmedDuration || ''}
@@ -1024,6 +1032,33 @@ export default function WorkoutSession() {
                 max={300}
                 className="w-24"
               />
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-foreground w-24">Datum:</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-48 justify-start text-left font-normal",
+                      !confirmedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {confirmedDate ? format(confirmedDate, "PPP", { locale: sv }) : <span>Välj datum</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={confirmedDate}
+                    onSelect={(date) => date && setConfirmedDate(date)}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           <AlertDialogFooter>
