@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { APP_VERSION } from '@/components/PWAUpdateNotification';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,7 @@ import { toast } from 'sonner';
 import { 
   User, Camera, Save, Loader2, ArrowLeft, Crown, Mail, 
   Calendar, UserCircle, LogOut, Settings, Shield, Sun, Moon, Monitor,
-  Bell, Users, Trophy, Target, Dumbbell, Instagram, Facebook, Link, RefreshCw
+  Bell, Users, Trophy, Target, Dumbbell, Instagram, Facebook, Link, RefreshCw, Info
 } from 'lucide-react';
 
 interface Profile {
@@ -695,6 +696,16 @@ export default function Account() {
             <p className="text-xs text-muted-foreground mt-2">
               Använd detta om appen inte uppdateras automatiskt
             </p>
+            
+            <Separator className="my-4" />
+            
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Appversion</span>
+              </div>
+              <Badge variant="outline" className="font-mono">v{APP_VERSION}</Badge>
+            </div>
           </CardContent>
         </Card>
 
