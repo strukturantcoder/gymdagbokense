@@ -765,18 +765,18 @@ export default function Dashboard() {
           {/* Program details */}
           <div className="lg:col-span-2">
             {selectedProgram ? (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{(isEditing ? editedProgram : selectedProgram)?.program_data.name}</CardTitle>
-                      <CardDescription>{(isEditing ? editedProgram : selectedProgram)?.program_data.description}</CardDescription>
+              <Card className="overflow-hidden">
+                <CardHeader className="space-y-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="min-w-0">
+                      <CardTitle className="text-lg sm:text-xl break-words">{(isEditing ? editedProgram : selectedProgram)?.program_data.name}</CardTitle>
+                      <CardDescription className="mt-1 text-sm break-words">{(isEditing ? editedProgram : selectedProgram)?.program_data.description}</CardDescription>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {isEditing ? (
                         <>
                           <Button variant="hero" size="sm" onClick={saveEdits}>
-                            <Save className="w-4 h-4 mr-2" />
+                            <Save className="w-4 h-4 mr-1.5" />
                             Spara
                           </Button>
                           <Button variant="ghost" size="sm" onClick={cancelEditing}>
@@ -786,12 +786,21 @@ export default function Dashboard() {
                       ) : (
                         <>
                           <Button variant="hero" size="sm" onClick={() => openRefineDialogForProgram(selectedProgram)}>
-                            <Sparkles className="w-4 h-4 mr-2" />
+                            <Sparkles className="w-4 h-4 mr-1.5" />
                             Finjustera
                           </Button>
                           <Button variant="outline" size="sm" onClick={startEditing}>
-                            <Edit2 className="w-4 h-4 mr-2" />
+                            <Edit2 className="w-4 h-4 mr-1.5" />
                             Redigera
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-muted-foreground lg:hidden"
+                            onClick={() => setSelectedProgram(null)}
+                          >
+                            <X className="w-4 h-4 mr-1.5" />
+                            Stäng
                           </Button>
                         </>
                       )}
