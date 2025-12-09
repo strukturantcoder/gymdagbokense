@@ -512,15 +512,16 @@ export default function Dashboard() {
           </CardContent>
         </Card>
         
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-display font-bold">Mina Träningsprogram</h1>
-            <p className="text-muted-foreground">Skapa AI-genererade program anpassade för dig</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold truncate">Mina Träningsprogram</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Skapa AI-genererade program anpassade för dig</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="hero" onClick={() => setShowGenerator(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nytt Program
+          <div className="flex gap-2 flex-shrink-0">
+            <Button variant="hero" size="sm" className="sm:size-default" onClick={() => setShowGenerator(true)}>
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Nytt Program</span>
+              <span className="sm:hidden">Nytt</span>
             </Button>
             <Button 
               variant={showTrash ? "default" : "outline"} 
@@ -529,7 +530,7 @@ export default function Dashboard() {
                 setShowTrash(!showTrash);
                 if (!showTrash) fetchTrashPrograms();
               }}
-              className="relative"
+              className="relative flex-shrink-0"
             >
               <Trash className="w-4 h-4" />
               {trashPrograms.length > 0 && !showTrash && (
