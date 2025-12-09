@@ -5,7 +5,7 @@ import { RefreshCw, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 // App version - increment this when deploying critical updates
-const APP_VERSION = '2.0.1';
+export const APP_VERSION = '2.0.1';
 const VERSION_KEY = 'gymdagboken_app_version';
 
 // Update check interval in milliseconds (30 seconds)
