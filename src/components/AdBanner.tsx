@@ -12,8 +12,10 @@ interface Ad {
 // Add your ads here - they will rotate randomly
 const ads: Ad[] = [
   {
-    id: "placeholder",
-    // Placeholder ad - replace with real ads
+    id: "tradedoubler-1",
+    imageUrl: `https://imp.tradedoubler.com/imp?type(img)g(25913394)a(3465011)${Math.random().toString().substring(2, 11)}`,
+    link: "https://clk.tradedoubler.com/click?p=382764&a=3465011&g=25913394",
+    altText: "Annons",
   },
 ];
 
