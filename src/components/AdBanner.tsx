@@ -4,8 +4,8 @@ import { useMemo } from "react";
 
 interface Ad {
   id: string;
-  imageUrl?: string;
-  link?: string;
+  imageBaseUrl: string;
+  link: string;
   altText?: string;
 }
 
@@ -13,13 +13,13 @@ interface Ad {
 const ads: Ad[] = [
   {
     id: "tradedoubler-1",
-    imageUrl: `https://imp.tradedoubler.com/imp?type(img)g(25913394)a(3465011)${Math.random().toString().substring(2, 11)}`,
+    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(25913394)a(3465011)",
     link: "https://clk.tradedoubler.com/click?p=382764&a=3465011&g=25913394",
     altText: "Annons",
   },
   {
     id: "tradedoubler-2",
-    imageUrl: `https://imp.tradedoubler.com/imp?type(img)g(25913396)a(3465011)${Math.random().toString().substring(2, 11)}`,
+    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(25913396)a(3465011)",
     link: "https://clk.tradedoubler.com/click?p=382764&a=3465011&g=25913396",
     altText: "Annons",
   },
@@ -33,9 +33,14 @@ interface AdBannerProps {
 const AdBanner = ({ size = "horizontal", className = "" }: AdBannerProps) => {
   const { isPremium } = useAuth();
   
-  // Select a random ad on each render
-  const selectedAd = useMemo(() => {
-    return ads[Math.floor(Math.random() * ads.length)];
+  // Select a random ad and generate unique cache-busting param per component instance
+  const { selectedAd, imageUrl } = useMemo(() => {
+    const ad = ads[Math.floor(Math.random() * ads.length)];
+    const cacheBuster = Math.random().toString().substring(2, 11);
+    return {
+      selectedAd: ad,
+      imageUrl: `${ad.imageBaseUrl}${cacheBuster}`
+    };
   }, []);
   
   // Don't show ads for premium users
@@ -50,28 +55,29 @@ const AdBanner = ({ size = "horizontal", className = "" }: AdBannerProps) => {
   };
 
   const renderAdContent = () => {
-    if (selectedAd.imageUrl) {
+    if (imageUrl) {
       const content = (
         <img 
-          src={selectedAd.imageUrl} 
+          src={imageUrl} 
           alt={selectedAd.altText || "Annons"} 
           className="w-full h-full object-cover"
+          onError={(e) => {
+            // Hide the ad if image fails to load (e.g., ad blocker)
+            e.currentTarget.style.display = 'none';
+          }}
         />
       );
       
-      if (selectedAd.link) {
-        return (
-          <a 
-            href={selectedAd.link} 
-            target="_blank" 
-            rel="noopener noreferrer sponsored"
-            className="w-full h-full block"
-          >
-            {content}
-          </a>
-        );
-      }
-      return content;
+      return (
+        <a 
+          href={selectedAd.link} 
+          target="_blank" 
+          rel="noopener noreferrer sponsored"
+          className="w-full h-full block"
+        >
+          {content}
+        </a>
+      );
     }
     
     // Placeholder when no image
