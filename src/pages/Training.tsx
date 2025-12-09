@@ -4,10 +4,10 @@ import { Dumbbell, Footprints, ArrowLeft, Zap, Loader2 } from 'lucide-react';
 import WorkoutLogContent from '@/components/training/WorkoutLogContent';
 import CardioLogContent from '@/components/training/CardioLogContent';
 import CrossFitWOD from '@/components/CrossFitWOD';
+import TrainingOnboardingGuide from '@/components/TrainingOnboardingGuide';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-
 export default function Training() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -37,6 +37,7 @@ export default function Training() {
 
   return (
     <div className="min-h-screen bg-background">
+      <TrainingOnboardingGuide />
       <div className="container px-4 py-6">
         <div className="flex items-center gap-4 mb-6">
           <Button 
