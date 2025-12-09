@@ -107,99 +107,116 @@ export default function ShareToInstagramDialog({
     canvas.width = 1080;
     canvas.height = 1920;
 
-    // Background gradient
+    // Background gradient matching the preview card (primary to secondary)
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, '#1a1a2e');
-    gradient.addColorStop(0.5, '#16213e');
-    gradient.addColorStop(1, '#0f3460');
+    gradient.addColorStop(0, '#6366f1'); // primary color (indigo)
+    gradient.addColorStop(1, '#8b5cf6'); // secondary color (violet)
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Add subtle pattern overlay
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
-    for (let i = 0; i < canvas.height; i += 4) {
-      ctx.fillRect(0, i, canvas.width, 2);
+    // Add subtle overlay pattern
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    for (let i = 0; i < canvas.height; i += 6) {
+      ctx.fillRect(0, i, canvas.width, 3);
     }
 
-    // Title
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 72px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
     
     if (workoutData) {
-      ctx.fillText('💪 TRÄNINGSPASS', canvas.width / 2, 300);
-      ctx.fillText('AVKLARAT', canvas.width / 2, 390);
+      // Dumbbell icon area (drawn as text since we can't use Lucide in canvas)
+      ctx.font = '120px system-ui';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('💪', canvas.width / 2, 500);
       
-      // Stats box
-      const boxY = 500;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-      ctx.roundRect(100, boxY, canvas.width - 200, 600, 30);
+      // Day name - matching preview
+      ctx.font = 'bold 72px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(workoutData.dayName, canvas.width / 2, 650);
+      
+      // Stats container
+      const boxY = 750;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.beginPath();
+      ctx.roundRect(120, boxY, canvas.width - 240, 450, 40);
       ctx.fill();
       
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 48px system-ui';
-      ctx.fillText(workoutData.dayName, canvas.width / 2, boxY + 80);
+      // Stats - matching preview layout
+      ctx.font = '44px system-ui';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
       
-      ctx.font = '40px system-ui';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      let yPos = boxY + 100;
       
-      let yPos = boxY + 180;
       if (workoutData.duration) {
-        ctx.fillText(`⏱️ ${workoutData.duration} minuter`, canvas.width / 2, yPos);
-        yPos += 70;
+        ctx.fillText(`⏱️  ${workoutData.duration} min`, canvas.width / 2, yPos);
+        yPos += 90;
       }
-      ctx.fillText(`🎯 ${workoutData.exerciseCount} övningar`, canvas.width / 2, yPos);
-      yPos += 70;
-      ctx.fillText(`📊 ${workoutData.totalSets} set`, canvas.width / 2, yPos);
       
+      ctx.fillText(`${workoutData.exerciseCount} övningar`, canvas.width / 2, yPos);
+      yPos += 90;
+      
+      ctx.fillText(`${workoutData.totalSets} set`, canvas.width / 2, yPos);
+      
+      // PB badge - matching preview golden color
       if (workoutData.newPBs && workoutData.newPBs.length > 0) {
-        yPos += 100;
-        ctx.fillStyle = '#ffd700';
-        ctx.font = 'bold 44px system-ui';
-        ctx.fillText('🏆 NYTT PB!', canvas.width / 2, yPos);
-        ctx.font = '36px system-ui';
-        ctx.fillText(workoutData.newPBs.join(', '), canvas.width / 2, yPos + 60);
+        const pbY = boxY + 500;
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.3)'; // yellow background
+        ctx.beginPath();
+        ctx.roundRect(300, pbY, canvas.width - 600, 100, 20);
+        ctx.fill();
+        
+        ctx.fillStyle = '#eab308'; // yellow-500
+        ctx.font = 'bold 40px system-ui';
+        ctx.fillText('🏆 Nytt PB!', canvas.width / 2, pbY + 65);
       }
+      
     } else if (cardioData) {
+      // Activity icon
       const emoji = {
         'Löpning': '🏃',
         'Cykling': '🚴',
         'Simning': '🏊',
         'Promenad': '🚶',
         'Golf': '⛳',
-        'Övrigt': '🏋️'
-      }[cardioData.activityType] || '🏃';
+        'Övrigt': '🔥'
+      }[cardioData.activityType] || '🔥';
       
-      ctx.fillText(`${emoji} ${cardioData.activityType.toUpperCase()}`, canvas.width / 2, 300);
-      ctx.fillText('AVKLARAT', canvas.width / 2, 390);
+      ctx.font = '120px system-ui';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(emoji, canvas.width / 2, 500);
       
-      // Stats box
-      const boxY = 500;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-      ctx.roundRect(100, boxY, canvas.width - 200, 500, 30);
+      // Activity name - matching preview
+      ctx.font = 'bold 72px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(cardioData.activityType, canvas.width / 2, 650);
+      
+      // Stats container
+      const boxY = 750;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.beginPath();
+      ctx.roundRect(120, boxY, canvas.width - 240, 400, 40);
       ctx.fill();
       
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '48px system-ui';
+      ctx.font = '44px system-ui';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
       
       let yPos = boxY + 100;
-      ctx.fillText(`⏱️ ${cardioData.duration} minuter`, canvas.width / 2, yPos);
+      ctx.fillText(`⏱️  ${cardioData.duration} min`, canvas.width / 2, yPos);
       
       if (cardioData.distance) {
-        yPos += 100;
-        ctx.fillText(`📍 ${cardioData.distance} km`, canvas.width / 2, yPos);
+        yPos += 90;
+        ctx.fillText(`${cardioData.distance} km`, canvas.width / 2, yPos);
       }
       
       if (cardioData.calories) {
-        yPos += 100;
-        ctx.fillText(`🔥 ${cardioData.calories} kcal`, canvas.width / 2, yPos);
+        yPos += 90;
+        ctx.fillText(`${cardioData.calories} kcal`, canvas.width / 2, yPos);
       }
     }
 
-    // Branding
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.font = '32px system-ui';
-    ctx.fillText('Gymdagboken.se', canvas.width / 2, canvas.height - 100);
+    // Branding at bottom
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.font = '36px system-ui';
+    ctx.fillText('Gymdagboken.se', canvas.width / 2, canvas.height - 150);
 
     return canvas.toDataURL('image/png');
   };
