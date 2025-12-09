@@ -518,22 +518,25 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Skapa AI-genererade program anpassade för dig</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="hero" onClick={() => setShowGenerator(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nytt Program
+            </Button>
             <Button 
               variant={showTrash ? "default" : "outline"} 
+              size="icon"
               onClick={() => {
                 setShowTrash(!showTrash);
                 if (!showTrash) fetchTrashPrograms();
               }}
+              className="relative"
             >
-              <Trash className="w-4 h-4 mr-2" />
-              Papperskorg
+              <Trash className="w-4 h-4" />
               {trashPrograms.length > 0 && !showTrash && (
-                <Badge variant="secondary" className="ml-2">{trashPrograms.length}</Badge>
+                <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {trashPrograms.length}
+                </Badge>
               )}
-            </Button>
-            <Button variant="hero" onClick={() => setShowGenerator(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nytt Program
             </Button>
           </div>
         </div>
