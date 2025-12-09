@@ -57,6 +57,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
+import AdBanner from '@/components/AdBanner';
 
 interface SetDetail {
   reps: number;
@@ -527,6 +528,11 @@ export default function WorkoutSession() {
           </div>
         </header>
 
+        {/* Ad at top of summary */}
+        <div className="p-4 pb-0">
+          <AdBanner size="horizontal" />
+        </div>
+
         <main className="flex-1 p-4 flex flex-col items-center justify-center">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
@@ -762,6 +768,13 @@ export default function WorkoutSession() {
           <Progress value={progress} className="h-2" />
         </div>
       </header>
+
+      {/* Ad at start of session */}
+      {currentExerciseIndex === 0 && (
+        <div className="p-4 pb-0">
+          <AdBanner size="horizontal" />
+        </div>
+      )}
 
       {/* Main content */}
       <main className="flex-1 p-4 overflow-auto">
