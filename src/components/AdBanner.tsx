@@ -32,10 +32,16 @@ const ads: Ad[] = [
     altText: "Annons",
   },
   {
-    id: "tradedoubler-4",
-    imageBaseUrl: "",
+    id: "nutrimimic-hero",
+    imageBaseUrl: "https://customer-assets.emergentagent.com/job_diet-companion-25/artifacts/xx1t8w21_u1865862766_A_professional_food_photographer_captures_a_top-d_0b02e73d-f14d-47ca-8e31-3e563bcdbf9d_1.png",
     link: "https://clk.tradedoubler.com/click?p=393591&a=3465011",
-    altText: "Annons",
+    altText: "Nutrimimic - Feel the Reset",
+  },
+  {
+    id: "nutrimimic-portrait",
+    imageBaseUrl: "https://customer-assets.emergentagent.com/job_fmd-coach/artifacts/8s7904fy_nutrimic_portrait.jpg",
+    link: "https://clk.tradedoubler.com/click?p=393591&a=3465011",
+    altText: "Nutrimimic - Healthy Eating",
   },
 ];
 
