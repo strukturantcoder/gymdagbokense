@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { Crown } from "lucide-react";
 
 interface Ad {
   id: string;
@@ -34,10 +36,12 @@ const ads: Ad[] = [
 interface AdBannerProps {
   size?: "horizontal" | "square" | "vertical";
   className?: string;
+  showPremiumPrompt?: boolean;
 }
 
-const AdBanner = ({ size = "horizontal", className = "" }: AdBannerProps) => {
+const AdBanner = ({ size = "horizontal", className = "", showPremiumPrompt = true }: AdBannerProps) => {
   const { isPremium } = useAuth();
+  const navigate = useNavigate();
   
   // Select a random ad and generate unique cache-busting param per component instance
   const { selectedAd, imageUrl } = useMemo(() => {
@@ -102,15 +106,27 @@ const AdBanner = ({ size = "horizontal", className = "" }: AdBannerProps) => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className={`${sizeClasses[size]} ${className}`}
-    >
-      <div className="w-full h-full bg-gym-charcoal border border-border/50 rounded-lg flex items-center justify-center relative overflow-hidden">
-        {renderAdContent()}
-      </div>
-    </motion.div>
+    <div className={`space-y-2 ${className}`}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={sizeClasses[size]}
+      >
+        <div className="w-full h-full bg-gym-charcoal border border-border/50 rounded-lg flex items-center justify-center relative overflow-hidden">
+          {renderAdContent()}
+        </div>
+      </motion.div>
+      
+      {showPremiumPrompt && (
+        <button
+          onClick={() => navigate('/account')}
+          className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors py-1"
+        >
+          <Crown className="w-3 h-3 text-gym-orange" />
+          <span>Bli Premium för att ta bort annonser</span>
+        </button>
+      )}
+    </div>
   );
 };
 
