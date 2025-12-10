@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   Plus, Trash2, Loader2,
-  Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles, Map, Play, Zap, Share2
+  Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles, Map, Play, Zap, Share2, Calendar
 } from 'lucide-react';
 import ActiveCardioPlanSession from '@/components/ActiveCardioPlanSession';
 import QuickStartCardio from '@/components/QuickStartCardio';
@@ -46,6 +46,7 @@ interface CardioDraft {
   distanceKm: string;
   caloriesBurned: string;
   notes: string;
+  completedAt: string;
   userId: string;
   createdAt: string;
 }
@@ -71,6 +72,7 @@ interface CardioGoal {
 
 const activityTypes = [
   { value: 'running', label: 'Löpning', icon: Footprints },
+  { value: 'intervals', label: 'Intervaller', icon: Zap },
   { value: 'walking', label: 'Promenad', icon: Footprints },
   { value: 'cycling', label: 'Cykling', icon: Bike },
   { value: 'swimming', label: 'Simning', icon: Waves },
@@ -105,6 +107,7 @@ export default function CardioLogContent() {
   const [distanceKm, setDistanceKm] = useState('');
   const [caloriesBurned, setCaloriesBurned] = useState('');
   const [notes, setNotes] = useState('');
+  const [completedAt, setCompletedAt] = useState(''); // For retroactive logging
 
   const [goalActivityType, setGoalActivityType] = useState('all');
   const [goalTargetType, setGoalTargetType] = useState('distance_km');
@@ -139,11 +142,12 @@ export default function CardioLogContent() {
       distanceKm,
       caloriesBurned,
       notes,
+      completedAt,
       userId: user.id,
       createdAt: new Date().toISOString()
     };
     localStorage.setItem(CARDIO_DRAFT_KEY, JSON.stringify(draft));
-  }, [user, showForm, activityType, durationMinutes, distanceKm, caloriesBurned, notes]);
+  }, [user, showForm, activityType, durationMinutes, distanceKm, caloriesBurned, notes, completedAt]);
 
   // Load draft from localStorage
   const loadDraft = useCallback(() => {
@@ -186,6 +190,7 @@ export default function CardioLogContent() {
       setDistanceKm(draft.distanceKm);
       setCaloriesBurned(draft.caloriesBurned);
       setNotes(draft.notes);
+      setCompletedAt(draft.completedAt || '');
       setShowForm(true);
       setShowDraftDialog(false);
     }
@@ -320,6 +325,7 @@ export default function CardioLogContent() {
         distance_km: distanceKm ? parseFloat(distanceKm) : null,
         calories_burned: caloriesBurned ? parseInt(caloriesBurned) : null,
         notes: notes || null,
+        completed_at: completedAt ? new Date(completedAt).toISOString() : new Date().toISOString(),
       });
 
       if (error) throw error;
@@ -418,6 +424,7 @@ export default function CardioLogContent() {
     setDistanceKm('');
     setCaloriesBurned('');
     setNotes('');
+    setCompletedAt('');
     setShowForm(false);
     discardDraft();
   };
@@ -766,6 +773,22 @@ export default function CardioLogContent() {
                     value={caloriesBurned}
                     onChange={(e) => setCaloriesBurned(e.target.value)}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Datum & tid (lämna tomt för nu)
+                  </Label>
+                  <Input
+                    type="datetime-local"
+                    value={completedAt}
+                    onChange={(e) => setCompletedAt(e.target.value)}
+                    max={new Date().toISOString().slice(0, 16)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Använd för att logga ett pass i efterhand
+                  </p>
                 </div>
               </div>
 

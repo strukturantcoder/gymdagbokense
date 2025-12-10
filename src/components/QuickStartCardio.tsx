@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { 
   Play, Pause, Square, Timer, Footprints, Bike, Waves, Flag, 
-  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle
+  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle, Zap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -19,6 +19,7 @@ import AdBanner from '@/components/AdBanner';
 
 const activityTypes = [
   { value: 'running', label: 'Löpning', icon: Footprints, color: 'from-orange-500 to-red-500', gpsRecommended: true },
+  { value: 'intervals', label: 'Intervaller', icon: Zap, color: 'from-yellow-500 to-orange-500', gpsRecommended: true },
   { value: 'walking', label: 'Promenad', icon: Footprints, color: 'from-green-500 to-emerald-500', gpsRecommended: true },
   { value: 'cycling', label: 'Cykling', icon: Bike, color: 'from-blue-500 to-cyan-500', gpsRecommended: true },
   { value: 'swimming', label: 'Simning', icon: Waves, color: 'from-cyan-500 to-blue-500', gpsRecommended: false },
