@@ -134,12 +134,6 @@ export default function SwipeableSetRow({
                 e.stopPropagation();
                 onUpdateWeight(e.target.value === '' ? 0 : parseFloat(e.target.value));
               }}
-              onFocus={(e) => {
-                e.stopPropagation();
-                if (e.target.value === '0') {
-                  e.target.value = '';
-                }
-              }}
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
               className={`h-8 text-center ${isCompleted ? 'bg-green-500/10 border-green-500/30' : ''}`}
