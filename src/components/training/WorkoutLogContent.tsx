@@ -129,6 +129,9 @@ export default function WorkoutLogContent() {
   const [showLogDetails, setShowLogDetails] = useState(false);
   const [showDeleteLogDialog, setShowDeleteLogDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showProgramSelectDialog, setShowProgramSelectDialog] = useState(false);
+  const [pendingProgramId, setPendingProgramId] = useState<string>('');
+  const [pendingDayIndex, setPendingDayIndex] = useState<string>('');
   
   // New workout form
   const [selectedProgram, setSelectedProgram] = useState<string>('');
@@ -735,35 +738,38 @@ export default function WorkoutLogContent() {
 
   const currentProgram = programs.find(p => p.id === selectedProgram);
 
-  const startNewWorkout = async () => {
+  const openProgramSelectDialog = async () => {
+    if (!programs.length) {
+      toast.error('Skapa ett träningsprogram först');
+      return;
+    }
+    
     setAutoSuggestLoading(true);
     
     try {
-      let targetProgram: WorkoutProgram | null = null;
-      let targetDayIndex = 0;
+      let suggestedProgramId = programs[0].id;
+      let suggestedDayIndex = 0;
       
       // Find the best program and day to suggest
       if (programs.length === 1) {
-        targetProgram = programs[0];
-        
         const { data: lastWorkout } = await supabase
           .from('workout_logs')
           .select('workout_day, program_id')
-          .eq('program_id', targetProgram.id)
+          .eq('program_id', programs[0].id)
           .order('completed_at', { ascending: false })
           .limit(1)
           .maybeSingle();
         
-        if (lastWorkout && targetProgram.program_data.days) {
-          const lastDayIndex = targetProgram.program_data.days.findIndex(
+        if (lastWorkout && programs[0].program_data.days) {
+          const lastDayIndex = programs[0].program_data.days.findIndex(
             d => d.day === lastWorkout.workout_day
           );
           
           if (lastDayIndex !== -1) {
-            targetDayIndex = (lastDayIndex + 1) % targetProgram.program_data.days.length;
+            suggestedDayIndex = (lastDayIndex + 1) % programs[0].program_data.days.length;
           }
         }
-      } else if (programs.length > 1) {
+      } else {
         const { data: lastWorkout } = await supabase
           .from('workout_logs')
           .select('workout_day, program_id')
@@ -774,34 +780,50 @@ export default function WorkoutLogContent() {
         if (lastWorkout?.program_id) {
           const program = programs.find(p => p.id === lastWorkout.program_id);
           if (program) {
-            targetProgram = program;
+            suggestedProgramId = program.id;
             
             const lastDayIndex = program.program_data.days?.findIndex(
               d => d.day === lastWorkout.workout_day
             ) ?? -1;
             
             if (lastDayIndex !== -1 && program.program_data.days) {
-              targetDayIndex = (lastDayIndex + 1) % program.program_data.days.length;
+              suggestedDayIndex = (lastDayIndex + 1) % program.program_data.days.length;
             }
           }
-        } else {
-          targetProgram = programs[0];
         }
       }
+      
+      setPendingProgramId(suggestedProgramId);
+      setPendingDayIndex(suggestedDayIndex.toString());
+      setShowProgramSelectDialog(true);
+    } catch (error) {
+      console.error('Error loading suggestions:', error);
+      setPendingProgramId(programs[0].id);
+      setPendingDayIndex('0');
+      setShowProgramSelectDialog(true);
+    } finally {
+      setAutoSuggestLoading(false);
+    }
+  };
 
-      if (!targetProgram || !targetProgram.program_data.days?.length) {
-        toast.error('Skapa ett träningsprogram först');
-        setAutoSuggestLoading(false);
-        return;
-      }
+  const confirmAndStartWorkout = async () => {
+    const program = programs.find(p => p.id === pendingProgramId);
+    if (!program || !pendingDayIndex) {
+      toast.error('Välj program och dag');
+      return;
+    }
 
-      const day = targetProgram.program_data.days[targetDayIndex];
-      if (!day) {
-        toast.error('Kunde inte hitta träningsdag');
-        setAutoSuggestLoading(false);
-        return;
-      }
+    const dayIndex = parseInt(pendingDayIndex);
+    const day = program.program_data.days[dayIndex];
+    if (!day) {
+      toast.error('Kunde inte hitta träningsdag');
+      return;
+    }
 
+    setShowProgramSelectDialog(false);
+    setAutoSuggestLoading(true);
+
+    try {
       // Fetch last weights for exercises
       const exerciseNames = day.exercises.map(ex => ex.name);
       const { data: lastWeights } = await supabase
@@ -851,9 +873,9 @@ export default function WorkoutLogContent() {
 
       // Store session data and navigate
       const sessionData = {
-        programId: targetProgram.id,
-        programName: targetProgram.name,
-        dayIndex: targetDayIndex.toString(),
+        programId: program.id,
+        programName: program.name,
+        dayIndex: pendingDayIndex,
         dayName: day.day,
         exercises,
         startedAt: Date.now()
@@ -869,6 +891,8 @@ export default function WorkoutLogContent() {
       setAutoSuggestLoading(false);
     }
   };
+
+  const pendingProgram = programs.find(p => p.id === pendingProgramId);
 
   const startWorkoutTimer = () => {
     setWorkoutStartTime(Date.now());
@@ -934,6 +958,61 @@ export default function WorkoutLogContent() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Program select dialog */}
+      <Dialog open={showProgramSelectDialog} onOpenChange={setShowProgramSelectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 text-primary" />
+              Välj träningspass
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Träningsprogram</Label>
+              <Select value={pendingProgramId} onValueChange={(v) => { setPendingProgramId(v); setPendingDayIndex('0'); }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Välj program" />
+                </SelectTrigger>
+                <SelectContent>
+                  {programs.map(program => (
+                    <SelectItem key={program.id} value={program.id}>
+                      {program.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {pendingProgram && (
+              <div className="space-y-2">
+                <Label>Träningsdag</Label>
+                <Select value={pendingDayIndex} onValueChange={setPendingDayIndex}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Välj dag" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pendingProgram.program_data.days.map((day, index) => (
+                      <SelectItem key={index} value={index.toString()}>
+                        {day.day} - {day.focus}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-3 mt-2">
+            <Button variant="outline" onClick={() => setShowProgramSelectDialog(false)} className="flex-1">
+              Avbryt
+            </Button>
+            <Button onClick={confirmAndStartWorkout} className="flex-1" disabled={!pendingProgramId || pendingDayIndex === ''}>
+              Starta pass
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -971,7 +1050,7 @@ export default function WorkoutLogContent() {
             </div>
           )}
           {!isLogging && (
-            <Button variant="hero" size="sm" onClick={startNewWorkout} disabled={autoSuggestLoading}>
+            <Button variant="hero" size="sm" onClick={openProgramSelectDialog} disabled={autoSuggestLoading}>
               {autoSuggestLoading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (

@@ -36,7 +36,8 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  CalendarIcon
+  CalendarIcon,
+  Plus
 } from 'lucide-react';
 import {
   Select,
@@ -156,6 +157,10 @@ export default function WorkoutSession() {
     reps?: number;
   } | null>(null);
   const [savedSessionName, setSavedSessionName] = useState('');
+  const [showBonusDialog, setShowBonusDialog] = useState(false);
+  const [bonusExerciseName, setBonusExerciseName] = useState('');
+  const [bonusExerciseSets, setBonusExerciseSets] = useState(3);
+  const [bonusExerciseReps, setBonusExerciseReps] = useState(10);
   const [summaryData, setSummaryData] = useState<{
     totalSets: number;
     totalReps: number;
@@ -322,10 +327,54 @@ export default function WorkoutSession() {
       return;
     }
     
+    // Ask if user wants to add a bonus exercise
+    setShowBonusDialog(true);
+  };
+
+  const proceedToSave = () => {
+    setShowBonusDialog(false);
     // Initialize confirmed duration with current elapsed time and date to today
     setConfirmedDuration(Math.round(elapsedTime / 60));
     setConfirmedDate(new Date());
     setShowDurationDialog(true);
+  };
+
+  const addBonusExercise = () => {
+    if (!sessionData || !bonusExerciseName.trim()) {
+      toast.error('Ange ett övningsnamn');
+      return;
+    }
+
+    const newExercise: ExerciseLogEntry = {
+      exercise_name: bonusExerciseName.trim(),
+      sets_completed: bonusExerciseSets,
+      reps_completed: Array(bonusExerciseSets).fill(bonusExerciseReps).join(', '),
+      weight_kg: '',
+      notes: '',
+      set_details: Array.from({ length: bonusExerciseSets }, () => ({
+        reps: bonusExerciseReps,
+        weight: 0,
+        completed: false
+      })),
+      programSets: bonusExerciseSets,
+      programReps: bonusExerciseReps.toString()
+    };
+
+    setSessionData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        exercises: [...prev.exercises, newExercise]
+      };
+    });
+
+    // Navigate to the new exercise
+    setCurrentExerciseIndex(sessionData.exercises.length);
+    setShowBonusDialog(false);
+    setBonusExerciseName('');
+    setBonusExerciseSets(3);
+    setBonusExerciseReps(10);
+    toast.success(`Bonusövning "${bonusExerciseName.trim()}" tillagd!`);
   };
 
   const handleSaveWorkout = async () => {
@@ -953,6 +1002,11 @@ export default function WorkoutSession() {
                             type="number"
                             value={set.weight !== undefined && set.weight !== null ? set.weight : ''}
                             onChange={(e) => updateSetDetail(idx, 'weight', parseFloat(e.target.value) || 0)}
+                            onFocus={(e) => {
+                              if (e.target.value === '0') {
+                                e.target.value = '';
+                              }
+                            }}
                             className="h-10 text-center font-mono text-lg"
                             step="0.5"
                             min="0"
@@ -1120,6 +1174,66 @@ export default function WorkoutSession() {
             <AlertDialogAction onClick={handleSaveWorkout} disabled={!confirmedDuration || confirmedDuration < 1}>
               Spara pass
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bonus exercise dialog */}
+      <AlertDialog open={showBonusDialog} onOpenChange={setShowBonusDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-gym-orange" />
+              Bonusövning?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Har du energi kvar? Lägg till en bonusövning innan du avslutar!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Övningsnamn</label>
+              <Input
+                placeholder="T.ex. Biceps Curls, Plankan..."
+                value={bonusExerciseName}
+                onChange={(e) => setBonusExerciseName(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Antal set</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={bonusExerciseSets}
+                  onChange={(e) => setBonusExerciseSets(parseInt(e.target.value) || 3)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Reps per set</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={bonusExerciseReps}
+                  onChange={(e) => setBonusExerciseReps(parseInt(e.target.value) || 10)}
+                />
+              </div>
+            </div>
+          </div>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={proceedToSave} className="w-full sm:w-auto">
+              Nej, avsluta passet
+            </Button>
+            <Button 
+              onClick={addBonusExercise} 
+              disabled={!bonusExerciseName.trim()}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Lägg till bonusövning
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
