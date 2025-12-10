@@ -1000,16 +1000,12 @@ export default function WorkoutSession() {
                           </label>
                           <Input
                             type="number"
-                            value={set.weight !== undefined && set.weight !== null ? set.weight : ''}
+                            value={set.weight === 0 ? '' : (set.weight !== undefined && set.weight !== null ? set.weight : '')}
                             onChange={(e) => updateSetDetail(idx, 'weight', parseFloat(e.target.value) || 0)}
-                            onFocus={(e) => {
-                              if (e.target.value === '0') {
-                                e.target.value = '';
-                              }
-                            }}
                             className="h-10 text-center font-mono text-lg"
                             step="0.5"
                             min="0"
+                            placeholder="0"
                           />
                         </div>
                         <div className="space-y-1">
