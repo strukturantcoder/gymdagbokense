@@ -7,6 +7,8 @@ import SocialProofBanner from "@/components/SocialProofBanner";
 import AdBanner from "@/components/AdBanner";
 import Footer from "@/components/Footer";
 
+// Force module refresh
+
 // Lazy load below-fold components to reduce initial bundle size
 const Features = lazy(() => import("@/components/Features"));
 const HowItWorks = lazy(() => import("@/components/HowItWorks"));
