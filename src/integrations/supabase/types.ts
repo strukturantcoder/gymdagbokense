@@ -1161,7 +1161,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      friend_profiles_view: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          display_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          display_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      friend_stats_view: {
+        Row: {
+          level: number | null
+          total_workouts: number | null
+          total_xp: number | null
+          user_id: string | null
+        }
+        Insert: {
+          level?: number | null
+          total_workouts?: number | null
+          total_xp?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          level?: number | null
+          total_workouts?: number | null
+          total_xp?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       abbreviate_name: { Args: { full_name: string }; Returns: string }
@@ -1171,6 +1209,15 @@ export type Database = {
         Returns: {
           avatar_url: string
           display_name: string
+          user_id: string
+        }[]
+      }
+      get_friend_stats: {
+        Args: { friend_user_id: string }
+        Returns: {
+          level: number
+          total_workouts: number
+          total_xp: number
           user_id: string
         }[]
       }
