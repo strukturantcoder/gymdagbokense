@@ -586,10 +586,127 @@ export default function CardioLogContent() {
             </DialogContent>
           </Dialog>
             <GenerateCardioPlanDialog />
-            <Button variant="hero" size="sm" onClick={() => setShowForm(true)} className="shrink-0">
-              <Plus className="w-4 h-4 mr-2" />
-              Starta pass
-            </Button>
+            <Dialog open={showForm} onOpenChange={setShowForm}>
+              <DialogTrigger asChild>
+                <Button variant="hero" size="sm" className="shrink-0">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Logga pass
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Logga konditionspass</DialogTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Du får {CARDIO_XP_PER_MINUTE} XP per minut + {CARDIO_XP_PER_KM} XP per km
+                  </p>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label>Aktivitetstyp *</Label>
+                      <Select value={activityType} onValueChange={setActivityType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Välj aktivitet" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {activityTypes.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              <div className="flex items-center gap-2">
+                                <type.icon className="w-4 h-4" />
+                                {type.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Tid (minuter) *</Label>
+                        <Input
+                          type="number"
+                          placeholder="45"
+                          value={durationMinutes}
+                          onChange={(e) => setDurationMinutes(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Distans (km)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="5.0"
+                          value={distanceKm}
+                          onChange={(e) => setDistanceKm(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Kalorier brända</Label>
+                      <Input
+                        type="number"
+                        placeholder="300"
+                        value={caloriesBurned}
+                        onChange={(e) => setCaloriesBurned(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Datum & tid (lämna tomt för nu)
+                      </Label>
+                      <Input
+                        type="datetime-local"
+                        value={completedAt}
+                        onChange={(e) => setCompletedAt(e.target.value)}
+                        max={new Date().toISOString().slice(0, 16)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Använd för att logga ett pass i efterhand
+                      </p>
+                    </div>
+
+                    {durationMinutes && (
+                      <div className="p-3 bg-primary/10 rounded-lg">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          Förväntad XP: +{calculateXP(parseInt(durationMinutes) || 0, distanceKm ? parseFloat(distanceKm) : null)}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label>Anteckningar</Label>
+                      <Textarea
+                        placeholder="Hur kändes passet?"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button variant="ghost" onClick={resetForm}>
+                      Avbryt
+                    </Button>
+                    <Button variant="hero" onClick={handleSave} disabled={isSaving}>
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Sparar...
+                        </>
+                      ) : (
+                        'Spara pass'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
           <div className="absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />
         </div>
@@ -710,125 +827,6 @@ export default function CardioLogContent() {
         </div>
       )}
 
-      {showForm && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <Card className="border-primary/50 bg-gradient-to-b from-primary/5 to-card">
-            <CardHeader>
-              <CardTitle>Logga konditionspass</CardTitle>
-              <CardDescription>
-                Du får {CARDIO_XP_PER_MINUTE} XP per minut + {CARDIO_XP_PER_KM} XP per km
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Aktivitetstyp *</Label>
-                  <Select value={activityType} onValueChange={setActivityType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Välj aktivitet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activityTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          <div className="flex items-center gap-2">
-                            <type.icon className="w-4 h-4" />
-                            {type.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Tid (minuter) *</Label>
-                  <Input
-                    type="number"
-                    placeholder="45"
-                    value={durationMinutes}
-                    onChange={(e) => setDurationMinutes(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Distans (km)</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    placeholder="5.0"
-                    value={distanceKm}
-                    onChange={(e) => setDistanceKm(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Kalorier brända</Label>
-                  <Input
-                    type="number"
-                    placeholder="300"
-                    value={caloriesBurned}
-                    onChange={(e) => setCaloriesBurned(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Datum & tid (lämna tomt för nu)
-                  </Label>
-                  <Input
-                    type="datetime-local"
-                    value={completedAt}
-                    onChange={(e) => setCompletedAt(e.target.value)}
-                    max={new Date().toISOString().slice(0, 16)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Använd för att logga ett pass i efterhand
-                  </p>
-                </div>
-              </div>
-
-              {durationMinutes && (
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    Förväntad XP: +{calculateXP(parseInt(durationMinutes) || 0, distanceKm ? parseFloat(distanceKm) : null)}
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label>Anteckningar</Label>
-                <Textarea
-                  placeholder="Hur kändes passet?"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button variant="hero" onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Sparar...
-                    </>
-                  ) : (
-                    'Spara pass'
-                  )}
-                </Button>
-                <Button variant="ghost" onClick={resetForm}>
-                  Avbryt
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
 
       <div>
         <h2 className="text-xl font-display font-bold mb-4">Senaste pass</h2>
