@@ -320,6 +320,62 @@ export default function Account() {
       </header>
 
       <main className="container px-4 py-6 max-w-2xl mx-auto space-y-6">
+        {/* App Maintenance - Moved to top */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5" />
+              Underhåll
+            </CardTitle>
+            <CardDescription>
+              Felsökning och uppdateringar
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isClearing ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{clearingMessage}</span>
+                  <span className="font-medium text-primary">{clearingProgress}%</span>
+                </div>
+                <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${clearingProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Vänligen vänta medan appen uppdateras...
+                </p>
+              </div>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={handleForceUpdate} 
+                  className="w-full"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Rensa cache och uppdatera
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Använd detta om appen inte uppdateras automatiskt
+                </p>
+              </>
+            )}
+            
+            <Separator className="my-4" />
+            
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Appversion</span>
+              </div>
+              <Badge variant="outline" className="font-mono">v{APP_VERSION}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Profile Card */}
         <Card>
           <CardHeader>
@@ -676,61 +732,6 @@ export default function Account() {
           </CardContent>
         </Card>
 
-        {/* App Maintenance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <RefreshCw className="h-5 w-5" />
-              Underhåll
-            </CardTitle>
-            <CardDescription>
-              Felsökning och uppdateringar
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isClearing ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{clearingMessage}</span>
-                  <span className="font-medium text-primary">{clearingProgress}%</span>
-                </div>
-                <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${clearingProgress}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Vänligen vänta medan appen uppdateras...
-                </p>
-              </div>
-            ) : (
-              <>
-                <Button 
-                  variant="outline" 
-                  onClick={handleForceUpdate} 
-                  className="w-full"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Rensa cache och uppdatera
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Använd detta om appen inte uppdateras automatiskt
-                </p>
-              </>
-            )}
-            
-            <Separator className="my-4" />
-            
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Info className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Appversion</span>
-              </div>
-              <Badge variant="outline" className="font-mono">v{APP_VERSION}</Badge>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Sign Out */}
         <Card className="border-destructive/20">
