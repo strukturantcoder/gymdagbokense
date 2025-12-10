@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { APP_VERSION } from '@/components/PWAUpdateNotification';
+import { APP_VERSION, forceAppUpdate } from '@/components/PWAUpdateNotification';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -60,6 +60,8 @@ export default function Account() {
   const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>(defaultPreferences);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [clearingProgress, setClearingProgress] = useState(0);
+  const [clearingMessage, setClearingMessage] = useState('');
   
   // Form state
   const [displayName, setDisplayName] = useState('');
@@ -262,15 +264,21 @@ export default function Account() {
 
   const handleForceUpdate = async () => {
     setIsClearing(true);
+    setClearingProgress(0);
+    setClearingMessage('Förbereder...');
+    
     try {
-      // Import and call the force update function
-      const { forceAppUpdate } = await import('@/components/PWAUpdateNotification');
-      toast.info('Rensar cache och uppdaterar...');
-      await forceAppUpdate();
+      await forceAppUpdate((step, totalSteps, message) => {
+        const progress = Math.round((step / totalSteps) * 100);
+        setClearingProgress(progress);
+        setClearingMessage(message);
+      });
     } catch (error) {
       console.error('Error forcing update:', error);
       toast.error('Kunde inte rensa cachen');
       setIsClearing(false);
+      setClearingProgress(0);
+      setClearingMessage('');
     }
   };
 
@@ -679,23 +687,38 @@ export default function Account() {
               Felsökning och uppdateringar
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button 
-              variant="outline" 
-              onClick={handleForceUpdate} 
-              disabled={isClearing}
-              className="w-full"
-            >
-              {isClearing ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Rensa cache och uppdatera
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2">
-              Använd detta om appen inte uppdateras automatiskt
-            </p>
+          <CardContent className="space-y-4">
+            {isClearing ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{clearingMessage}</span>
+                  <span className="font-medium text-primary">{clearingProgress}%</span>
+                </div>
+                <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${clearingProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Vänligen vänta medan appen uppdateras...
+                </p>
+              </div>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={handleForceUpdate} 
+                  className="w-full"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Rensa cache och uppdatera
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Använd detta om appen inte uppdateras automatiskt
+                </p>
+              </>
+            )}
             
             <Separator className="my-4" />
             
