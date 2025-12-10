@@ -245,10 +245,35 @@ export const PWAUpdateNotification = () => {
   );
 };
 
-// Export utility for manual cache clearing (can be used from settings)
-export const forceAppUpdate = async () => {
+// Progress callback type for manual cache clearing
+export type UpdateProgressCallback = (step: number, totalSteps: number, message: string) => void;
+
+// Export utility for manual cache clearing with progress (can be used from settings)
+export const forceAppUpdate = async (onProgress?: UpdateProgressCallback) => {
+  const totalSteps = 5;
+  
+  // Step 1: Start
+  onProgress?.(1, totalSteps, 'Förbereder...');
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  // Step 2: Clear caches
+  onProgress?.(2, totalSteps, 'Rensar cache...');
   await forceCleanAllCaches();
+  await new Promise(resolve => setTimeout(resolve, 400));
+  
+  // Step 3: Unregister service workers
+  onProgress?.(3, totalSteps, 'Avregistrerar service workers...');
   await unregisterAllServiceWorkers();
+  await new Promise(resolve => setTimeout(resolve, 400));
+  
+  // Step 4: Clear version
+  onProgress?.(4, totalSteps, 'Slutför...');
   localStorage.removeItem(VERSION_KEY);
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  // Step 5: Complete
+  onProgress?.(5, totalSteps, 'Klart! Laddar om...');
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
   window.location.reload();
 };
