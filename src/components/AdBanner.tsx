@@ -43,6 +43,12 @@ const ads: Ad[] = [
     link: "https://clk.tradedoubler.com/click?p=393591&a=3465011",
     altText: "Nutrimimic - Healthy Eating",
   },
+  {
+    id: "tradedoubler-4",
+    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(26010526)a(3465011)",
+    link: "https://clk.tradedoubler.com/click?p=384188&a=3465011&g=26010526",
+    altText: "Annons",
+  },
 ];
 
 interface AdBannerProps {
