@@ -423,7 +423,8 @@ export default function CrossFitWOD() {
 
   return (
     <div className="space-y-4">
-      {/* Draft Resume Card */}
+      {/* Top Ad Banner */}
+      <AdBanner size="horizontal" />
       {hasDraft && !showLogDialog && (
         <Card className="border-primary/50 bg-gradient-to-r from-primary/10 to-transparent">
           <CardContent className="py-4">
@@ -844,6 +845,9 @@ export default function CrossFitWOD() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bottom Ad Banner */}
+      <AdBanner size="horizontal" />
     </div>
   );
 }
