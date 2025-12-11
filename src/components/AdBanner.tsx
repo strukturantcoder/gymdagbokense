@@ -59,13 +59,13 @@ const ads: Ad[] = [
     id: "tradedoubler-6",
     imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(24930420)a(3465011)",
     link: "https://clk.tradedoubler.com/click?p=311300&a=3465011&g=24930420",
-    altText: "Annons",
+    altText: "Racketspecialisten - Kod XMAS15 ger 15% rabatt på dyraste produkten",
   },
   {
     id: "tradedoubler-7",
     imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(24930416)a(3465011)",
     link: "https://clk.tradedoubler.com/click?p=311300&a=3465011&g=24930416",
-    altText: "Annons",
+    altText: "Racketspecialisten - Kod XMAS15 ger 15% rabatt på dyraste produkten",
   },
 ];
 
