@@ -67,6 +67,12 @@ const ads: Ad[] = [
     link: "https://clk.tradedoubler.com/click?p=311300&a=3465011&g=24930416",
     altText: "Racketspecialisten - Kod XMAS15 ger 15% rabatt på dyraste produkten",
   },
+  {
+    id: "alpingaraget-1",
+    imageBaseUrl: "https://statics.alpingaraget.se/imp?type(img)g(25827970)a(3465011)",
+    link: "https://statics.alpingaraget.se/click?p=374688&a=3465011&g=25827970",
+    altText: "Alpingaraget",
+  },
 ];
 
 interface AdBannerProps {
