@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dumbbell, ArrowLeft, Loader2, TrendingUp, Calendar, Flame, Weight, Footprints, MapPin, Timer, Zap, Sparkles } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
+import TrainingAIAnalysis from '@/components/TrainingAIAnalysis';
 import {
   LineChart,
   Line,
@@ -954,6 +955,11 @@ export default function Statistics() {
             </motion.div>
           </TabsContent>
         </Tabs>
+        
+        {/* AI Training Analysis */}
+        <div className="mt-8">
+          <TrainingAIAnalysis />
+        </div>
         
         {/* Bottom Ad Banner */}
         <AdBanner className="mt-8" />
