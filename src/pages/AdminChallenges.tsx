@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell, Image } from "lucide-react";
 import { AdminStats } from "@/components/AdminStats";
 import { AdminPushNotification } from "@/components/AdminPushNotification";
 import { format } from "date-fns";
@@ -309,7 +309,7 @@ export default function AdminChallenges() {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <Tabs defaultValue="stats" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-lg">
+          <TabsList className="grid w-full grid-cols-4 max-w-xl">
             <TabsTrigger value="stats" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               Statistik
@@ -321,6 +321,10 @@ export default function AdminChallenges() {
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" />
               Notiser
+            </TabsTrigger>
+            <TabsTrigger value="instagram" className="gap-2" onClick={() => navigate("/admin/instagram")}>
+              <Image className="h-4 w-4" />
+              Instagram
             </TabsTrigger>
           </TabsList>
 
