@@ -8,7 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MapPin, Gauge, TrendingUp, Timer, Navigation, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MapPin, Gauge, TrendingUp, Timer, Navigation, Loader2, Smartphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface RoutePosition {
@@ -258,6 +259,14 @@ export default function RouteMapDialog({
                   className="h-64 md:h-80 rounded-lg overflow-hidden"
                 />
               )}
+
+              {/* Native app notice */}
+              <Alert className="bg-blue-500/10 border-blue-500/30">
+                <Smartphone className="h-4 w-4 text-blue-500" />
+                <AlertDescription className="text-xs text-muted-foreground">
+                  <strong className="text-foreground">Snart ännu bättre!</strong> Vår kommande native app ger bakgrunds-GPS för exaktare rutter även när telefonen är låst.
+                </AlertDescription>
+              </Alert>
             </>
           )}
 

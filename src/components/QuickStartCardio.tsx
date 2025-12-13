@@ -8,8 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { 
   Play, Pause, Square, Timer, Footprints, Bike, Waves, Flag, 
-  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle, Zap
+  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle, Zap, Info, Smartphone
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
@@ -415,18 +416,28 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
 
             {/* GPS Toggle */}
             {!showFinishForm && (
-              <div className="flex items-center justify-between bg-muted/30 rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <Navigation className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">GPS-spårning</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between bg-muted/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <Navigation className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">GPS-spårning</span>
+                  </div>
+                  <Switch
+                    checked={gpsEnabled}
+                    onCheckedChange={(checked) => {
+                      setGpsEnabled(checked);
+                      persistSession();
+                    }}
+                  />
                 </div>
-                <Switch
-                  checked={gpsEnabled}
-                  onCheckedChange={(checked) => {
-                    setGpsEnabled(checked);
-                    persistSession();
-                  }}
-                />
+                {gpsEnabled && (
+                  <Alert className="bg-blue-500/10 border-blue-500/30">
+                    <Smartphone className="h-4 w-4 text-blue-500" />
+                    <AlertDescription className="text-xs text-muted-foreground">
+                      <strong className="text-foreground">Tips:</strong> GPS fungerar endast när appen är öppen. För bakgrundsspårning, släpp vi snart vår native app!
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
             )}
 
