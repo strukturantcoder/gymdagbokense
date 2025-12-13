@@ -31,11 +31,44 @@ const AdminInstagramImages = () => {
   const [imageFormat, setImageFormat] = useState<"post" | "story">("post");
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
 
-  // Load logo on mount
+  // Load and process logo to remove white background
   useEffect(() => {
     const img = new window.Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => setLogoImage(img);
+    img.onload = () => {
+      // Create a canvas to process the image and remove white background
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        setLogoImage(img);
+        return;
+      }
+      
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // Make white/light pixels transparent
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        // Check if pixel is white or very light (threshold: 240)
+        if (r > 240 && g > 240 && b > 240) {
+          data[i + 3] = 0; // Set alpha to 0 (transparent)
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      
+      // Create a new image from the processed canvas
+      const processedImg = new window.Image();
+      processedImg.onload = () => setLogoImage(processedImg);
+      processedImg.src = canvas.toDataURL("image/png");
+    };
     img.src = "/pwa-512x512.png";
   }, []);
 
