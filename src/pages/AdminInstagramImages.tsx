@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Image, Sparkles, Trophy, Gift, Dumbbell, FolderDown } from "lucide-react";
+import { Download, Image, Sparkles, Trophy, Gift, Dumbbell, FolderDown, Megaphone } from "lucide-react";
 import { toast } from "sonner";
+import MarketingImageGenerator from "@/components/admin/MarketingImageGenerator";
 
 // Competition content configuration
 interface CompetitionContent {
@@ -471,7 +472,20 @@ const AdminInstagramImages = () => {
         </Button>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <Tabs defaultValue="competition" className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="competition" className="gap-2">
+            <Trophy className="h-4 w-4" />
+            Tävling
+          </TabsTrigger>
+          <TabsTrigger value="marketing" className="gap-2">
+            <Megaphone className="h-4 w-4" />
+            Marknadsföring
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="competition">
+          <div className="grid gap-8 lg:grid-cols-2">
         {/* Controls */}
         <div className="space-y-6">
           <Card>
@@ -707,6 +721,12 @@ Lycka till! 🚀
           </Button>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="marketing">
+          <MarketingImageGenerator />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
