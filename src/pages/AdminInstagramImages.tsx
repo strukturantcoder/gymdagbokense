@@ -4,8 +4,22 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Download, Image, Sparkles, Trophy, Gift, Dumbbell, FolderDown } from "lucide-react";
 import { toast } from "sonner";
+
+// Competition content configuration
+interface CompetitionContent {
+  prizeValue: string;
+  prizeDescription: string;
+  sponsor: string;
+  commentQuestion: string;
+  tagCount: string;
+  deadline: string;
+  instagramHandle: string;
+}
 
 type ImageTemplate = "main" | "howToEnter" | "extraChance" | "winner" | "countdown";
 
@@ -30,6 +44,17 @@ const AdminInstagramImages = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<ImageTemplate>("main");
   const [imageFormat, setImageFormat] = useState<"post" | "story">("post");
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
+  
+  // Editable competition content
+  const [content, setContent] = useState<CompetitionContent>({
+    prizeValue: "1000 KR",
+    prizeDescription: "PRESENTKORT",
+    sponsor: "GYMGROSSISTEN",
+    commentQuestion: "Vad är ett måste i din träning?",
+    tagCount: "2",
+    deadline: "19 december kl. 12:00",
+    instagramHandle: "@gymdagbokense",
+  });
 
   // Load and process logo to remove white background
   useEffect(() => {
@@ -142,12 +167,12 @@ const AdminInstagramImages = () => {
     ctx.font = "bold 32px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.whiteDim;
     ctx.textAlign = "center";
-    ctx.fillText("@gymdagbokense", width / 2, height - 40);
+    ctx.fillText(content.instagramHandle, width / 2, height - 40);
 
     return new Promise((resolve) => {
       canvas.toBlob((blob) => resolve(blob), "image/png", 1.0);
     });
-  }, [logoImage]);
+  }, [logoImage, content]);
 
   const drawMainTemplate = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
     const centerY = height / 2 + (format === "post" ? 30 : 100);
@@ -171,14 +196,14 @@ const AdminInstagramImages = () => {
     prizeGradient.addColorStop(1, COLORS.orangeDark);
     ctx.fillStyle = prizeGradient;
     ctx.font = "bold 72px 'Oswald', sans-serif";
-    ctx.fillText("PRESENTKORT", width / 2, centerY - 40);
+    ctx.fillText(content.prizeDescription.toUpperCase(), width / 2, centerY - 40);
     ctx.font = "bold 120px 'Oswald', sans-serif";
-    ctx.fillText("1000 KR", width / 2, centerY + 80);
+    ctx.fillText(content.prizeValue.toUpperCase(), width / 2, centerY + 80);
 
     // From text
     ctx.font = "bold 48px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.white;
-    ctx.fillText("FRÅN GYMGROSSISTEN", width / 2, centerY + 160);
+    ctx.fillText(`FRÅN ${content.sponsor.toUpperCase()}`, width / 2, centerY + 160);
 
     // Gift emoji
     ctx.font = "100px sans-serif";
@@ -205,7 +230,7 @@ const AdminInstagramImages = () => {
 
     // Steps
     const steps = [
-      { emoji: "1️⃣", text: "Följ @gymdagbokense" },
+      { emoji: "1️⃣", text: `Följ ${content.instagramHandle}` },
       { emoji: "2️⃣", text: "Gilla detta inlägg ❤️" },
       { emoji: "3️⃣", text: "Kommentera:" },
     ];
@@ -227,14 +252,14 @@ const AdminInstagramImages = () => {
     // Comment instruction
     ctx.font = "italic 36px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.whiteMuted;
-    ctx.fillText('"Vad är ett måste i din träning?"', width / 2, yPos + 20);
-    ctx.fillText("+ tagga 2 träningskompisar", width / 2, yPos + 70);
+    ctx.fillText(`"${content.commentQuestion}"`, width / 2, yPos + 20);
+    ctx.fillText(`+ tagga ${content.tagCount} träningskompisar`, width / 2, yPos + 70);
 
     // Deadline
     ctx.font = "bold 40px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.orange;
     ctx.fillText("📅 Tävlingen avslutas", width / 2, height - 200);
-    ctx.fillText("19 december kl. 12:00", width / 2, height - 150);
+    ctx.fillText(content.deadline, width / 2, height - 150);
   };
 
   const drawExtraChanceTemplate = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
@@ -255,7 +280,7 @@ const AdminInstagramImages = () => {
       "➡️ Registrera dig på gymdagboken.se",
       "➡️ Genomför ett styrkepass i appen",
       "➡️ Dela passet i din story",
-      "➡️ Tagga @gymdagbokense",
+      `➡️ Tagga ${content.instagramHandle}`,
     ];
 
     ctx.font = "bold 40px 'Oswald', sans-serif";
@@ -291,10 +316,11 @@ const AdminInstagramImages = () => {
     ctx.fillText("VINNAREN", width / 2, centerY);
     ctx.fillText("LOTTAS", width / 2, centerY + 80);
 
-    // Date
+    // Date - extract just the date from deadline
+    const deadlineDate = content.deadline.split(" kl.")[0] || content.deadline;
     ctx.font = "bold 48px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.white;
-    ctx.fillText("19 december", width / 2, centerY + 180);
+    ctx.fillText(deadlineDate, width / 2, centerY + 180);
 
     // Contact info
     ctx.font = "36px 'Oswald', sans-serif";
@@ -327,7 +353,7 @@ const AdminInstagramImages = () => {
     ctx.fillStyle = COLORS.orange;
     ctx.fillText("Tävlingen avslutas", width / 2, centerY + 40);
     ctx.font = "bold 64px 'Oswald', sans-serif";
-    ctx.fillText("19 december kl. 12:00", width / 2, centerY + 120);
+    ctx.fillText(content.deadline, width / 2, centerY + 120);
 
     // Call to action
     ctx.font = "bold 44px 'Oswald', sans-serif";
@@ -339,12 +365,12 @@ const AdminInstagramImages = () => {
     ctx.fillText("🔥💪🎁", width / 2, height - 120);
   };
 
-  // Update preview when template, format, or logo changes
+  // Update preview when template, format, logo, or content changes
   useEffect(() => {
     if (isAdmin && previewCanvasRef.current && logoImage) {
       generateImage(previewCanvasRef.current, selectedTemplate, imageFormat);
     }
-  }, [selectedTemplate, imageFormat, isAdmin, logoImage, generateImage]);
+  }, [selectedTemplate, imageFormat, isAdmin, logoImage, generateImage, content]);
 
   const handleDownload = async () => {
     if (!downloadCanvasRef.current) {
@@ -432,60 +458,146 @@ const AdminInstagramImages = () => {
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Controls */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Image className="h-5 w-5" />
-              Välj mall och format
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Template selection */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium">Mall</label>
-              <div className="grid grid-cols-2 gap-2">
-                {templates.map((template) => (
-                  <Button
-                    key={template.id}
-                    variant={selectedTemplate === template.id ? "default" : "outline"}
-                    className="justify-start gap-2"
-                    onClick={() => setSelectedTemplate(template.id)}
-                  >
-                    {template.icon}
-                    {template.label}
-                  </Button>
-                ))}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Image className="h-5 w-5" />
+                Välj mall och format
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Template selection */}
+              <div className="space-y-3">
+                <Label>Mall</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {templates.map((template) => (
+                    <Button
+                      key={template.id}
+                      variant={selectedTemplate === template.id ? "default" : "outline"}
+                      className="justify-start gap-2"
+                      onClick={() => setSelectedTemplate(template.id)}
+                    >
+                      {template.icon}
+                      {template.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Format selection */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium">Format</label>
-              <Tabs value={imageFormat} onValueChange={(v) => setImageFormat(v as "post" | "story")}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="post" className="flex-1">
-                    Post (1080x1080)
-                  </TabsTrigger>
-                  <TabsTrigger value="story" className="flex-1">
-                    Story (1080x1920)
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+              {/* Format selection */}
+              <div className="space-y-3">
+                <Label>Format</Label>
+                <Tabs value={imageFormat} onValueChange={(v) => setImageFormat(v as "post" | "story")}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="post" className="flex-1">
+                      Post (1080x1080)
+                    </TabsTrigger>
+                    <TabsTrigger value="story" className="flex-1">
+                      Story (1080x1920)
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
-            {/* Download buttons */}
-            <div className="space-y-2">
-              <Button onClick={handleDownload} className="w-full" size="lg">
-                <Download className="h-5 w-5 mr-2" />
-                Ladda ner bild
-              </Button>
-              <Button onClick={handleDownloadAll} variant="outline" className="w-full" size="lg">
-                <FolderDown className="h-5 w-5 mr-2" />
-                Ladda ner alla bilder
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              {/* Download buttons */}
+              <div className="space-y-2">
+                <Button onClick={handleDownload} className="w-full" size="lg">
+                  <Download className="h-5 w-5 mr-2" />
+                  Ladda ner bild
+                </Button>
+                <Button onClick={handleDownloadAll} variant="outline" className="w-full" size="lg">
+                  <FolderDown className="h-5 w-5 mr-2" />
+                  Ladda ner alla bilder
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Editable content */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Tävlingsinnehåll
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="prizeValue">Prisvärde</Label>
+                  <Input
+                    id="prizeValue"
+                    value={content.prizeValue}
+                    onChange={(e) => setContent({ ...content, prizeValue: e.target.value })}
+                    placeholder="1000 KR"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="prizeDescription">Pristyp</Label>
+                  <Input
+                    id="prizeDescription"
+                    value={content.prizeDescription}
+                    onChange={(e) => setContent({ ...content, prizeDescription: e.target.value })}
+                    placeholder="PRESENTKORT"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sponsor">Sponsor</Label>
+                <Input
+                  id="sponsor"
+                  value={content.sponsor}
+                  onChange={(e) => setContent({ ...content, sponsor: e.target.value })}
+                  placeholder="GYMGROSSISTEN"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="commentQuestion">Kommentarsfråga</Label>
+                <Textarea
+                  id="commentQuestion"
+                  value={content.commentQuestion}
+                  onChange={(e) => setContent({ ...content, commentQuestion: e.target.value })}
+                  placeholder="Vad är ett måste i din träning?"
+                  rows={2}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="tagCount">Antal att tagga</Label>
+                  <Input
+                    id="tagCount"
+                    value={content.tagCount}
+                    onChange={(e) => setContent({ ...content, tagCount: e.target.value })}
+                    placeholder="2"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="instagramHandle">Instagram-handle</Label>
+                  <Input
+                    id="instagramHandle"
+                    value={content.instagramHandle}
+                    onChange={(e) => setContent({ ...content, instagramHandle: e.target.value })}
+                    placeholder="@gymdagbokense"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deadline">Deadline</Label>
+                <Input
+                  id="deadline"
+                  value={content.deadline}
+                  onChange={(e) => setContent({ ...content, deadline: e.target.value })}
+                  placeholder="19 december kl. 12:00"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Preview */}
         <Card>
@@ -529,24 +641,24 @@ const AdminInstagramImages = () => {
 {`🔥 TÄVLA & VINN 🔥
 Redo att ta din träning till nästa nivå? 💪
 
-Vi lottar ut ett presentkort från Gymgrossisten värt 1000 kr 🎁
+Vi lottar ut ett ${content.prizeDescription.toLowerCase()} från ${content.sponsor} värt ${content.prizeValue.toLowerCase()} 🎁
 Perfekt för protein, kreatin, träningskläder eller annat du behöver för dina mål.
 
 👇 SÅ DELTAR DU 👇
-1️⃣ Följ @gymdagbokense
+1️⃣ Följ ${content.instagramHandle}
 2️⃣ Gilla detta inlägg ❤️
-3️⃣ Kommentera: Vad är ett måste i din träning? + tagga 2 träningskompisar
+3️⃣ Kommentera: ${content.commentQuestion} + tagga ${content.tagCount} träningskompisar
 
 💥 EXTRA CHANS ATT VINNA 💥
 ➡️ Registrera dig på gymdagboken.se
 ➡️ Genomför ett styrkepass i appen
-➡️ Dela passet i din story och tagga @gymdagbokense
+➡️ Dela passet i din story och tagga ${content.instagramHandle}
 
-📅 Tävlingen avslutas 19:e december kl. 12:00
+📅 Tävlingen avslutas ${content.deadline}
 🏆 Vinnaren lottas och kontaktas via DM
 
 Lycka till! 🚀
-#gymdagboken #tävling #giveaway #gymgrossisten #träning #fitness`}
+#gymdagboken #tävling #giveaway #${content.sponsor.toLowerCase().replace(/\s+/g, '')} #träning #fitness`}
           </pre>
           <Button 
             variant="outline" 
@@ -555,24 +667,24 @@ Lycka till! 🚀
               navigator.clipboard.writeText(`🔥 TÄVLA & VINN 🔥
 Redo att ta din träning till nästa nivå? 💪
 
-Vi lottar ut ett presentkort från Gymgrossisten värt 1000 kr 🎁
+Vi lottar ut ett ${content.prizeDescription.toLowerCase()} från ${content.sponsor} värt ${content.prizeValue.toLowerCase()} 🎁
 Perfekt för protein, kreatin, träningskläder eller annat du behöver för dina mål.
 
 👇 SÅ DELTAR DU 👇
-1️⃣ Följ @gymdagbokense
+1️⃣ Följ ${content.instagramHandle}
 2️⃣ Gilla detta inlägg ❤️
-3️⃣ Kommentera: Vad är ett måste i din träning? + tagga 2 träningskompisar
+3️⃣ Kommentera: ${content.commentQuestion} + tagga ${content.tagCount} träningskompisar
 
 💥 EXTRA CHANS ATT VINNA 💥
 ➡️ Registrera dig på gymdagboken.se
 ➡️ Genomför ett styrkepass i appen
-➡️ Dela passet i din story och tagga @gymdagbokense
+➡️ Dela passet i din story och tagga ${content.instagramHandle}
 
-📅 Tävlingen avslutas 19:e december kl. 12:00
+📅 Tävlingen avslutas ${content.deadline}
 🏆 Vinnaren lottas och kontaktas via DM
 
 Lycka till! 🚀
-#gymdagboken #tävling #giveaway #gymgrossisten #träning #fitness`);
+#gymdagboken #tävling #giveaway #${content.sponsor.toLowerCase().replace(/\s+/g, '')} #träning #fitness`);
               toast.success("Text kopierad!");
             }}
           >
