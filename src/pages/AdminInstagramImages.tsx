@@ -1,118 +1,141 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, Image, Sparkles, Trophy, Gift, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 
 type ImageTemplate = "main" | "howToEnter" | "extraChance" | "winner" | "countdown";
 
+// Brand colors - Black and Orange theme
+const COLORS = {
+  background: "#121212",
+  backgroundGradient1: "#0a0a0a",
+  backgroundGradient2: "#1a1a1a",
+  orange: "#f97316", // HSL 25 95% 53%
+  orangeLight: "#fb923c",
+  orangeDark: "#ea580c",
+  white: "#FFFFFF",
+  whiteMuted: "rgba(255, 255, 255, 0.8)",
+  whiteDim: "rgba(255, 255, 255, 0.6)",
+};
+
 const AdminInstagramImages = () => {
   const { isAdmin, loading: isLoading } = useAdmin();
   const navigate = useNavigate();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const downloadCanvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<ImageTemplate>("main");
   const [imageFormat, setImageFormat] = useState<"post" | "story">("post");
+  const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
 
+  // Load logo on mount
   useEffect(() => {
-    if (!isLoading && !isAdmin) {
-      navigate("/");
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => setLogoImage(img);
+    img.src = "/pwa-512x512.png";
+  }, []);
+
+  const drawLogo = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
+    if (logoImage) {
+      ctx.drawImage(logoImage, x - size / 2, y - size / 2, size, size);
     }
-  }, [isAdmin, isLoading, navigate]);
+  };
 
-  // Auto-generate preview when template or format changes
-  useEffect(() => {
-    if (isAdmin) {
-      generateImage(selectedTemplate, imageFormat);
-    }
-  }, [selectedTemplate, imageFormat, isAdmin]);
-
-  const generateImage = async (template: ImageTemplate, format: "post" | "story"): Promise<Blob | null> => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-
+  const generateImage = useCallback(async (
+    canvas: HTMLCanvasElement,
+    template: ImageTemplate, 
+    format: "post" | "story"
+  ): Promise<Blob | null> => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
     // Set dimensions based on format
-    const width = format === "post" ? 1080 : 1080;
+    const width = 1080;
     const height = format === "post" ? 1080 : 1920;
     canvas.width = width;
     canvas.height = height;
 
-    // Background gradient
+    // Background gradient - Black
     const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, "#1a1a2e");
-    gradient.addColorStop(0.5, "#16213e");
-    gradient.addColorStop(1, "#0f0f23");
+    gradient.addColorStop(0, COLORS.backgroundGradient1);
+    gradient.addColorStop(0.5, COLORS.background);
+    gradient.addColorStop(1, COLORS.backgroundGradient2);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
-    // Add glow effects
-    ctx.shadowBlur = 100;
-    ctx.shadowColor = "rgba(255, 215, 0, 0.3)";
+    // Add orange glow effects
+    ctx.shadowBlur = 150;
+    ctx.shadowColor = "rgba(249, 115, 22, 0.4)";
     ctx.beginPath();
-    ctx.arc(width * 0.7, height * 0.3, 200, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255, 215, 0, 0.1)";
+    ctx.arc(width * 0.8, height * 0.2, 200, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(249, 115, 22, 0.08)";
     ctx.fill();
 
-    ctx.shadowColor = "rgba(147, 51, 234, 0.3)";
     ctx.beginPath();
-    ctx.arc(width * 0.3, height * 0.7, 250, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(147, 51, 234, 0.1)";
+    ctx.arc(width * 0.2, height * 0.8, 250, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(249, 115, 22, 0.05)";
     ctx.fill();
     ctx.shadowBlur = 0;
+
+    // Draw logo at top
+    const logoSize = format === "post" ? 120 : 150;
+    const logoY = format === "post" ? 100 : 120;
+    drawLogo(ctx, width / 2, logoY, logoSize);
 
     // Draw template-specific content
     switch (template) {
       case "main":
-        await drawMainTemplate(ctx, width, height);
+        drawMainTemplate(ctx, width, height, format);
         break;
       case "howToEnter":
-        await drawHowToEnterTemplate(ctx, width, height);
+        drawHowToEnterTemplate(ctx, width, height, format);
         break;
       case "extraChance":
-        await drawExtraChanceTemplate(ctx, width, height);
+        drawExtraChanceTemplate(ctx, width, height, format);
         break;
       case "winner":
-        await drawWinnerTemplate(ctx, width, height);
+        drawWinnerTemplate(ctx, width, height, format);
         break;
       case "countdown":
-        await drawCountdownTemplate(ctx, width, height);
+        drawCountdownTemplate(ctx, width, height, format);
         break;
     }
 
-    // Add branding
+    // Add branding at bottom
     ctx.font = "bold 32px 'Oswald', sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+    ctx.fillStyle = COLORS.whiteDim;
     ctx.textAlign = "center";
     ctx.fillText("@gymdagboken.se", width / 2, height - 40);
 
     return new Promise((resolve) => {
       canvas.toBlob((blob) => resolve(blob), "image/png", 1.0);
     });
-  };
+  }, [logoImage]);
 
-  const drawMainTemplate = async (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    const centerY = height / 2;
+  const drawMainTemplate = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
+    const centerY = height / 2 + (format === "post" ? 30 : 100);
 
-    // Fire emoji area
+    // Fire emoji
     ctx.font = "80px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("🔥", width / 2, centerY - 280);
 
-    // Main title
+    // Main title with orange gradient
     ctx.font = "bold 90px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFD700";
-    ctx.textAlign = "center";
+    const titleGradient = ctx.createLinearGradient(0, centerY - 200, 0, centerY - 120);
+    titleGradient.addColorStop(0, COLORS.orangeLight);
+    titleGradient.addColorStop(1, COLORS.orange);
+    ctx.fillStyle = titleGradient;
     ctx.fillText("TÄVLA & VINN", width / 2, centerY - 160);
 
     // Prize highlight
-    const prizeGradient = ctx.createLinearGradient(0, centerY - 80, 0, centerY + 40);
-    prizeGradient.addColorStop(0, "#FFD700");
-    prizeGradient.addColorStop(1, "#FFA500");
+    const prizeGradient = ctx.createLinearGradient(0, centerY - 80, 0, centerY + 100);
+    prizeGradient.addColorStop(0, COLORS.orange);
+    prizeGradient.addColorStop(1, COLORS.orangeDark);
     ctx.fillStyle = prizeGradient;
     ctx.font = "bold 72px 'Oswald', sans-serif";
     ctx.fillText("PRESENTKORT", width / 2, centerY - 40);
@@ -121,7 +144,7 @@ const AdminInstagramImages = () => {
 
     // From text
     ctx.font = "bold 48px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFFFFF";
+    ctx.fillStyle = COLORS.white;
     ctx.fillText("FRÅN GYMGROSSISTEN", width / 2, centerY + 160);
 
     // Gift emoji
@@ -130,16 +153,16 @@ const AdminInstagramImages = () => {
 
     // Bottom text
     ctx.font = "36px 'Oswald', sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.fillStyle = COLORS.whiteMuted;
     ctx.fillText("Svajpa för att se hur du deltar →", width / 2, height - 100);
   };
 
-  const drawHowToEnterTemplate = async (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    const startY = height * 0.15;
+  const drawHowToEnterTemplate = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
+    const startY = format === "post" ? height * 0.22 : height * 0.15;
 
     // Title
     ctx.font = "bold 72px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFD700";
+    ctx.fillStyle = COLORS.orange;
     ctx.textAlign = "center";
     ctx.fillText("SÅ DELTAR DU", width / 2, startY);
 
@@ -154,12 +177,12 @@ const AdminInstagramImages = () => {
       { emoji: "3️⃣", text: "Kommentera:" },
     ];
 
-    ctx.font = "bold 48px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFFFFF";
+    ctx.fillStyle = COLORS.white;
 
     let yPos = startY + 180;
     steps.forEach((step) => {
       ctx.font = "48px sans-serif";
+      ctx.textAlign = "center";
       ctx.fillText(step.emoji, width / 2 - 300, yPos);
       ctx.font = "bold 44px 'Oswald', sans-serif";
       ctx.textAlign = "left";
@@ -170,19 +193,19 @@ const AdminInstagramImages = () => {
 
     // Comment instruction
     ctx.font = "italic 36px 'Oswald', sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.fillStyle = COLORS.whiteMuted;
     ctx.fillText('"Vad är ett måste i din träning?"', width / 2, yPos + 20);
     ctx.fillText("+ tagga 2 träningskompisar", width / 2, yPos + 70);
 
     // Deadline
     ctx.font = "bold 40px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFD700";
+    ctx.fillStyle = COLORS.orange;
     ctx.fillText("📅 Tävlingen avslutas", width / 2, height - 200);
     ctx.fillText("19 december kl. 12:00", width / 2, height - 150);
   };
 
-  const drawExtraChanceTemplate = async (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    const centerY = height / 2;
+  const drawExtraChanceTemplate = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
+    const centerY = height / 2 + (format === "post" ? 30 : 100);
 
     // Title
     ctx.font = "80px sans-serif";
@@ -190,7 +213,7 @@ const AdminInstagramImages = () => {
     ctx.fillText("💥", width / 2, centerY - 280);
 
     ctx.font = "bold 64px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFD700";
+    ctx.fillStyle = COLORS.orange;
     ctx.fillText("EXTRA CHANS", width / 2, centerY - 180);
     ctx.fillText("ATT VINNA", width / 2, centerY - 110);
 
@@ -203,7 +226,7 @@ const AdminInstagramImages = () => {
     ];
 
     ctx.font = "bold 40px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFFFFF";
+    ctx.fillStyle = COLORS.white;
 
     let yPos = centerY;
     steps.forEach((step) => {
@@ -217,12 +240,12 @@ const AdminInstagramImages = () => {
 
     // Bottom highlight
     ctx.font = "bold 36px 'Oswald', sans-serif";
-    ctx.fillStyle = "rgba(255, 215, 0, 0.8)";
+    ctx.fillStyle = COLORS.orangeLight;
     ctx.fillText("Dubbla dina chanser att vinna!", width / 2, height - 100);
   };
 
-  const drawWinnerTemplate = async (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    const centerY = height / 2;
+  const drawWinnerTemplate = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
+    const centerY = height / 2 + (format === "post" ? 30 : 100);
 
     // Trophy
     ctx.font = "120px sans-serif";
@@ -231,30 +254,30 @@ const AdminInstagramImages = () => {
 
     // Title
     ctx.font = "bold 80px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFD700";
+    ctx.fillStyle = COLORS.orange;
     ctx.fillText("VINNAREN", width / 2, centerY);
     ctx.fillText("LOTTAS", width / 2, centerY + 80);
 
     // Date
     ctx.font = "bold 48px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFFFFF";
+    ctx.fillStyle = COLORS.white;
     ctx.fillText("19 december", width / 2, centerY + 180);
 
     // Contact info
     ctx.font = "36px 'Oswald', sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.fillStyle = COLORS.whiteMuted;
     ctx.fillText("Vinnaren kontaktas via DM", width / 2, centerY + 260);
 
     // Good luck
     ctx.font = "60px sans-serif";
     ctx.fillText("🍀", width / 2, height - 150);
     ctx.font = "bold 40px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFD700";
+    ctx.fillStyle = COLORS.orange;
     ctx.fillText("Lycka till!", width / 2, height - 80);
   };
 
-  const drawCountdownTemplate = async (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    const centerY = height / 2;
+  const drawCountdownTemplate = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
+    const centerY = height / 2 + (format === "post" ? 30 : 100);
 
     // Clock
     ctx.font = "100px sans-serif";
@@ -263,19 +286,19 @@ const AdminInstagramImages = () => {
 
     // Title
     ctx.font = "bold 72px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FF6B6B";
+    ctx.fillStyle = COLORS.orangeLight;
     ctx.fillText("SISTA CHANSEN!", width / 2, centerY - 60);
 
     // Deadline
     ctx.font = "bold 56px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFD700";
+    ctx.fillStyle = COLORS.orange;
     ctx.fillText("Tävlingen avslutas", width / 2, centerY + 40);
     ctx.font = "bold 64px 'Oswald', sans-serif";
     ctx.fillText("19 december kl. 12:00", width / 2, centerY + 120);
 
     // Call to action
     ctx.font = "bold 44px 'Oswald', sans-serif";
-    ctx.fillStyle = "#FFFFFF";
+    ctx.fillStyle = COLORS.white;
     ctx.fillText("Har du deltagit?", width / 2, centerY + 220);
 
     // Emojis
@@ -283,8 +306,20 @@ const AdminInstagramImages = () => {
     ctx.fillText("🔥💪🎁", width / 2, height - 120);
   };
 
+  // Update preview when template, format, or logo changes
+  useEffect(() => {
+    if (isAdmin && previewCanvasRef.current && logoImage) {
+      generateImage(previewCanvasRef.current, selectedTemplate, imageFormat);
+    }
+  }, [selectedTemplate, imageFormat, isAdmin, logoImage, generateImage]);
+
   const handleDownload = async () => {
-    const blob = await generateImage(selectedTemplate, imageFormat);
+    if (!downloadCanvasRef.current) {
+      toast.error("Kunde inte generera bilden");
+      return;
+    }
+
+    const blob = await generateImage(downloadCanvasRef.current, selectedTemplate, imageFormat);
     if (!blob) {
       toast.error("Kunde inte generera bilden");
       return;
@@ -306,6 +341,12 @@ const AdminInstagramImages = () => {
     { id: "winner", label: "Vinnare lottas", icon: <Gift className="h-4 w-4" /> },
     { id: "countdown", label: "Countdown", icon: <Image className="h-4 w-4" /> },
   ];
+
+  useEffect(() => {
+    if (!isLoading && !isAdmin) {
+      navigate("/");
+    }
+  }, [isAdmin, isLoading, navigate]);
 
   if (isLoading) {
     return (
@@ -393,7 +434,7 @@ const AdminInstagramImages = () => {
               }}
             >
               <canvas
-                ref={canvasRef}
+                ref={previewCanvasRef}
                 className="max-w-full max-h-full object-contain"
                 style={{ 
                   width: imageFormat === "post" ? "100%" : "auto",
@@ -408,8 +449,8 @@ const AdminInstagramImages = () => {
         </Card>
       </div>
 
-      {/* Hidden canvas for generation */}
-      <canvas ref={canvasRef} className="hidden" />
+      {/* Hidden canvas for download generation */}
+      <canvas ref={downloadCanvasRef} className="hidden" />
 
       {/* Competition text reference */}
       <Card className="mt-8">
