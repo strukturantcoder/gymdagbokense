@@ -142,7 +142,7 @@ const AdminInstagramImages = () => {
     ctx.font = "bold 32px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.whiteDim;
     ctx.textAlign = "center";
-    ctx.fillText("@gymdagboken.se", width / 2, height - 40);
+    ctx.fillText("@gymdagbokense", width / 2, height - 40);
 
     return new Promise((resolve) => {
       canvas.toBlob((blob) => resolve(blob), "image/png", 1.0);
@@ -205,7 +205,7 @@ const AdminInstagramImages = () => {
 
     // Steps
     const steps = [
-      { emoji: "1️⃣", text: "Följ @gymdagboken.se" },
+      { emoji: "1️⃣", text: "Följ @gymdagbokense" },
       { emoji: "2️⃣", text: "Gilla detta inlägg ❤️" },
       { emoji: "3️⃣", text: "Kommentera:" },
     ];
@@ -255,7 +255,7 @@ const AdminInstagramImages = () => {
       "➡️ Registrera dig på gymdagboken.se",
       "➡️ Genomför ett styrkepass i appen",
       "➡️ Dela passet i din story",
-      "➡️ Tagga @gymdagboken.se",
+      "➡️ Tagga @gymdagbokense",
     ];
 
     ctx.font = "bold 40px 'Oswald', sans-serif";
@@ -499,14 +499,14 @@ Vi lottar ut ett presentkort från Gymgrossisten värt 1000 kr 🎁
 Perfekt för protein, kreatin, träningskläder eller annat du behöver för dina mål.
 
 👇 SÅ DELTAR DU 👇
-1️⃣ Följ @gymdagboken.se
+1️⃣ Följ @gymdagbokense
 2️⃣ Gilla detta inlägg ❤️
 3️⃣ Kommentera: Vad är ett måste i din träning? + tagga 2 träningskompisar
 
 💥 EXTRA CHANS ATT VINNA 💥
 ➡️ Registrera dig på gymdagboken.se
 ➡️ Genomför ett styrkepass i appen
-➡️ Dela passet i din story och tagga @gymdagboken.se
+➡️ Dela passet i din story och tagga @gymdagbokense
 
 📅 Tävlingen avslutas 19:e december kl. 12:00
 🏆 Vinnaren lottas och kontaktas via DM
@@ -525,14 +525,14 @@ Vi lottar ut ett presentkort från Gymgrossisten värt 1000 kr 🎁
 Perfekt för protein, kreatin, träningskläder eller annat du behöver för dina mål.
 
 👇 SÅ DELTAR DU 👇
-1️⃣ Följ @gymdagboken.se
+1️⃣ Följ @gymdagbokense
 2️⃣ Gilla detta inlägg ❤️
 3️⃣ Kommentera: Vad är ett måste i din träning? + tagga 2 träningskompisar
 
 💥 EXTRA CHANS ATT VINNA 💥
 ➡️ Registrera dig på gymdagboken.se
 ➡️ Genomför ett styrkepass i appen
-➡️ Dela passet i din story och tagga @gymdagboken.se
+➡️ Dela passet i din story och tagga @gymdagbokense
 
 📅 Tävlingen avslutas 19:e december kl. 12:00
 🏆 Vinnaren lottas och kontaktas via DM
