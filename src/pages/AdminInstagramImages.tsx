@@ -45,16 +45,31 @@ const AdminInstagramImages = () => {
   const [imageFormat, setImageFormat] = useState<"post" | "story">("post");
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
   
-  // Editable competition content
-  const [content, setContent] = useState<CompetitionContent>({
-    prizeValue: "1000 KR",
-    prizeDescription: "PRESENTKORT",
-    sponsor: "GYMGROSSISTEN",
-    commentQuestion: "Vad är ett måste i din träning?",
-    tagCount: "2",
-    deadline: "19 december kl. 12:00",
-    instagramHandle: "@gymdagbokense",
+  // Editable competition content - load from localStorage
+  const [content, setContent] = useState<CompetitionContent>(() => {
+    const saved = localStorage.getItem('instagram-competition-content');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // fallback to defaults
+      }
+    }
+    return {
+      prizeValue: "1000 KR",
+      prizeDescription: "PRESENTKORT",
+      sponsor: "GYMGROSSISTEN",
+      commentQuestion: "Vad är ett måste i din träning?",
+      tagCount: "2",
+      deadline: "19 december kl. 12:00",
+      instagramHandle: "@gymdagbokense",
+    };
   });
+
+  // Save content to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('instagram-competition-content', JSON.stringify(content));
+  }, [content]);
 
   // Load and process logo to remove white background
   useEffect(() => {
