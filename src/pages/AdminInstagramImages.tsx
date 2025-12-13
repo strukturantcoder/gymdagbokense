@@ -4,7 +4,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Image, Sparkles, Trophy, Gift, Dumbbell } from "lucide-react";
+import { Download, Image, Sparkles, Trophy, Gift, Dumbbell, FolderDown } from "lucide-react";
 import { toast } from "sonner";
 
 type ImageTemplate = "main" | "howToEnter" | "extraChance" | "winner" | "countdown";
@@ -367,6 +367,34 @@ const AdminInstagramImages = () => {
     toast.success("Bilden har laddats ner!");
   };
 
+  const handleDownloadAll = async () => {
+    if (!downloadCanvasRef.current) {
+      toast.error("Kunde inte generera bilderna");
+      return;
+    }
+
+    const allTemplates: ImageTemplate[] = ["main", "howToEnter", "extraChance", "winner", "countdown"];
+    const timestamp = Date.now();
+    
+    toast.info("Genererar alla bilder...");
+
+    for (const template of allTemplates) {
+      const blob = await generateImage(downloadCanvasRef.current, template, imageFormat);
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `instagram-${template}-${imageFormat}-${timestamp}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+        // Small delay between downloads to prevent browser blocking
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+
+    toast.success("Alla bilder har laddats ner!");
+  };
+
   const templates: { id: ImageTemplate; label: string; icon: React.ReactNode }[] = [
     { id: "main", label: "Huvudbild", icon: <Trophy className="h-4 w-4" /> },
     { id: "howToEnter", label: "Så deltar du", icon: <Dumbbell className="h-4 w-4" /> },
@@ -445,11 +473,17 @@ const AdminInstagramImages = () => {
               </Tabs>
             </div>
 
-            {/* Download button */}
-            <Button onClick={handleDownload} className="w-full" size="lg">
-              <Download className="h-5 w-5 mr-2" />
-              Ladda ner bild
-            </Button>
+            {/* Download buttons */}
+            <div className="space-y-2">
+              <Button onClick={handleDownload} className="w-full" size="lg">
+                <Download className="h-5 w-5 mr-2" />
+                Ladda ner bild
+              </Button>
+              <Button onClick={handleDownloadAll} variant="outline" className="w-full" size="lg">
+                <FolderDown className="h-5 w-5 mr-2" />
+                Ladda ner alla bilder
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
