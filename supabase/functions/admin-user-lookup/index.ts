@@ -55,7 +55,120 @@ serve(async (req) => {
       });
     }
 
-    const { action, query, userId } = await req.json();
+    const { action, query, userId, limit = 50, offset = 0 } = await req.json();
+
+    // List all users with pagination
+    if (action === "listAll") {
+      console.log("Fetching all users with limit:", limit, "offset:", offset);
+      
+      const { data: profiles, count } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, display_name, avatar_url, created_at", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      // Get stats for these users
+      const userIds = profiles?.map(p => p.user_id) || [];
+      const { data: statsData } = await supabaseAdmin
+        .from("user_stats")
+        .select("user_id, level, total_xp, total_workouts, total_cardio_sessions")
+        .in("user_id", userIds);
+
+      const statsMap = new Map(statsData?.map(s => [s.user_id, s]) || []);
+
+      const usersWithStats = profiles?.map(p => ({
+        ...p,
+        stats: statsMap.get(p.user_id) || null
+      })) || [];
+
+      return new Response(JSON.stringify({ 
+        users: usersWithStats,
+        total: count || 0
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // List workout logs with user info
+    if (action === "listWorkouts") {
+      console.log("Fetching workout logs with limit:", limit, "offset:", offset);
+      
+      const { data: workouts, count } = await supabaseAdmin
+        .from("workout_logs")
+        .select("id, user_id, workout_day, duration_minutes, completed_at, notes", { count: "exact" })
+        .order("completed_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      // Get user profiles for these workouts
+      const userIds = [...new Set(workouts?.map(w => w.user_id) || [])];
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, display_name, avatar_url")
+        .in("user_id", userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      // Get exercise counts for each workout
+      const workoutIds = workouts?.map(w => w.id) || [];
+      const { data: exerciseLogs } = await supabaseAdmin
+        .from("exercise_logs")
+        .select("workout_log_id, sets_completed")
+        .in("workout_log_id", workoutIds);
+
+      const exerciseCountMap = new Map<string, { exercises: number; sets: number }>();
+      exerciseLogs?.forEach(e => {
+        const current = exerciseCountMap.get(e.workout_log_id) || { exercises: 0, sets: 0 };
+        current.exercises++;
+        current.sets += e.sets_completed || 0;
+        exerciseCountMap.set(e.workout_log_id, current);
+      });
+
+      const workoutsWithUsers = workouts?.map(w => ({
+        ...w,
+        profile: profileMap.get(w.user_id) || null,
+        exerciseCount: exerciseCountMap.get(w.id)?.exercises || 0,
+        totalSets: exerciseCountMap.get(w.id)?.sets || 0
+      })) || [];
+
+      return new Response(JSON.stringify({ 
+        workouts: workoutsWithUsers,
+        total: count || 0
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // List cardio logs with user info
+    if (action === "listCardio") {
+      console.log("Fetching cardio logs with limit:", limit, "offset:", offset);
+      
+      const { data: cardioLogs, count } = await supabaseAdmin
+        .from("cardio_logs")
+        .select("id, user_id, activity_type, duration_minutes, distance_km, calories_burned, completed_at, notes", { count: "exact" })
+        .order("completed_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      // Get user profiles for these logs
+      const userIds = [...new Set(cardioLogs?.map(c => c.user_id) || [])];
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, display_name, avatar_url")
+        .in("user_id", userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      const cardioWithUsers = cardioLogs?.map(c => ({
+        ...c,
+        profile: profileMap.get(c.user_id) || null
+      })) || [];
+
+      return new Response(JSON.stringify({ 
+        cardioLogs: cardioWithUsers,
+        total: count || 0
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (action === "search") {
       // Search users by name or email
