@@ -170,6 +170,143 @@ serve(async (req) => {
       });
     }
 
+    // List active users (users who logged workout or cardio in last 7 days)
+    if (action === "listActiveUsers") {
+      console.log("Fetching active users with limit:", limit, "offset:", offset);
+      
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      // Get unique users who logged workouts in last 7 days
+      const { data: workoutUsers } = await supabaseAdmin
+        .from("workout_logs")
+        .select("user_id")
+        .gte("completed_at", sevenDaysAgo.toISOString());
+      
+      // Get unique users who logged cardio in last 7 days
+      const { data: cardioUsers } = await supabaseAdmin
+        .from("cardio_logs")
+        .select("user_id")
+        .gte("completed_at", sevenDaysAgo.toISOString());
+      
+      // Combine and deduplicate
+      const allActiveUserIds = [...new Set([
+        ...(workoutUsers?.map(w => w.user_id) || []),
+        ...(cardioUsers?.map(c => c.user_id) || [])
+      ])];
+      
+      const totalActive = allActiveUserIds.length;
+      const paginatedIds = allActiveUserIds.slice(offset, offset + limit);
+      
+      // Get profiles for paginated users
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, display_name, avatar_url, created_at")
+        .in("user_id", paginatedIds);
+      
+      // Get stats for these users
+      const { data: statsData } = await supabaseAdmin
+        .from("user_stats")
+        .select("user_id, level, total_xp, total_workouts, total_cardio_sessions")
+        .in("user_id", paginatedIds);
+      
+      const statsMap = new Map(statsData?.map(s => [s.user_id, s]) || []);
+      
+      // Count recent activity for each user
+      const usersWithActivity = await Promise.all((profiles || []).map(async (p) => {
+        const { count: recentWorkouts } = await supabaseAdmin
+          .from("workout_logs")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", p.user_id)
+          .gte("completed_at", sevenDaysAgo.toISOString());
+        
+        const { count: recentCardio } = await supabaseAdmin
+          .from("cardio_logs")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", p.user_id)
+          .gte("completed_at", sevenDaysAgo.toISOString());
+        
+        return {
+          ...p,
+          stats: statsMap.get(p.user_id) || null,
+          recentWorkouts: recentWorkouts || 0,
+          recentCardio: recentCardio || 0
+        };
+      }));
+      
+      return new Response(JSON.stringify({ 
+        users: usersWithActivity,
+        total: totalActive
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // List challenge participants (both community and pool)
+    if (action === "listChallengeParticipants") {
+      console.log("Fetching challenge participants with limit:", limit, "offset:", offset);
+      
+      // Get community challenge participants
+      const { data: communityParticipants } = await supabaseAdmin
+        .from("community_challenge_participants")
+        .select(`
+          id, user_id, current_value, joined_at,
+          challenge:community_challenges(id, title, is_active, end_date)
+        `)
+        .order("joined_at", { ascending: false });
+      
+      // Get pool challenge participants
+      const { data: poolParticipants } = await supabaseAdmin
+        .from("pool_challenge_participants")
+        .select(`
+          id, user_id, current_value, joined_at,
+          challenge:pool_challenges(id, challenge_type, challenge_category, status, end_date)
+        `)
+        .order("joined_at", { ascending: false });
+      
+      // Combine all participants
+      const allParticipants = [
+        ...(communityParticipants || []).map(p => ({
+          ...p,
+          type: "community" as const,
+          challengeTitle: (p.challenge as any)?.title || "Okänd",
+          isActive: (p.challenge as any)?.is_active,
+          endDate: (p.challenge as any)?.end_date
+        })),
+        ...(poolParticipants || []).map(p => ({
+          ...p,
+          type: "pool" as const,
+          challengeTitle: `${(p.challenge as any)?.challenge_category || ""} - ${(p.challenge as any)?.challenge_type || ""}`,
+          isActive: (p.challenge as any)?.status === "active",
+          endDate: (p.challenge as any)?.end_date
+        }))
+      ].sort((a, b) => new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime());
+      
+      const total = allParticipants.length;
+      const paginated = allParticipants.slice(offset, offset + limit);
+      
+      // Get profiles for paginated participants
+      const userIds = [...new Set(paginated.map(p => p.user_id))];
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, display_name, avatar_url")
+        .in("user_id", userIds);
+      
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      
+      const participantsWithProfiles = paginated.map(p => ({
+        ...p,
+        profile: profileMap.get(p.user_id) || null
+      }));
+      
+      return new Response(JSON.stringify({ 
+        participants: participantsWithProfiles,
+        total
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "search") {
       // Search users by name or email
       const searchTerm = `%${query}%`;

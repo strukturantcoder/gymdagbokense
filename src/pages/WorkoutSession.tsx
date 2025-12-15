@@ -477,9 +477,10 @@ export default function WorkoutSession() {
         setPRShareData(bestNewPR);
       }
 
-      // Update user stats
+      // Update user stats with XP cap (max 500 XP per workout to prevent abuse)
       const totalSets = sessionData.exercises.reduce((sum, ex) => sum + ex.sets_completed, 0);
-      const xpEarned = 50 + totalSets * 2 + Math.floor(durationMinutes / 5) * 5;
+      const MAX_XP_PER_WORKOUT = 500;
+      const xpEarned = Math.min(MAX_XP_PER_WORKOUT, 50 + totalSets * 2 + Math.floor(durationMinutes / 5) * 5);
 
       const { data: currentStats } = await supabase
         .from('user_stats')
