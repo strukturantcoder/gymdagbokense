@@ -117,7 +117,34 @@ interface UserDetailedStats {
   recentCardio: number;
 }
 
-type ModalType = "users" | "workouts" | "cardio" | null;
+interface ActiveUserEntry {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  stats: {
+    level: number;
+    total_xp: number;
+    total_workouts: number;
+    total_cardio_sessions: number;
+  } | null;
+  recentWorkouts: number;
+  recentCardio: number;
+}
+
+interface ChallengeParticipant {
+  id: string;
+  user_id: string;
+  current_value: number;
+  joined_at: string;
+  type: "community" | "pool";
+  challengeTitle: string;
+  isActive: boolean;
+  endDate: string;
+  profile: { display_name: string | null; avatar_url: string | null } | null;
+}
+
+type ModalType = "users" | "workouts" | "cardio" | "activeUsers" | "challengeParticipants" | null;
 
 export function AdminStats() {
   const [stats, setStats] = useState<AdminStatsData | null>(null);
@@ -150,6 +177,16 @@ export function AdminStats() {
   const [cardioLogs, setCardioLogs] = useState<CardioLogEntry[]>([]);
   const [cardioTotal, setCardioTotal] = useState(0);
   const [cardioPage, setCardioPage] = useState(0);
+  
+  // Active users
+  const [activeUsers, setActiveUsers] = useState<ActiveUserEntry[]>([]);
+  const [activeUsersTotal, setActiveUsersTotal] = useState(0);
+  const [activeUsersPage, setActiveUsersPage] = useState(0);
+  
+  // Challenge participants
+  const [challengeParticipants, setChallengeParticipants] = useState<ChallengeParticipant[]>([]);
+  const [challengeParticipantsTotal, setChallengeParticipantsTotal] = useState(0);
+  const [challengeParticipantsPage, setChallengeParticipantsPage] = useState(0);
 
   const PAGE_SIZE = 20;
 
@@ -227,6 +264,42 @@ export function AdminStats() {
     }
   };
 
+  const fetchActiveUsers = async (page: number) => {
+    setModalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-user-lookup", {
+        body: { action: "listActiveUsers", limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+      });
+      
+      if (error) throw error;
+      setActiveUsers(data.users || []);
+      setActiveUsersTotal(data.total || 0);
+      setActiveUsersPage(page);
+    } catch (err) {
+      console.error("Error fetching active users:", err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const fetchChallengeParticipants = async (page: number) => {
+    setModalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-user-lookup", {
+        body: { action: "listChallengeParticipants", limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+      });
+      
+      if (error) throw error;
+      setChallengeParticipants(data.participants || []);
+      setChallengeParticipantsTotal(data.total || 0);
+      setChallengeParticipantsPage(page);
+    } catch (err) {
+      console.error("Error fetching challenge participants:", err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
   const openModal = (type: ModalType) => {
     setModalType(type);
     if (type === "users") {
@@ -235,6 +308,10 @@ export function AdminStats() {
       fetchWorkoutLogs(0);
     } else if (type === "cardio") {
       fetchCardioLogs(0);
+    } else if (type === "activeUsers") {
+      fetchActiveUsers(0);
+    } else if (type === "challengeParticipants") {
+      fetchChallengeParticipants(0);
     }
   };
 
@@ -331,6 +408,8 @@ export function AdminStats() {
       description: `${stats.users.activeMonth} senaste månaden`,
       icon: Activity,
       color: "text-green-500",
+      clickable: true,
+      onClick: () => openModal("activeUsers"),
     },
     {
       title: "Totalt styrkepass",
@@ -363,6 +442,8 @@ export function AdminStats() {
       description: `${stats.challenges.communityParticipants} community, ${stats.challenges.poolParticipants} pool`,
       icon: Trophy,
       color: "text-yellow-500",
+      clickable: true,
+      onClick: () => openModal("challengeParticipants"),
     },
     {
       title: "Vänskapsrelationer",
@@ -602,6 +683,164 @@ export function AdminStats() {
                 size="sm"
                 onClick={() => fetchCardioLogs(cardioPage + 1)}
                 disabled={(cardioPage + 1) * PAGE_SIZE >= cardioTotal || modalLoading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Active Users Modal */}
+      <Dialog open={modalType === "activeUsers"} onOpenChange={(open) => !open && setModalType(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Aktiva användare senaste 7 dagarna ({formatNumber(activeUsersTotal)})
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            {modalLoading ? (
+              <div className="py-8 text-center text-muted-foreground">Laddar...</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Användare</TableHead>
+                    <TableHead>Nivå</TableHead>
+                    <TableHead>XP</TableHead>
+                    <TableHead>Styrkepass (7d)</TableHead>
+                    <TableHead>Konditionspass (7d)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activeUsers.map((user) => (
+                    <TableRow key={user.user_id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {user.avatar_url ? (
+                            <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                          <span className="font-medium">{user.display_name || "Okänd"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{user.stats?.level || 1}</TableCell>
+                      <TableCell>{formatNumber(user.stats?.total_xp || 0)}</TableCell>
+                      <TableCell>{user.recentWorkouts}</TableCell>
+                      <TableCell>{user.recentCardio}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </ScrollArea>
+          <div className="flex items-center justify-between pt-4 border-t">
+            <span className="text-sm text-muted-foreground">
+              Visar {activeUsersPage * PAGE_SIZE + 1}-{Math.min((activeUsersPage + 1) * PAGE_SIZE, activeUsersTotal)} av {activeUsersTotal}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchActiveUsers(activeUsersPage - 1)}
+                disabled={activeUsersPage === 0 || modalLoading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchActiveUsers(activeUsersPage + 1)}
+                disabled={(activeUsersPage + 1) * PAGE_SIZE >= activeUsersTotal || modalLoading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Challenge Participants Modal */}
+      <Dialog open={modalType === "challengeParticipants"} onOpenChange={(open) => !open && setModalType(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5" />
+              Tävlingsdeltagare ({formatNumber(challengeParticipantsTotal)})
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            {modalLoading ? (
+              <div className="py-8 text-center text-muted-foreground">Laddar...</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Användare</TableHead>
+                    <TableHead>Tävling</TableHead>
+                    <TableHead>Typ</TableHead>
+                    <TableHead>Progress</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Gick med</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {challengeParticipants.map((participant) => (
+                    <TableRow key={participant.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {participant.profile?.avatar_url ? (
+                            <img src={participant.profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                          <span className="font-medium">{participant.profile?.display_name || "Okänd"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate">{participant.challengeTitle}</TableCell>
+                      <TableCell>
+                        <span className={`text-xs px-2 py-1 rounded ${participant.type === "community" ? "bg-blue-500/10 text-blue-500" : "bg-yellow-500/10 text-yellow-500"}`}>
+                          {participant.type === "community" ? "Community" : "Pool"}
+                        </span>
+                      </TableCell>
+                      <TableCell>{participant.current_value}</TableCell>
+                      <TableCell>
+                        <span className={`text-xs px-2 py-1 rounded ${participant.isActive ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"}`}>
+                          {participant.isActive ? "Aktiv" : "Avslutad"}
+                        </span>
+                      </TableCell>
+                      <TableCell>{format(parseISO(participant.joined_at), "d MMM HH:mm", { locale: sv })}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </ScrollArea>
+          <div className="flex items-center justify-between pt-4 border-t">
+            <span className="text-sm text-muted-foreground">
+              Visar {challengeParticipantsPage * PAGE_SIZE + 1}-{Math.min((challengeParticipantsPage + 1) * PAGE_SIZE, challengeParticipantsTotal)} av {challengeParticipantsTotal}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchChallengeParticipants(challengeParticipantsPage - 1)}
+                disabled={challengeParticipantsPage === 0 || modalLoading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchChallengeParticipants(challengeParticipantsPage + 1)}
+                disabled={(challengeParticipantsPage + 1) * PAGE_SIZE >= challengeParticipantsTotal || modalLoading}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
