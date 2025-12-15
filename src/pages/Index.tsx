@@ -45,7 +45,7 @@ const Index = () => {
         
         {/* Ad banner after social proof */}
         <div className="container px-4 py-8">
-          <AdBanner size="horizontal" />
+          <AdBanner format="horizontal" />
         </div>
         
         <LazySection>
@@ -58,7 +58,7 @@ const Index = () => {
         
         {/* Ad banner in middle */}
         <div className="container px-4 py-8">
-          <AdBanner size="horizontal" />
+          <AdBanner format="horizontal" />
         </div>
         
         <LazySection>
@@ -85,7 +85,7 @@ const Index = () => {
         
         {/* Final ad before footer */}
         <div className="container px-4 py-8">
-          <AdBanner size="horizontal" />
+          <AdBanner format="horizontal" />
         </div>
       </main>
       

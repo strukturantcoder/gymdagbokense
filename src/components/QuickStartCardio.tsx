@@ -335,7 +335,7 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
         className="mb-8 space-y-4"
       >
         {/* Ad at start of cardio session */}
-        <AdBanner size="horizontal" />
+        <AdBanner format="horizontal" />
         
         <Card className="border-2 border-primary overflow-hidden">
           <div className={`h-2 bg-gradient-to-r ${activeActivity.color}`} />
@@ -535,7 +535,7 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                 </div>
 
                 {/* Ad in finish form */}
-                <AdBanner size="horizontal" />
+                <AdBanner format="horizontal" />
 
                 <div className="p-3 bg-primary/10 rounded-lg">
                   <p className="text-sm font-medium flex items-center gap-2">

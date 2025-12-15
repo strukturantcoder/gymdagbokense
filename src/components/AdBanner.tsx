@@ -1,117 +1,144 @@
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Crown } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Ad {
   id: string;
-  imageBaseUrl: string;
+  name: string;
+  image_url: string;
   link: string;
-  altText?: string;
+  alt_text: string | null;
+  format: string;
+  placement: string | null;
 }
 
-// Add your ads here - they will rotate randomly
-const ads: Ad[] = [
+// Fallback ads for when database is empty
+const fallbackAds: Ad[] = [
   {
     id: "tradedoubler-1",
-    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(25913394)a(3465011)",
+    name: "Tradedoubler 1",
+    image_url: "https://imp.tradedoubler.com/imp?type(img)g(25913394)a(3465011)",
     link: "https://clk.tradedoubler.com/click?p=382764&a=3465011&g=25913394",
-    altText: "Annons",
+    alt_text: "Annons",
+    format: "horizontal",
+    placement: null,
   },
   {
     id: "tradedoubler-2",
-    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(25913396)a(3465011)",
+    name: "Tradedoubler 2",
+    image_url: "https://imp.tradedoubler.com/imp?type(img)g(25913396)a(3465011)",
     link: "https://clk.tradedoubler.com/click?p=382764&a=3465011&g=25913396",
-    altText: "Annons",
-  },
-  {
-    id: "tradedoubler-3",
-    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(25913398)a(3465011)",
-    link: "https://clk.tradedoubler.com/click?p=382764&a=3465011&g=25913398",
-    altText: "Annons",
-  },
-  {
-    id: "nutrimimic-hero",
-    imageBaseUrl: "https://customer-assets.emergentagent.com/job_diet-companion-25/artifacts/xx1t8w21_u1865862766_A_professional_food_photographer_captures_a_top-d_0b02e73d-f14d-47ca-8e31-3e563bcdbf9d_1.png",
-    link: "https://clk.tradedoubler.com/click?p=393591&a=3465011",
-    altText: "Nutrimimic - Feel the Reset",
-  },
-  {
-    id: "nutrimimic-portrait",
-    imageBaseUrl: "https://customer-assets.emergentagent.com/job_fmd-coach/artifacts/8s7904fy_nutrimic_portrait.jpg",
-    link: "https://clk.tradedoubler.com/click?p=393591&a=3465011",
-    altText: "Nutrimimic - Healthy Eating",
-  },
-  {
-    id: "tradedoubler-4",
-    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(26010526)a(3465011)",
-    link: "https://clk.tradedoubler.com/click?p=384188&a=3465011&g=26010526",
-    altText: "Annons",
-  },
-  {
-    id: "tradedoubler-5",
-    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(26010508)a(3465011)",
-    link: "https://clk.tradedoubler.com/click?p=384188&a=3465011&g=26010508",
-    altText: "Annons",
-  },
-  {
-    id: "tradedoubler-6",
-    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(24930420)a(3465011)",
-    link: "https://clk.tradedoubler.com/click?p=311300&a=3465011&g=24930420",
-    altText: "Racketspecialisten - Kod XMAS15 ger 15% rabatt på dyraste produkten",
-  },
-  {
-    id: "tradedoubler-7",
-    imageBaseUrl: "https://imp.tradedoubler.com/imp?type(img)g(24930416)a(3465011)",
-    link: "https://clk.tradedoubler.com/click?p=311300&a=3465011&g=24930416",
-    altText: "Racketspecialisten - Kod XMAS15 ger 15% rabatt på dyraste produkten",
-  },
-  {
-    id: "alpingaraget-1",
-    imageBaseUrl: "https://statics.alpingaraget.se/imp?type(img)g(25827970)a(3465011)",
-    link: "https://statics.alpingaraget.se/click?p=374688&a=3465011&g=25827970",
-    altText: "Alpingaraget",
+    alt_text: "Annons",
+    format: "horizontal",
+    placement: null,
   },
 ];
 
+type AdFormat = "horizontal" | "square_large" | "square_medium" | "vertical" | "leaderboard" | "mobile_banner";
+
 interface AdBannerProps {
-  size?: "horizontal" | "square" | "vertical";
+  format?: AdFormat;
+  placement?: string;
   className?: string;
   showPremiumPrompt?: boolean;
 }
 
-const AdBanner = ({ size = "horizontal", className = "", showPremiumPrompt = true }: AdBannerProps) => {
+const AdBanner = ({ 
+  format = "horizontal", 
+  placement,
+  className = "", 
+  showPremiumPrompt = true 
+}: AdBannerProps) => {
   const { isPremium } = useAuth();
   const navigate = useNavigate();
-  
+  const [ads, setAds] = useState<Ad[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAds = async () => {
+      try {
+        let query = supabase
+          .from("ads")
+          .select("id, name, image_url, link, alt_text, format, placement")
+          .eq("is_active", true);
+
+        // Filter by format
+        query = query.eq("format", format);
+
+        // Filter by placement if specified
+        if (placement) {
+          query = query.or(`placement.eq.${placement},placement.is.null`);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error("Error fetching ads:", error);
+          setAds(fallbackAds.filter(ad => ad.format === format));
+        } else if (data && data.length > 0) {
+          setAds(data);
+        } else {
+          // Use fallback ads matching the format
+          setAds(fallbackAds.filter(ad => ad.format === format));
+        }
+      } catch (err) {
+        console.error("Error fetching ads:", err);
+        setAds(fallbackAds.filter(ad => ad.format === format));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAds();
+  }, [format, placement]);
+
   // Select a random ad and generate unique cache-busting param per component instance
   const { selectedAd, imageUrl } = useMemo(() => {
+    if (ads.length === 0) return { selectedAd: null, imageUrl: "" };
     const ad = ads[Math.floor(Math.random() * ads.length)];
     const cacheBuster = Math.random().toString().substring(2, 11);
+    // Only add cache buster if it's a tradedoubler URL
+    const url = ad.image_url.includes("tradedoubler.com") 
+      ? `${ad.image_url}${cacheBuster}`
+      : ad.image_url;
     return {
       selectedAd: ad,
-      imageUrl: `${ad.imageBaseUrl}${cacheBuster}`
+      imageUrl: url
     };
-  }, []);
+  }, [ads]);
   
   // Don't show ads for premium users
   if (isPremium) {
     return null;
   }
 
-  const sizeClasses = {
+  // Size classes based on format
+  const sizeClasses: Record<AdFormat, string> = {
     horizontal: "w-full h-16 sm:h-20 md:h-28",
-    square: "w-full aspect-square max-w-[300px]",
+    square_large: "w-full aspect-square max-w-[400px]",
+    square_medium: "w-full aspect-square max-w-[300px]",
     vertical: "w-full max-w-[160px] h-[600px]",
+    leaderboard: "w-full h-20 sm:h-24",
+    mobile_banner: "w-full h-12 sm:h-14",
   };
 
   const renderAdContent = () => {
-    if (imageUrl) {
+    if (loading) {
+      return (
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="animate-pulse bg-muted/30 w-full h-full" />
+        </div>
+      );
+    }
+
+    if (selectedAd && imageUrl) {
       const content = (
         <img 
           src={imageUrl} 
-          alt={selectedAd.altText || "Annons"} 
+          alt={selectedAd.alt_text || "Annons"} 
           className="w-full h-full object-cover"
           onError={(e) => {
             // Hide the ad if image fails to load (e.g., ad blocker)
@@ -152,7 +179,7 @@ const AdBanner = ({ size = "horizontal", className = "", showPremiumPrompt = tru
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className={sizeClasses[size]}
+        className={sizeClasses[format]}
       >
         <div className="w-full h-full bg-gym-charcoal border border-border/50 rounded-lg flex items-center justify-center relative overflow-hidden">
           {renderAdContent()}

@@ -424,7 +424,7 @@ export default function CrossFitWOD() {
   return (
     <div className="space-y-4">
       {/* Top Ad Banner */}
-      <AdBanner size="horizontal" />
+      <AdBanner format="horizontal" />
       {hasDraft && !showLogDialog && (
         <Card className="border-primary/50 bg-gradient-to-r from-primary/10 to-transparent">
           <CardContent className="py-4">
@@ -498,7 +498,7 @@ export default function CrossFitWOD() {
           {wod && !isLoading && (
             <div className="space-y-4">
               {/* Ad when WOD is displayed */}
-              <AdBanner size="horizontal" />
+              <AdBanner format="horizontal" />
               
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -716,7 +716,7 @@ export default function CrossFitWOD() {
           
           <div className="space-y-4 py-4">
             {/* Ad in log dialog */}
-            <AdBanner size="horizontal" />
+            <AdBanner format="horizontal" />
             
             <div className="space-y-2">
               <Label htmlFor="completionTime">Tid (mm:ss eller total tid)</Label>
@@ -847,7 +847,7 @@ export default function CrossFitWOD() {
       </AlertDialog>
 
       {/* Bottom Ad Banner */}
-      <AdBanner size="horizontal" />
+      <AdBanner format="horizontal" />
     </div>
   );
 }
