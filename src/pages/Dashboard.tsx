@@ -485,8 +485,8 @@ export default function Dashboard() {
       </header>
 
       <main className="container px-4 py-8">
-        {/* Ad Banner */}
-        <AdBanner className="mb-6" />
+        {/* Ad Banner - horizontal on top */}
+        <AdBanner format="horizontal" placement="dashboard_top" className="mb-6" />
 
         {/* Quick Actions with Streak and Weekly Stats */}
         <QuickActions />
@@ -907,8 +907,13 @@ export default function Dashboard() {
           </div>
         </div>
         
-        {/* Bottom Ad Banner */}
-        <AdBanner className="mt-8" />
+        {/* Square medium ad */}
+        <div className="flex justify-center my-8">
+          <AdBanner format="square_medium" placement="dashboard_square" showPremiumPrompt={false} />
+        </div>
+        
+        {/* Bottom Ad Banner - horizontal */}
+        <AdBanner format="horizontal" placement="dashboard_bottom" className="mt-8" />
       </main>
 
       {/* Confirm permanent delete dialog */}

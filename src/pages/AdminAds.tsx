@@ -49,16 +49,32 @@ const AD_FORMATS = [
 ];
 
 const AD_PLACEMENTS = [
-  { value: "dashboard_top", label: "Dashboard - Toppen" },
-  { value: "dashboard_bottom", label: "Dashboard - Botten" },
-  { value: "training_top", label: "Träning - Toppen" },
-  { value: "training_bottom", label: "Träning - Botten" },
-  { value: "statistics_top", label: "Statistik - Toppen" },
-  { value: "statistics_bottom", label: "Statistik - Botten" },
-  { value: "social_top", label: "Socialt - Toppen" },
-  { value: "social_bottom", label: "Socialt - Botten" },
-  { value: "sidebar", label: "Sidopanel" },
-  { value: "any", label: "Valfri position" },
+  // Horizontal (468x60) placements
+  { value: "dashboard_top", label: "Dashboard - Toppen (horizontal)", format: "horizontal" },
+  { value: "dashboard_bottom", label: "Dashboard - Botten (horizontal)", format: "horizontal" },
+  { value: "training_top", label: "Träning - Toppen (horizontal)", format: "horizontal" },
+  { value: "training_bottom", label: "Träning - Botten (horizontal)", format: "horizontal" },
+  { value: "statistics_top", label: "Statistik - Toppen (horizontal)", format: "horizontal" },
+  { value: "statistics_bottom", label: "Statistik - Botten (horizontal)", format: "horizontal" },
+  { value: "social_top", label: "Socialt - Toppen (horizontal)", format: "horizontal" },
+  { value: "social_bottom", label: "Socialt - Botten (horizontal)", format: "horizontal" },
+  // Square medium (500x500) placements
+  { value: "dashboard_square", label: "Dashboard - Kvadrat (square_medium)", format: "square_medium" },
+  { value: "training_square", label: "Träning - Kvadrat (square_medium)", format: "square_medium" },
+  { value: "social_square", label: "Socialt - Kvadrat (square_medium)", format: "square_medium" },
+  // Square large (1200x1200) placements
+  { value: "landing_square", label: "Landningssida - Stor kvadrat (square_large)", format: "square_large" },
+  // Vertical (160x600) placements
+  { value: "statistics_sidebar", label: "Statistik - Sidopanel (vertical)", format: "vertical" },
+  { value: "dashboard_sidebar", label: "Dashboard - Sidopanel (vertical)", format: "vertical" },
+  // Leaderboard (728x90) placements
+  { value: "landing_leaderboard", label: "Landningssida - Leaderboard", format: "leaderboard" },
+  { value: "statistics_leaderboard", label: "Statistik - Leaderboard", format: "leaderboard" },
+  // Mobile banner (320x50) placements
+  { value: "mobile_sticky", label: "Mobil - Sticky banner", format: "mobile_banner" },
+  { value: "training_mobile", label: "Träning - Mobilbanner", format: "mobile_banner" },
+  // Any placement
+  { value: "any", label: "Valfri position", format: null },
 ];
 
 const AdminAds = () => {
@@ -435,11 +451,14 @@ const AdminAds = () => {
                         <Select value={formData.placement} onValueChange={(value) => setFormData({ ...formData, placement: value })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {AD_PLACEMENTS.map((placement) => (
-                              <SelectItem key={placement.value} value={placement.value}>{placement.label}</SelectItem>
-                            ))}
+                            {AD_PLACEMENTS
+                              .filter((placement) => placement.format === null || placement.format === formData.format)
+                              .map((placement) => (
+                                <SelectItem key={placement.value} value={placement.value}>{placement.label}</SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
+                        <p className="text-xs text-muted-foreground">Visar platser som matchar valt format</p>
                       </div>
                       <div className="flex items-center justify-between">
                         <Label htmlFor="is_active">Aktiv</Label>

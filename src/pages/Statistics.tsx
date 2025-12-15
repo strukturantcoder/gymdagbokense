@@ -307,8 +307,8 @@ export default function Statistics() {
       </header>
 
       <main className="container px-4 py-8">
-        {/* Ad Banner */}
-        <AdBanner className="mb-6" />
+        {/* Leaderboard ad at top */}
+        <AdBanner format="leaderboard" placement="statistics_leaderboard" className="mb-6" />
         
         <div className="mb-8">
           <h1 className="text-3xl font-display font-bold">Din utveckling</h1>
@@ -961,8 +961,13 @@ export default function Statistics() {
           <TrainingAIAnalysis />
         </div>
         
-        {/* Bottom Ad Banner */}
-        <AdBanner className="mt-8" />
+        {/* Vertical sidebar ad - only on desktop */}
+        <div className="hidden lg:block fixed right-4 top-1/2 -translate-y-1/2 z-40">
+          <AdBanner format="vertical" placement="statistics_sidebar" showPremiumPrompt={false} />
+        </div>
+        
+        {/* Bottom Ad Banner - horizontal */}
+        <AdBanner format="horizontal" placement="statistics_bottom" className="mt-8" />
       </main>
     </div>
   );

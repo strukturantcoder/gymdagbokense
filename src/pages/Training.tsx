@@ -5,13 +5,16 @@ import WorkoutLogContent from '@/components/training/WorkoutLogContent';
 import CardioLogContent from '@/components/training/CardioLogContent';
 import CrossFitWOD from '@/components/CrossFitWOD';
 import TrainingOnboardingGuide from '@/components/TrainingOnboardingGuide';
+import AdBanner from '@/components/AdBanner';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 export default function Training() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const isMobile = useIsMobile();
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabParam === 'cardio' ? 'cardio' : tabParam === 'crossfit' ? 'crossfit' : 'strength');
 
@@ -79,6 +82,18 @@ export default function Training() {
             <CardioLogContent />
           </TabsContent>
         </Tabs>
+        
+        {/* Mobile banner ad - only on mobile */}
+        {isMobile && (
+          <div className="mt-6">
+            <AdBanner format="mobile_banner" placement="training_mobile" />
+          </div>
+        )}
+        
+        {/* Square medium ad */}
+        <div className="flex justify-center my-8">
+          <AdBanner format="square_medium" placement="training_square" showPremiumPrompt={false} />
+        </div>
       </div>
     </div>
   );
