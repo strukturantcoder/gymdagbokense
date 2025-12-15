@@ -55,7 +55,7 @@ serve(async (req) => {
       });
     }
 
-    const { action, query, userId, limit = 50, offset = 0 } = await req.json();
+    const { action, query, userId, limit = 50, offset = 0, fromDate } = await req.json();
 
     // List all users with pagination
     if (action === "listAll") {
@@ -91,13 +91,18 @@ serve(async (req) => {
 
     // List workout logs with user info
     if (action === "listWorkouts") {
-      console.log("Fetching workout logs with limit:", limit, "offset:", offset);
+      console.log("Fetching workout logs with limit:", limit, "offset:", offset, "fromDate:", fromDate);
       
-      const { data: workouts, count } = await supabaseAdmin
+      let workoutQuery = supabaseAdmin
         .from("workout_logs")
         .select("id, user_id, workout_day, duration_minutes, completed_at, notes", { count: "exact" })
-        .order("completed_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+        .order("completed_at", { ascending: false });
+      
+      if (fromDate) {
+        workoutQuery = workoutQuery.gte("completed_at", fromDate);
+      }
+      
+      const { data: workouts, count } = await workoutQuery.range(offset, offset + limit - 1);
 
       // Get user profiles for these workouts
       const userIds = [...new Set(workouts?.map(w => w.user_id) || [])];
@@ -140,13 +145,18 @@ serve(async (req) => {
 
     // List cardio logs with user info
     if (action === "listCardio") {
-      console.log("Fetching cardio logs with limit:", limit, "offset:", offset);
+      console.log("Fetching cardio logs with limit:", limit, "offset:", offset, "fromDate:", fromDate);
       
-      const { data: cardioLogs, count } = await supabaseAdmin
+      let cardioQuery = supabaseAdmin
         .from("cardio_logs")
         .select("id, user_id, activity_type, duration_minutes, distance_km, calories_burned, completed_at, notes", { count: "exact" })
-        .order("completed_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+        .order("completed_at", { ascending: false });
+      
+      if (fromDate) {
+        cardioQuery = cardioQuery.gte("completed_at", fromDate);
+      }
+      
+      const { data: cardioLogs, count } = await cardioQuery.range(offset, offset + limit - 1);
 
       // Get user profiles for these logs
       const userIds = [...new Set(cardioLogs?.map(c => c.user_id) || [])];
@@ -170,24 +180,28 @@ serve(async (req) => {
       });
     }
 
-    // List active users (users who logged workout or cardio in last 7 days)
+    // List active users (users who logged workout or cardio within date range)
     if (action === "listActiveUsers") {
-      console.log("Fetching active users with limit:", limit, "offset:", offset);
+      console.log("Fetching active users with limit:", limit, "offset:", offset, "fromDate:", fromDate);
       
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      // Use fromDate if provided, otherwise default to 7 days ago
+      const dateFilter = fromDate || (() => {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        return sevenDaysAgo.toISOString();
+      })();
       
-      // Get unique users who logged workouts in last 7 days
+      // Get unique users who logged workouts in the date range
       const { data: workoutUsers } = await supabaseAdmin
         .from("workout_logs")
         .select("user_id")
-        .gte("completed_at", sevenDaysAgo.toISOString());
+        .gte("completed_at", dateFilter);
       
-      // Get unique users who logged cardio in last 7 days
+      // Get unique users who logged cardio in the date range
       const { data: cardioUsers } = await supabaseAdmin
         .from("cardio_logs")
         .select("user_id")
-        .gte("completed_at", sevenDaysAgo.toISOString());
+        .gte("completed_at", dateFilter);
       
       // Combine and deduplicate
       const allActiveUserIds = [...new Set([
@@ -218,13 +232,13 @@ serve(async (req) => {
           .from("workout_logs")
           .select("*", { count: "exact", head: true })
           .eq("user_id", p.user_id)
-          .gte("completed_at", sevenDaysAgo.toISOString());
+          .gte("completed_at", dateFilter);
         
         const { count: recentCardio } = await supabaseAdmin
           .from("cardio_logs")
           .select("*", { count: "exact", head: true })
           .eq("user_id", p.user_id)
-          .gte("completed_at", sevenDaysAgo.toISOString());
+          .gte("completed_at", dateFilter);
         
         return {
           ...p,
@@ -244,10 +258,10 @@ serve(async (req) => {
 
     // List challenge participants (both community and pool)
     if (action === "listChallengeParticipants") {
-      console.log("Fetching challenge participants with limit:", limit, "offset:", offset);
+      console.log("Fetching challenge participants with limit:", limit, "offset:", offset, "fromDate:", fromDate);
       
       // Get community challenge participants
-      const { data: communityParticipants } = await supabaseAdmin
+      let communityQuery = supabaseAdmin
         .from("community_challenge_participants")
         .select(`
           id, user_id, current_value, joined_at,
@@ -255,14 +269,26 @@ serve(async (req) => {
         `)
         .order("joined_at", { ascending: false });
       
+      if (fromDate) {
+        communityQuery = communityQuery.gte("joined_at", fromDate);
+      }
+      
+      const { data: communityParticipants } = await communityQuery;
+      
       // Get pool challenge participants
-      const { data: poolParticipants } = await supabaseAdmin
+      let poolQuery = supabaseAdmin
         .from("pool_challenge_participants")
         .select(`
           id, user_id, current_value, joined_at,
           challenge:pool_challenges(id, challenge_type, challenge_category, status, end_date)
         `)
         .order("joined_at", { ascending: false });
+      
+      if (fromDate) {
+        poolQuery = poolQuery.gte("joined_at", fromDate);
+      }
+      
+      const { data: poolParticipants } = await poolQuery;
       
       // Combine all participants
       const allParticipants = [

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Dumbbell, Heart, Trophy, UserPlus, Activity, Clock, Zap, Search, User, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Users, Dumbbell, Heart, Trophy, UserPlus, Activity, Clock, Zap, Search, User, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, Calendar } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, subDays, subMonths } from "date-fns";
 import { sv } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+type DateFilter = "all" | "week" | "month" | "3months";
 
 interface AdminStatsData {
   users: {
@@ -188,7 +191,24 @@ export function AdminStats() {
   const [challengeParticipantsTotal, setChallengeParticipantsTotal] = useState(0);
   const [challengeParticipantsPage, setChallengeParticipantsPage] = useState(0);
 
+  // Date filters
+  const [workoutsDateFilter, setWorkoutsDateFilter] = useState<DateFilter>("all");
+  const [cardioDateFilter, setCardioDateFilter] = useState<DateFilter>("all");
+  const [activeUsersDateFilter, setActiveUsersDateFilter] = useState<DateFilter>("week");
+  const [challengesDateFilter, setChallengesDateFilter] = useState<DateFilter>("all");
+
   const PAGE_SIZE = 20;
+
+  const getDateFromFilter = (filter: DateFilter): string | null => {
+    if (filter === "all") return null;
+    const now = new Date();
+    switch (filter) {
+      case "week": return subDays(now, 7).toISOString();
+      case "month": return subMonths(now, 1).toISOString();
+      case "3months": return subMonths(now, 3).toISOString();
+      default: return null;
+    }
+  };
 
   useEffect(() => {
     fetchStats();
@@ -228,11 +248,12 @@ export function AdminStats() {
     }
   };
 
-  const fetchWorkoutLogs = async (page: number) => {
+  const fetchWorkoutLogs = async (page: number, dateFilter: DateFilter = workoutsDateFilter) => {
     setModalLoading(true);
     try {
+      const fromDate = getDateFromFilter(dateFilter);
       const { data, error } = await supabase.functions.invoke("admin-user-lookup", {
-        body: { action: "listWorkouts", limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+        body: { action: "listWorkouts", limit: PAGE_SIZE, offset: page * PAGE_SIZE, fromDate }
       });
       
       if (error) throw error;
@@ -246,11 +267,12 @@ export function AdminStats() {
     }
   };
 
-  const fetchCardioLogs = async (page: number) => {
+  const fetchCardioLogs = async (page: number, dateFilter: DateFilter = cardioDateFilter) => {
     setModalLoading(true);
     try {
+      const fromDate = getDateFromFilter(dateFilter);
       const { data, error } = await supabase.functions.invoke("admin-user-lookup", {
-        body: { action: "listCardio", limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+        body: { action: "listCardio", limit: PAGE_SIZE, offset: page * PAGE_SIZE, fromDate }
       });
       
       if (error) throw error;
@@ -264,11 +286,12 @@ export function AdminStats() {
     }
   };
 
-  const fetchActiveUsers = async (page: number) => {
+  const fetchActiveUsers = async (page: number, dateFilter: DateFilter = activeUsersDateFilter) => {
     setModalLoading(true);
     try {
+      const fromDate = getDateFromFilter(dateFilter);
       const { data, error } = await supabase.functions.invoke("admin-user-lookup", {
-        body: { action: "listActiveUsers", limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+        body: { action: "listActiveUsers", limit: PAGE_SIZE, offset: page * PAGE_SIZE, fromDate }
       });
       
       if (error) throw error;
@@ -282,11 +305,12 @@ export function AdminStats() {
     }
   };
 
-  const fetchChallengeParticipants = async (page: number) => {
+  const fetchChallengeParticipants = async (page: number, dateFilter: DateFilter = challengesDateFilter) => {
     setModalLoading(true);
     try {
+      const fromDate = getDateFromFilter(dateFilter);
       const { data, error } = await supabase.functions.invoke("admin-user-lookup", {
-        body: { action: "listChallengeParticipants", limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+        body: { action: "listChallengeParticipants", limit: PAGE_SIZE, offset: page * PAGE_SIZE, fromDate }
       });
       
       if (error) throw error;
@@ -298,6 +322,26 @@ export function AdminStats() {
     } finally {
       setModalLoading(false);
     }
+  };
+
+  const handleWorkoutsFilterChange = (filter: DateFilter) => {
+    setWorkoutsDateFilter(filter);
+    fetchWorkoutLogs(0, filter);
+  };
+
+  const handleCardioFilterChange = (filter: DateFilter) => {
+    setCardioDateFilter(filter);
+    fetchCardioLogs(0, filter);
+  };
+
+  const handleActiveUsersFilterChange = (filter: DateFilter) => {
+    setActiveUsersDateFilter(filter);
+    fetchActiveUsers(0, filter);
+  };
+
+  const handleChallengesFilterChange = (filter: DateFilter) => {
+    setChallengesDateFilter(filter);
+    fetchChallengeParticipants(0, filter);
   };
 
   const openModal = (type: ModalType) => {
@@ -543,10 +587,24 @@ export function AdminStats() {
       <Dialog open={modalType === "workouts"} onOpenChange={(open) => !open && setModalType(null)}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Dumbbell className="h-5 w-5" />
-              Alla styrkepass ({formatNumber(workoutsTotal)})
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <Dumbbell className="h-5 w-5" />
+                Alla styrkepass ({formatNumber(workoutsTotal)})
+              </DialogTitle>
+              <Select value={workoutsDateFilter} onValueChange={(v) => handleWorkoutsFilterChange(v as DateFilter)}>
+                <SelectTrigger className="w-[160px]">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alla tider</SelectItem>
+                  <SelectItem value="week">Senaste veckan</SelectItem>
+                  <SelectItem value="month">Senaste månaden</SelectItem>
+                  <SelectItem value="3months">Senaste 3 mån</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </DialogHeader>
           <ScrollArea className="h-[60vh]">
             {modalLoading ? (
@@ -619,10 +677,24 @@ export function AdminStats() {
       <Dialog open={modalType === "cardio"} onOpenChange={(open) => !open && setModalType(null)}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Heart className="h-5 w-5" />
-              Alla konditionspass ({formatNumber(cardioTotal)})
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5" />
+                Alla konditionspass ({formatNumber(cardioTotal)})
+              </DialogTitle>
+              <Select value={cardioDateFilter} onValueChange={(v) => handleCardioFilterChange(v as DateFilter)}>
+                <SelectTrigger className="w-[160px]">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alla tider</SelectItem>
+                  <SelectItem value="week">Senaste veckan</SelectItem>
+                  <SelectItem value="month">Senaste månaden</SelectItem>
+                  <SelectItem value="3months">Senaste 3 mån</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </DialogHeader>
           <ScrollArea className="h-[60vh]">
             {modalLoading ? (
@@ -695,10 +767,23 @@ export function AdminStats() {
       <Dialog open={modalType === "activeUsers"} onOpenChange={(open) => !open && setModalType(null)}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Aktiva användare senaste 7 dagarna ({formatNumber(activeUsersTotal)})
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Aktiva användare ({formatNumber(activeUsersTotal)})
+              </DialogTitle>
+              <Select value={activeUsersDateFilter} onValueChange={(v) => handleActiveUsersFilterChange(v as DateFilter)}>
+                <SelectTrigger className="w-[160px]">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">Senaste veckan</SelectItem>
+                  <SelectItem value="month">Senaste månaden</SelectItem>
+                  <SelectItem value="3months">Senaste 3 mån</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </DialogHeader>
           <ScrollArea className="h-[60vh]">
             {modalLoading ? (
@@ -710,8 +795,8 @@ export function AdminStats() {
                     <TableHead>Användare</TableHead>
                     <TableHead>Nivå</TableHead>
                     <TableHead>XP</TableHead>
-                    <TableHead>Styrkepass (7d)</TableHead>
-                    <TableHead>Konditionspass (7d)</TableHead>
+                    <TableHead>Styrkepass</TableHead>
+                    <TableHead>Konditionspass</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -769,10 +854,24 @@ export function AdminStats() {
       <Dialog open={modalType === "challengeParticipants"} onOpenChange={(open) => !open && setModalType(null)}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
-              Tävlingsdeltagare ({formatNumber(challengeParticipantsTotal)})
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5" />
+                Tävlingsdeltagare ({formatNumber(challengeParticipantsTotal)})
+              </DialogTitle>
+              <Select value={challengesDateFilter} onValueChange={(v) => handleChallengesFilterChange(v as DateFilter)}>
+                <SelectTrigger className="w-[160px]">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alla tider</SelectItem>
+                  <SelectItem value="week">Senaste veckan</SelectItem>
+                  <SelectItem value="month">Senaste månaden</SelectItem>
+                  <SelectItem value="3months">Senaste 3 mån</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </DialogHeader>
           <ScrollArea className="h-[60vh]">
             {modalLoading ? (
