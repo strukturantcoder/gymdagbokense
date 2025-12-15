@@ -111,8 +111,10 @@ const AdBanner = ({
     };
   }, [ads]);
 
-  // Track impression when ad is displayed
+  // Track impression when ad is displayed (only for authenticated users)
   useEffect(() => {
+    if (!user?.id) return;
+
     if (selectedAd && !impressionTracked.current && !selectedAd.id.startsWith("tradedoubler")) {
       impressionTracked.current = true;
       supabase
@@ -120,24 +122,28 @@ const AdBanner = ({
         .insert({
           ad_id: selectedAd.id,
           event_type: "impression",
-          user_id: user?.id || null,
+          user_id: user.id,
         })
         .then(({ error }) => {
           if (error) console.error("Error tracking impression:", error);
         });
     }
-  }, [selectedAd, user]);
+  }, [selectedAd, user?.id]);
 
-  // Track click
+  // Track click (only for authenticated users)
   const trackClick = async () => {
+    if (!user?.id) return;
+
     if (selectedAd && !selectedAd.id.startsWith("tradedoubler")) {
-      await supabase
+      const { error } = await supabase
         .from("ad_stats")
         .insert({
           ad_id: selectedAd.id,
           event_type: "click",
-          user_id: user?.id || null,
+          user_id: user.id,
         });
+
+      if (error) console.error("Error tracking click:", error);
     }
   };
   
