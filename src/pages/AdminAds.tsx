@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, Image } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, Image, BarChart3, MousePointerClick, TrendingUp } from "lucide-react";
 
 interface Ad {
   id: string;
@@ -24,6 +25,17 @@ interface Ad {
   placement: string | null;
   is_active: boolean;
   created_at: string;
+}
+
+interface AdStats {
+  id: string;
+  name: string;
+  format: string;
+  placement: string | null;
+  is_active: boolean;
+  impressions: number;
+  clicks: number;
+  ctr: number;
 }
 
 const AD_FORMATS = [
@@ -54,12 +66,13 @@ const AdminAds = () => {
   const navigate = useNavigate();
   
   const [ads, setAds] = useState<Ad[]>([]);
+  const [adStats, setAdStats] = useState<AdStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [previewAd, setPreviewAd] = useState<Ad | null>(null);
+  const [activeTab, setActiveTab] = useState("ads");
   
-  // Form state
   const [formData, setFormData] = useState({
     name: "",
     image_url: "",
@@ -78,6 +91,7 @@ const AdminAds = () => {
         navigate("/dashboard");
       } else {
         fetchAds();
+        fetchAdStats();
       }
     }
   }, [user, isAdmin, authLoading, adminLoading, navigate]);
@@ -96,6 +110,20 @@ const AdminAds = () => {
       toast.error("Kunde inte hämta annonser");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAdStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("ad_statistics")
+        .select("*")
+        .order("impressions", { ascending: false });
+
+      if (error) throw error;
+      setAdStats((data || []) as AdStats[]);
+    } catch (err) {
+      console.error("Error fetching ad stats:", err);
     }
   };
 
@@ -169,6 +197,7 @@ const AdminAds = () => {
       setIsDialogOpen(false);
       resetForm();
       fetchAds();
+      fetchAdStats();
     } catch (err) {
       console.error("Error saving ad:", err);
       toast.error("Kunde inte spara annons");
@@ -179,14 +208,11 @@ const AdminAds = () => {
     if (!confirm("Är du säker på att du vill ta bort denna annons?")) return;
 
     try {
-      const { error } = await supabase
-        .from("ads")
-        .delete()
-        .eq("id", id);
-
+      const { error } = await supabase.from("ads").delete().eq("id", id);
       if (error) throw error;
       toast.success("Annons borttagen");
       fetchAds();
+      fetchAdStats();
     } catch (err) {
       console.error("Error deleting ad:", err);
       toast.error("Kunde inte ta bort annons");
@@ -209,10 +235,7 @@ const AdminAds = () => {
     }
   };
 
-  const getFormatLabel = (format: string) => {
-    return AD_FORMATS.find(f => f.value === format)?.label || format;
-  };
-
+  const getFormatLabel = (format: string) => AD_FORMATS.find(f => f.value === format)?.label || format;
   const getPlacementLabel = (placement: string | null) => {
     if (!placement) return "Valfri";
     return AD_PLACEMENTS.find(p => p.value === placement)?.label || placement;
@@ -226,6 +249,10 @@ const AdminAds = () => {
     );
   }
 
+  const totalImpressions = adStats.reduce((sum, ad) => sum + ad.impressions, 0);
+  const totalClicks = adStats.reduce((sum, ad) => sum + ad.clicks, 0);
+  const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00";
+
   return (
     <div className="min-h-screen bg-background p-4 pb-24">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -236,232 +263,272 @@ const AdminAds = () => {
           <h1 className="text-2xl font-bold text-foreground">Annonshantering</h1>
         </div>
 
-        <Card className="border-border/50 bg-card/50">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Annonser ({ads.length})</CardTitle>
-            <Dialog open={isDialogOpen} onOpenChange={(open) => {
-              setIsDialogOpen(open);
-              if (!open) resetForm();
-            }}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Ny annons
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingAd ? "Redigera annons" : "Skapa ny annons"}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Namn *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="T.ex. Tradedoubler Sommarkampanj"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="image_url">Bild-URL *</Label>
-                    <Input
-                      id="image_url"
-                      value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      placeholder="https://..."
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="link">Länk *</Label>
-                    <Input
-                      id="link"
-                      value={formData.link}
-                      onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                      placeholder="https://..."
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="alt_text">Alt-text</Label>
-                    <Input
-                      id="alt_text"
-                      value={formData.alt_text}
-                      onChange={(e) => setFormData({ ...formData, alt_text: e.target.value })}
-                      placeholder="Beskrivning av annonsen"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Format *</Label>
-                    <Select value={formData.format} onValueChange={(value) => setFormData({ ...formData, format: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {AD_FORMATS.map((format) => (
-                          <SelectItem key={format.value} value={format.value}>
-                            {format.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Placering</Label>
-                    <Select value={formData.placement} onValueChange={(value) => setFormData({ ...formData, placement: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {AD_PLACEMENTS.map((placement) => (
-                          <SelectItem key={placement.value} value={placement.value}>
-                            {placement.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="is_active">Aktiv</Label>
-                    <Switch
-                      id="is_active"
-                      checked={formData.is_active}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                    />
-                  </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-xs">
+            <TabsTrigger value="ads" className="gap-2">
+              <Image className="h-4 w-4" />
+              Annonser
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Statistik
+            </TabsTrigger>
+          </TabsList>
 
-                  {formData.image_url && (
-                    <div className="space-y-2">
-                      <Label>Förhandsvisning</Label>
-                      <div className="border border-border rounded-lg p-2 bg-muted/20">
-                        <img 
-                          src={formData.image_url} 
-                          alt="Förhandsvisning" 
-                          className="max-w-full h-auto max-h-40 object-contain mx-auto"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
+          <TabsContent value="ads" className="mt-6 space-y-6">
+            <Card className="border-border/50 bg-card/50">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg">Annonser ({ads.length})</CardTitle>
+                <Dialog open={isDialogOpen} onOpenChange={(open) => {
+                  setIsDialogOpen(open);
+                  if (!open) resetForm();
+                }}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="gap-2">
+                      <Plus className="w-4 h-4" />
+                      Ny annons
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{editingAd ? "Redigera annons" : "Skapa ny annons"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Namn *</Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          placeholder="T.ex. Tradedoubler Sommarkampanj"
                         />
                       </div>
-                    </div>
-                  )}
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline">Avbryt</Button>
-                  </DialogClose>
-                  <Button onClick={handleSubmit}>
-                    {editingAd ? "Spara" : "Skapa"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent>
-            {ads.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Image className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Inga annonser ännu</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Namn</TableHead>
-                      <TableHead>Format</TableHead>
-                      <TableHead>Placering</TableHead>
-                      <TableHead>Aktiv</TableHead>
-                      <TableHead className="text-right">Åtgärder</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ads.map((ad) => (
-                      <TableRow key={ad.id}>
-                        <TableCell className="font-medium">{ad.name}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {getFormatLabel(ad.format)}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {getPlacementLabel(ad.placement)}
-                        </TableCell>
-                        <TableCell>
-                          <Switch
-                            checked={ad.is_active}
-                            onCheckedChange={() => toggleActive(ad)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setPreviewAd(ad)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(ad)}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(ad.id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                      <div className="space-y-2">
+                        <Label htmlFor="image_url">Bild-URL *</Label>
+                        <Input
+                          id="image_url"
+                          value={formData.image_url}
+                          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                          placeholder="https://..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="link">Länk *</Label>
+                        <Input
+                          id="link"
+                          value={formData.link}
+                          onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                          placeholder="https://..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="alt_text">Alt-text</Label>
+                        <Input
+                          id="alt_text"
+                          value={formData.alt_text}
+                          onChange={(e) => setFormData({ ...formData, alt_text: e.target.value })}
+                          placeholder="Beskrivning av annonsen"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Format *</Label>
+                        <Select value={formData.format} onValueChange={(value) => setFormData({ ...formData, format: value })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {AD_FORMATS.map((format) => (
+                              <SelectItem key={format.value} value={format.value}>{format.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Placering</Label>
+                        <Select value={formData.placement} onValueChange={(value) => setFormData({ ...formData, placement: value })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {AD_PLACEMENTS.map((placement) => (
+                              <SelectItem key={placement.value} value={placement.value}>{placement.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="is_active">Aktiv</Label>
+                        <Switch
+                          id="is_active"
+                          checked={formData.is_active}
+                          onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                        />
+                      </div>
+                      {formData.image_url && (
+                        <div className="space-y-2">
+                          <Label>Förhandsvisning</Label>
+                          <div className="border border-border rounded-lg p-2 bg-muted/20">
+                            <img 
+                              src={formData.image_url} 
+                              alt="Förhandsvisning" 
+                              className="max-w-full h-auto max-h-40 object-contain mx-auto"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                        </div>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild><Button variant="outline">Avbryt</Button></DialogClose>
+                      <Button onClick={handleSubmit}>{editingAd ? "Spara" : "Skapa"}</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                {ads.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Image className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Inga annonser ännu</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Namn</TableHead>
+                          <TableHead>Format</TableHead>
+                          <TableHead>Placering</TableHead>
+                          <TableHead>Aktiv</TableHead>
+                          <TableHead className="text-right">Åtgärder</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {ads.map((ad) => (
+                          <TableRow key={ad.id}>
+                            <TableCell className="font-medium">{ad.name}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{getFormatLabel(ad.format)}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{getPlacementLabel(ad.placement)}</TableCell>
+                            <TableCell><Switch checked={ad.is_active} onCheckedChange={() => toggleActive(ad)} /></TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button variant="ghost" size="icon" onClick={() => setPreviewAd(ad)}><Eye className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(ad)}><Pencil className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleDelete(ad.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-        {/* Format guide */}
-        <Card className="border-border/50 bg-card/50">
-          <CardHeader>
-            <CardTitle className="text-lg">Formatguide</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {AD_FORMATS.map((format) => (
-                <div key={format.value} className="p-3 border border-border/50 rounded-lg">
-                  <div className="font-medium text-sm">{format.label}</div>
-                  <div className="text-xs text-muted-foreground">{format.dimensions} px</div>
+            <Card className="border-border/50 bg-card/50">
+              <CardHeader><CardTitle className="text-lg">Formatguide</CardTitle></CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {AD_FORMATS.map((format) => (
+                    <div key={format.value} className="p-3 border border-border/50 rounded-lg">
+                      <div className="font-medium text-sm">{format.label}</div>
+                      <div className="text-xs text-muted-foreground">{format.dimensions} px</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Preview dialog */}
+          <TabsContent value="stats" className="mt-6 space-y-6">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Card className="border-border/50 bg-card/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10"><Eye className="w-5 h-5 text-blue-500" /></div>
+                    <div>
+                      <div className="text-2xl font-bold">{totalImpressions.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">Totala visningar</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50 bg-card/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-500/10"><MousePointerClick className="w-5 h-5 text-green-500" /></div>
+                    <div>
+                      <div className="text-2xl font-bold">{totalClicks.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">Totala klick</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50 bg-card/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10"><TrendingUp className="w-5 h-5 text-primary" /></div>
+                    <div>
+                      <div className="text-2xl font-bold">{avgCtr}%</div>
+                      <div className="text-xs text-muted-foreground">Genomsnittlig CTR</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="border-border/50 bg-card/50">
+              <CardHeader><CardTitle className="text-lg">Prestanda per annons</CardTitle></CardHeader>
+              <CardContent>
+                {adStats.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Ingen statistik ännu</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Annons</TableHead>
+                          <TableHead>Format</TableHead>
+                          <TableHead className="text-right">Visningar</TableHead>
+                          <TableHead className="text-right">Klick</TableHead>
+                          <TableHead className="text-right">CTR</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {adStats.map((stat) => (
+                          <TableRow key={stat.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${stat.is_active ? 'bg-green-500' : 'bg-muted'}`} />
+                                {stat.name}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{getFormatLabel(stat.format)}</TableCell>
+                            <TableCell className="text-right font-mono">{stat.impressions.toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-mono">{stat.clicks.toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-mono">
+                              <span className={stat.ctr > 1 ? 'text-green-500' : stat.ctr > 0.5 ? 'text-yellow-500' : 'text-muted-foreground'}>
+                                {stat.ctr.toFixed(2)}%
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
         <Dialog open={!!previewAd} onOpenChange={() => setPreviewAd(null)}>
           <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{previewAd?.name}</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>{previewAd?.name}</DialogTitle></DialogHeader>
             {previewAd && (
               <div className="space-y-4">
                 <div className="border border-border rounded-lg p-4 bg-muted/20">
-                  <img 
-                    src={previewAd.image_url} 
-                    alt={previewAd.alt_text || "Annons"} 
-                    className="max-w-full h-auto mx-auto"
-                  />
+                  <img src={previewAd.image_url} alt={previewAd.alt_text || "Annons"} className="max-w-full h-auto mx-auto" />
                 </div>
                 <div className="grid gap-2 text-sm">
                   <div><span className="text-muted-foreground">Format:</span> {getFormatLabel(previewAd.format)}</div>

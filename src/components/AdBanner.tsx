@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,10 +52,11 @@ const AdBanner = ({
   className = "", 
   showPremiumPrompt = true 
 }: AdBannerProps) => {
-  const { isPremium } = useAuth();
+  const { isPremium, user } = useAuth();
   const navigate = useNavigate();
   const [ads, setAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(true);
+  const impressionTracked = useRef(false);
 
   useEffect(() => {
     const fetchAds = async () => {
@@ -109,6 +110,36 @@ const AdBanner = ({
       imageUrl: url
     };
   }, [ads]);
+
+  // Track impression when ad is displayed
+  useEffect(() => {
+    if (selectedAd && !impressionTracked.current && !selectedAd.id.startsWith("tradedoubler")) {
+      impressionTracked.current = true;
+      supabase
+        .from("ad_stats")
+        .insert({
+          ad_id: selectedAd.id,
+          event_type: "impression",
+          user_id: user?.id || null,
+        })
+        .then(({ error }) => {
+          if (error) console.error("Error tracking impression:", error);
+        });
+    }
+  }, [selectedAd, user]);
+
+  // Track click
+  const trackClick = async () => {
+    if (selectedAd && !selectedAd.id.startsWith("tradedoubler")) {
+      await supabase
+        .from("ad_stats")
+        .insert({
+          ad_id: selectedAd.id,
+          event_type: "click",
+          user_id: user?.id || null,
+        });
+    }
+  };
   
   // Don't show ads for premium users
   if (isPremium) {
@@ -153,6 +184,7 @@ const AdBanner = ({
           target="_blank" 
           rel="noopener noreferrer sponsored"
           className="w-full h-full block"
+          onClick={trackClick}
         >
           {content}
         </a>
