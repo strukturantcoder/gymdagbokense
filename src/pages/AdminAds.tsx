@@ -13,7 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, Image, BarChart3, MousePointerClick, TrendingUp } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, Image, BarChart3, MousePointerClick, TrendingUp, Code } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Ad {
   id: string;
@@ -82,6 +83,60 @@ const AdminAds = () => {
     placement: "any",
     is_active: true,
   });
+  const [embedCode, setEmbedCode] = useState("");
+
+  const parseTradeDoublerCode = (code: string) => {
+    try {
+      // Extract link from <a href="...">
+      const linkMatch = code.match(/<a[^>]+href=["']([^"']+)["']/i);
+      const link = linkMatch ? linkMatch[1] : "";
+
+      // Extract image URL from <img src="...">
+      const imgMatch = code.match(/<img[^>]+src=["']([^"']+)["']/i);
+      const imageUrl = imgMatch ? imgMatch[1] : "";
+
+      // Extract dimensions from width and height attributes
+      const widthMatch = code.match(/width=["']?(\d+)["']?/i);
+      const heightMatch = code.match(/height=["']?(\d+)["']?/i);
+      const width = widthMatch ? parseInt(widthMatch[1]) : 0;
+      const height = heightMatch ? parseInt(heightMatch[1]) : 0;
+
+      // Extract alt text from <img alt="...">
+      const altMatch = code.match(/<img[^>]+alt=["']([^"']*)["']/i);
+      const altText = altMatch ? altMatch[1] : "";
+
+      // Determine format based on dimensions
+      let format = "horizontal";
+      if (width && height) {
+        if (width === 1200 && height === 1200) format = "square_large";
+        else if (width === 500 && height === 500) format = "square_medium";
+        else if (width === 160 && height === 600) format = "vertical";
+        else if (width === 728 && height === 90) format = "leaderboard";
+        else if (width === 320 && height === 50) format = "mobile_banner";
+        else if (width === 468 && height === 60) format = "horizontal";
+        else if (height > width * 2) format = "vertical";
+        else if (width === height) format = width > 600 ? "square_large" : "square_medium";
+      }
+
+      if (link || imageUrl) {
+        setFormData(prev => ({
+          ...prev,
+          image_url: imageUrl || prev.image_url,
+          link: link || prev.link,
+          alt_text: altText || prev.alt_text,
+          format: format,
+          name: prev.name || `Tradedoubler ${width}x${height}`,
+        }));
+        toast.success("Tradedoubler-kod tolkad!");
+        setEmbedCode("");
+      } else {
+        toast.error("Kunde inte hitta länk eller bild i koden");
+      }
+    } catch (err) {
+      console.error("Error parsing embed code:", err);
+      toast.error("Kunde inte tolka koden");
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !adminLoading) {
@@ -294,6 +349,40 @@ const AdminAds = () => {
                       <DialogTitle>{editingAd ? "Redigera annons" : "Skapa ny annons"}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
+                      <div className="space-y-2 p-3 border border-dashed border-primary/50 rounded-lg bg-primary/5">
+                        <Label htmlFor="embed_code" className="flex items-center gap-2 text-primary">
+                          <Code className="w-4 h-4" />
+                          Klistra in Tradedoubler-kod
+                        </Label>
+                        <Textarea
+                          id="embed_code"
+                          value={embedCode}
+                          onChange={(e) => setEmbedCode(e.target.value)}
+                          placeholder='<a href="https://..."><img src="https://..." width="468" height="60" /></a>'
+                          rows={3}
+                          className="text-xs font-mono"
+                        />
+                        <Button 
+                          type="button" 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={() => parseTradeDoublerCode(embedCode)}
+                          disabled={!embedCode.trim()}
+                          className="w-full"
+                        >
+                          Tolka kod automatiskt
+                        </Button>
+                      </div>
+
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">eller fyll i manuellt</span>
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="name">Namn *</Label>
                         <Input
