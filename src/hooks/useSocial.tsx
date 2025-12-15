@@ -258,11 +258,13 @@ export function useSocial() {
   }, [user, fetchChallenges]);
 
   const searchUsers = async (query: string): Promise<UserProfile[]> => {
-    if (!query || query.length < 2) return [];
+    // Sanera jokertecken för att undvika LIKE-missbruk
+    const sanitized = query.replace(/[%_]/g, '').trim();
+    if (!sanitized || sanitized.length < 2) return [];
     
     // Use secure RPC function that only returns minimal data
     const { data, error } = await supabase
-      .rpc('search_users_by_name', { search_query: query });
+      .rpc('search_users_by_name', { search_query: sanitized });
     
     if (error) {
       console.error('Error searching users:', error);
@@ -271,7 +273,6 @@ export function useSocial() {
     
     return (data || []) as UserProfile[];
   };
-
   const sendFriendRequest = async (friendId: string) => {
     if (!user) return;
     
