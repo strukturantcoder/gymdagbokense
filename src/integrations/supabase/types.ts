@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_stats: {
+        Row: {
+          ad_id: string
+          created_at: string
+          event_type: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          ad_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          ad_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_stats_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ad_statistics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_stats_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ads: {
         Row: {
           alt_text: string | null
@@ -1200,7 +1239,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ad_statistics: {
+        Row: {
+          clicks: number | null
+          ctr: number | null
+          format: string | null
+          id: string | null
+          impressions: number | null
+          is_active: boolean | null
+          name: string | null
+          placement: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       abbreviate_name: { Args: { full_name: string }; Returns: string }
