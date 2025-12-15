@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Image, Sparkles, Trophy, Gift, Dumbbell, FolderDown, Megaphone, Share2 } from "lucide-react";
+import { Download, Image, Sparkles, Trophy, Gift, Dumbbell, FolderDown, Megaphone, Share2, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import MarketingImageGenerator from "@/components/admin/MarketingImageGenerator";
+import AppScreenshotGenerator from "@/components/admin/AppScreenshotGenerator";
 
 // Competition content configuration
 interface CompetitionContent {
@@ -506,8 +507,12 @@ const AdminInstagramImages = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="competition" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+      <Tabs defaultValue="screenshots" className="space-y-6">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsTrigger value="screenshots" className="gap-2">
+            <Smartphone className="h-4 w-4" />
+            App-screenshots
+          </TabsTrigger>
           <TabsTrigger value="competition" className="gap-2">
             <Trophy className="h-4 w-4" />
             Tävling
@@ -517,6 +522,10 @@ const AdminInstagramImages = () => {
             Marknadsföring
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="screenshots">
+          <AppScreenshotGenerator />
+        </TabsContent>
 
         <TabsContent value="competition">
           <div className="grid gap-8 lg:grid-cols-2">
