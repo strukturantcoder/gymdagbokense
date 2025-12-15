@@ -43,9 +43,9 @@ const Index = () => {
         {/* Social proof immediately after hero */}
         <SocialProofBanner />
         
-        {/* Ad banner after social proof */}
+        {/* Leaderboard ad after social proof */}
         <div className="container px-4 py-8">
-          <AdBanner format="horizontal" />
+          <AdBanner format="leaderboard" placement="landing_leaderboard" />
         </div>
         
         <LazySection>
@@ -56,9 +56,9 @@ const Index = () => {
           <HowItWorks />
         </LazySection>
         
-        {/* Ad banner in middle */}
-        <div className="container px-4 py-8">
-          <AdBanner format="horizontal" />
+        {/* Square large ad in middle */}
+        <div className="container px-4 py-8 flex justify-center">
+          <AdBanner format="square_large" placement="landing_square" />
         </div>
         
         <LazySection>
@@ -83,9 +83,9 @@ const Index = () => {
           <FAQ />
         </LazySection>
         
-        {/* Final ad before footer */}
+        {/* Horizontal ad before footer */}
         <div className="container px-4 py-8">
-          <AdBanner format="horizontal" />
+          <AdBanner format="horizontal" placement="dashboard_bottom" />
         </div>
       </main>
       

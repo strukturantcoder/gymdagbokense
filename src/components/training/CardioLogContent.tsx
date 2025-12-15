@@ -512,7 +512,7 @@ export default function CardioLogContent() {
         </Card>
       )}
 
-      <AdBanner className="mb-6" />
+      <AdBanner format="horizontal" placement="training_top" className="mb-6" />
 
       <div className="flex flex-col gap-4 mb-6">
         <div>

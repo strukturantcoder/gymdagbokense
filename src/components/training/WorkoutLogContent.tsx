@@ -934,7 +934,7 @@ export default function WorkoutLogContent() {
         />
       )}
 
-      <AdBanner className="mb-6" />
+      <AdBanner format="horizontal" placement="training_top" className="mb-6" />
 
       {/* Draft restore dialog */}
       <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>

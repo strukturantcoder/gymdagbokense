@@ -178,8 +178,8 @@ export default function Social() {
       </motion.header>
 
       <main className="container px-4 py-8 relative z-10">
-        {/* Ad Banner */}
-        <AdBanner className="mb-6" />
+        {/* Ad Banner - horizontal */}
+        <AdBanner format="horizontal" placement="social_top" className="mb-6" />
         
         {/* XP Card */}
         <motion.div
@@ -745,8 +745,13 @@ export default function Social() {
           </TabsContent>
         </Tabs>
         
-        {/* Bottom Ad Banner */}
-        <AdBanner className="mt-8" />
+        {/* Square medium ad */}
+        <div className="flex justify-center my-8">
+          <AdBanner format="square_medium" placement="social_square" showPremiumPrompt={false} />
+        </div>
+        
+        {/* Bottom Ad Banner - horizontal */}
+        <AdBanner format="horizontal" placement="social_bottom" className="mt-8" />
       </main>
     </div>
   );
