@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ads: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          format: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link: string
+          name: string
+          placement: string | null
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          format?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link: string
+          name: string
+          placement?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          format?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link?: string
+          name?: string
+          placement?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cardio_goals: {
         Row: {
           activity_type: string

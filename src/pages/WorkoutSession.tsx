@@ -613,7 +613,7 @@ export default function WorkoutSession() {
 
         {/* Ad at top of summary */}
         <div className="p-4 pb-0">
-          <AdBanner size="horizontal" />
+          <AdBanner format="horizontal" />
         </div>
 
         <main className="flex-1 p-4 flex flex-col items-center justify-center">
@@ -863,7 +863,7 @@ export default function WorkoutSession() {
       {/* Ad at start of session */}
       {currentExerciseIndex === 0 && (
         <div className="p-4 pb-0">
-          <AdBanner size="horizontal" />
+          <AdBanner format="horizontal" />
         </div>
       )}
 
