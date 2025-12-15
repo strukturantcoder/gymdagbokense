@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Smartphone, BarChart3, Trophy, Users, Zap, Map, Target, Dumbbell } from "lucide-react";
+import { Download, Smartphone, BarChart3, Trophy, Users, Zap, Map, Target, Dumbbell, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 type MarketingTemplate = 
@@ -629,6 +629,36 @@ export default function MarketingImageGenerator() {
     toast.success("Alla bilder nedladdade!");
   };
 
+  const handleShareToInstagram = async () => {
+    if (!downloadCanvasRef.current) return;
+    
+    const blob = await generateImage(downloadCanvasRef.current, selectedTemplate, imageFormat);
+    if (!blob) {
+      toast.error("Kunde inte generera bild");
+      return;
+    }
+
+    const file = new File([blob], `gymdagboken-${selectedTemplate}-${imageFormat}.png`, { type: "image/png" });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Gymdagboken Instagram",
+          text: "Dela till Instagram",
+        });
+        toast.success("Delad!");
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          handleDownload();
+        }
+      }
+    } else {
+      handleDownload();
+      toast.info("Öppna Instagram och välj bilden från kamerarullen");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid md:grid-cols-2 gap-6">
@@ -674,13 +704,17 @@ export default function MarketingImageGenerator() {
                 </Tabs>
               </div>
 
-              {/* Download buttons */}
+              {/* Download and share buttons */}
               <div className="space-y-2">
-                <Button onClick={handleDownload} className="w-full" size="lg">
+                <Button onClick={handleShareToInstagram} className="w-full" size="lg">
+                  <Share2 className="h-5 w-5 mr-2" />
+                  Dela till Instagram
+                </Button>
+                <Button onClick={handleDownload} variant="outline" className="w-full">
                   <Download className="h-5 w-5 mr-2" />
                   Ladda ner bild
                 </Button>
-                <Button onClick={handleDownloadAll} variant="outline" className="w-full">
+                <Button onClick={handleDownloadAll} variant="ghost" className="w-full">
                   Ladda ner alla bilder
                 </Button>
               </div>
