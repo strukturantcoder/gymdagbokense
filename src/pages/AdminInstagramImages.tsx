@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Image, Sparkles, Trophy, Gift, Dumbbell, FolderDown, Megaphone } from "lucide-react";
+import { Download, Image, Sparkles, Trophy, Gift, Dumbbell, FolderDown, Megaphone, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import MarketingImageGenerator from "@/components/admin/MarketingImageGenerator";
 
@@ -437,6 +437,40 @@ const AdminInstagramImages = () => {
     toast.success("Alla bilder har laddats ner!");
   };
 
+  const handleShareToInstagram = async () => {
+    if (!downloadCanvasRef.current) {
+      toast.error("Kunde inte generera bilden");
+      return;
+    }
+
+    const blob = await generateImage(downloadCanvasRef.current, selectedTemplate, imageFormat);
+    if (!blob) {
+      toast.error("Kunde inte generera bilden");
+      return;
+    }
+
+    const file = new File([blob], `instagram-${selectedTemplate}-${imageFormat}.png`, { type: "image/png" });
+
+    // Check if native share is available
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Gymdagboken Instagram",
+          text: "Dela till Instagram",
+        });
+        toast.success("Delad!");
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          handleDownload();
+        }
+      }
+    } else {
+      handleDownload();
+      toast.info("Öppna Instagram och välj bilden från kamerarullen");
+    }
+  };
+
   const templates: { id: ImageTemplate; label: string; icon: React.ReactNode }[] = [
     { id: "main", label: "Huvudbild", icon: <Trophy className="h-4 w-4" /> },
     { id: "howToEnter", label: "Så deltar du", icon: <Dumbbell className="h-4 w-4" /> },
@@ -529,13 +563,17 @@ const AdminInstagramImages = () => {
                 </Tabs>
               </div>
 
-              {/* Download buttons */}
+              {/* Download and share buttons */}
               <div className="space-y-2">
-                <Button onClick={handleDownload} className="w-full" size="lg">
+                <Button onClick={handleShareToInstagram} className="w-full" size="lg">
+                  <Share2 className="h-5 w-5 mr-2" />
+                  Dela till Instagram
+                </Button>
+                <Button onClick={handleDownload} variant="outline" className="w-full" size="lg">
                   <Download className="h-5 w-5 mr-2" />
                   Ladda ner bild
                 </Button>
-                <Button onClick={handleDownloadAll} variant="outline" className="w-full" size="lg">
+                <Button onClick={handleDownloadAll} variant="ghost" className="w-full">
                   <FolderDown className="h-5 w-5 mr-2" />
                   Ladda ner alla bilder
                 </Button>
