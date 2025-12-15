@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Dumbbell, Heart, Trophy, UserPlus, Activity, Clock, Zap, Search, User, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, Dumbbell, Heart, Trophy, UserPlus, Activity, Clock, Zap, Search, User, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface AdminStatsData {
   users: {
@@ -55,6 +58,43 @@ interface UserSearchResult {
   email?: string;
 }
 
+interface UserWithStats {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  stats: {
+    level: number;
+    total_xp: number;
+    total_workouts: number;
+    total_cardio_sessions: number;
+  } | null;
+}
+
+interface WorkoutLogEntry {
+  id: string;
+  user_id: string;
+  workout_day: string;
+  duration_minutes: number | null;
+  completed_at: string;
+  notes: string | null;
+  profile: { display_name: string | null; avatar_url: string | null } | null;
+  exerciseCount: number;
+  totalSets: number;
+}
+
+interface CardioLogEntry {
+  id: string;
+  user_id: string;
+  activity_type: string;
+  duration_minutes: number;
+  distance_km: number | null;
+  calories_burned: number | null;
+  completed_at: string;
+  notes: string | null;
+  profile: { display_name: string | null; avatar_url: string | null } | null;
+}
+
 interface UserDetailedStats {
   profile: {
     display_name: string | null;
@@ -77,6 +117,8 @@ interface UserDetailedStats {
   recentCardio: number;
 }
 
+type ModalType = "users" | "workouts" | "cardio" | null;
+
 export function AdminStats() {
   const [stats, setStats] = useState<AdminStatsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,6 +131,27 @@ export function AdminStats() {
   const [selectedUser, setSelectedUser] = useState<UserDetailedStats | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [userLookupOpen, setUserLookupOpen] = useState(false);
+
+  // Modal states
+  const [modalType, setModalType] = useState<ModalType>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+  
+  // All users list
+  const [allUsers, setAllUsers] = useState<UserWithStats[]>([]);
+  const [usersTotal, setUsersTotal] = useState(0);
+  const [usersPage, setUsersPage] = useState(0);
+  
+  // Workout logs
+  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLogEntry[]>([]);
+  const [workoutsTotal, setWorkoutsTotal] = useState(0);
+  const [workoutsPage, setWorkoutsPage] = useState(0);
+  
+  // Cardio logs
+  const [cardioLogs, setCardioLogs] = useState<CardioLogEntry[]>([]);
+  const [cardioTotal, setCardioTotal] = useState(0);
+  const [cardioPage, setCardioPage] = useState(0);
+
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     fetchStats();
@@ -107,6 +170,71 @@ export function AdminStats() {
       setError("Kunde inte hämta statistik");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllUsers = async (page: number) => {
+    setModalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-user-lookup", {
+        body: { action: "listAll", limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+      });
+      
+      if (error) throw error;
+      setAllUsers(data.users || []);
+      setUsersTotal(data.total || 0);
+      setUsersPage(page);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const fetchWorkoutLogs = async (page: number) => {
+    setModalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-user-lookup", {
+        body: { action: "listWorkouts", limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+      });
+      
+      if (error) throw error;
+      setWorkoutLogs(data.workouts || []);
+      setWorkoutsTotal(data.total || 0);
+      setWorkoutsPage(page);
+    } catch (err) {
+      console.error("Error fetching workouts:", err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const fetchCardioLogs = async (page: number) => {
+    setModalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-user-lookup", {
+        body: { action: "listCardio", limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+      });
+      
+      if (error) throw error;
+      setCardioLogs(data.cardioLogs || []);
+      setCardioTotal(data.total || 0);
+      setCardioPage(page);
+    } catch (err) {
+      console.error("Error fetching cardio:", err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const openModal = (type: ModalType) => {
+    setModalType(type);
+    if (type === "users") {
+      fetchAllUsers(0);
+    } else if (type === "workouts") {
+      fetchWorkoutLogs(0);
+    } else if (type === "cardio") {
+      fetchCardioLogs(0);
     }
   };
 
@@ -157,6 +285,16 @@ export function AdminStats() {
     return `${formatNumber(minutes)} min`;
   };
 
+  const activityTypeMap: Record<string, string> = {
+    running: "Löpning",
+    walking: "Promenad",
+    cycling: "Cykling",
+    swimming: "Simning",
+    golf: "Golf",
+    intervals: "Intervaller",
+    other: "Övrigt"
+  };
+
   if (loading) {
     return (
       <Card>
@@ -184,6 +322,8 @@ export function AdminStats() {
       description: `+${stats.users.newWeek} senaste veckan`,
       icon: Users,
       color: "text-blue-500",
+      clickable: true,
+      onClick: () => openModal("users"),
     },
     {
       title: "Aktiva användare (7d)",
@@ -198,6 +338,8 @@ export function AdminStats() {
       description: `${stats.workouts.week} senaste veckan`,
       icon: Dumbbell,
       color: "text-orange-500",
+      clickable: true,
+      onClick: () => openModal("workouts"),
     },
     {
       title: "Totalt konditionspass",
@@ -205,6 +347,8 @@ export function AdminStats() {
       description: `${stats.cardio.month} senaste månaden`,
       icon: Heart,
       color: "text-red-500",
+      clickable: true,
+      onClick: () => openModal("cardio"),
     },
     {
       title: "Träningsprogram",
@@ -238,6 +382,234 @@ export function AdminStats() {
 
   return (
     <div className="space-y-6">
+      {/* Users Modal */}
+      <Dialog open={modalType === "users"} onOpenChange={(open) => !open && setModalType(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Alla användare ({formatNumber(usersTotal)})
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            {modalLoading ? (
+              <div className="py-8 text-center text-muted-foreground">Laddar...</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Användare</TableHead>
+                    <TableHead>Nivå</TableHead>
+                    <TableHead>XP</TableHead>
+                    <TableHead>Styrkepass</TableHead>
+                    <TableHead>Konditionspass</TableHead>
+                    <TableHead>Registrerad</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allUsers.map((user) => (
+                    <TableRow key={user.user_id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {user.avatar_url ? (
+                            <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                          <span className="font-medium">{user.display_name || "Okänd"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{user.stats?.level || 1}</TableCell>
+                      <TableCell>{formatNumber(user.stats?.total_xp || 0)}</TableCell>
+                      <TableCell>{user.stats?.total_workouts || 0}</TableCell>
+                      <TableCell>{user.stats?.total_cardio_sessions || 0}</TableCell>
+                      <TableCell>{format(parseISO(user.created_at), "d MMM yyyy", { locale: sv })}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </ScrollArea>
+          <div className="flex items-center justify-between pt-4 border-t">
+            <span className="text-sm text-muted-foreground">
+              Visar {usersPage * PAGE_SIZE + 1}-{Math.min((usersPage + 1) * PAGE_SIZE, usersTotal)} av {usersTotal}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchAllUsers(usersPage - 1)}
+                disabled={usersPage === 0 || modalLoading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchAllUsers(usersPage + 1)}
+                disabled={(usersPage + 1) * PAGE_SIZE >= usersTotal || modalLoading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Workouts Modal */}
+      <Dialog open={modalType === "workouts"} onOpenChange={(open) => !open && setModalType(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5" />
+              Alla styrkepass ({formatNumber(workoutsTotal)})
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            {modalLoading ? (
+              <div className="py-8 text-center text-muted-foreground">Laddar...</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Användare</TableHead>
+                    <TableHead>Träningsdag</TableHead>
+                    <TableHead>Övningar</TableHead>
+                    <TableHead>Set</TableHead>
+                    <TableHead>Tid</TableHead>
+                    <TableHead>Datum</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {workoutLogs.map((workout) => (
+                    <TableRow key={workout.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {workout.profile?.avatar_url ? (
+                            <img src={workout.profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                          <span className="font-medium">{workout.profile?.display_name || "Okänd"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{workout.workout_day}</TableCell>
+                      <TableCell>{workout.exerciseCount}</TableCell>
+                      <TableCell>{workout.totalSets}</TableCell>
+                      <TableCell>{workout.duration_minutes ? `${workout.duration_minutes} min` : "-"}</TableCell>
+                      <TableCell>{format(parseISO(workout.completed_at), "d MMM HH:mm", { locale: sv })}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </ScrollArea>
+          <div className="flex items-center justify-between pt-4 border-t">
+            <span className="text-sm text-muted-foreground">
+              Visar {workoutsPage * PAGE_SIZE + 1}-{Math.min((workoutsPage + 1) * PAGE_SIZE, workoutsTotal)} av {workoutsTotal}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchWorkoutLogs(workoutsPage - 1)}
+                disabled={workoutsPage === 0 || modalLoading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchWorkoutLogs(workoutsPage + 1)}
+                disabled={(workoutsPage + 1) * PAGE_SIZE >= workoutsTotal || modalLoading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cardio Modal */}
+      <Dialog open={modalType === "cardio"} onOpenChange={(open) => !open && setModalType(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5" />
+              Alla konditionspass ({formatNumber(cardioTotal)})
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            {modalLoading ? (
+              <div className="py-8 text-center text-muted-foreground">Laddar...</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Användare</TableHead>
+                    <TableHead>Aktivitet</TableHead>
+                    <TableHead>Tid</TableHead>
+                    <TableHead>Distans</TableHead>
+                    <TableHead>Kalorier</TableHead>
+                    <TableHead>Datum</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cardioLogs.map((cardio) => (
+                    <TableRow key={cardio.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {cardio.profile?.avatar_url ? (
+                            <img src={cardio.profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                          <span className="font-medium">{cardio.profile?.display_name || "Okänd"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{activityTypeMap[cardio.activity_type] || cardio.activity_type}</TableCell>
+                      <TableCell>{cardio.duration_minutes} min</TableCell>
+                      <TableCell>{cardio.distance_km ? `${cardio.distance_km.toFixed(1)} km` : "-"}</TableCell>
+                      <TableCell>{cardio.calories_burned || "-"}</TableCell>
+                      <TableCell>{format(parseISO(cardio.completed_at), "d MMM HH:mm", { locale: sv })}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </ScrollArea>
+          <div className="flex items-center justify-between pt-4 border-t">
+            <span className="text-sm text-muted-foreground">
+              Visar {cardioPage * PAGE_SIZE + 1}-{Math.min((cardioPage + 1) * PAGE_SIZE, cardioTotal)} av {cardioTotal}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchCardioLogs(cardioPage - 1)}
+                disabled={cardioPage === 0 || modalLoading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchCardioLogs(cardioPage + 1)}
+                disabled={(cardioPage + 1) * PAGE_SIZE >= cardioTotal || modalLoading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* User Lookup Section */}
       <Collapsible open={userLookupOpen} onOpenChange={setUserLookupOpen}>
         <Card>
@@ -374,7 +746,11 @@ export function AdminStats() {
         <h2 className="text-lg font-semibold text-foreground mb-4">Användarstatistik</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {statCards.map((stat, index) => (
-            <Card key={index}>
+            <Card 
+              key={index} 
+              className={stat.clickable ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
+              onClick={stat.onClick}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <stat.icon className={`h-4 w-4 ${stat.color}`} />
