@@ -1,13 +1,15 @@
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Swords, Clock, X, Trophy, Users } from 'lucide-react';
+import { Loader2, Swords, Clock, X, Trophy, Users, ChevronDown, ChevronUp, History } from 'lucide-react';
 import { usePoolChallenges } from '@/hooks/usePoolChallenges';
 import { CreatePoolChallengeDialog } from './CreatePoolChallengeDialog';
 import { PoolChallengeCard } from './PoolChallengeCard';
 import { format, formatDistanceToNow } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -34,11 +36,31 @@ const typeLabels: Record<string, string> = {
 };
 
 export function PoolChallenges() {
-  const { myEntries, myChallenges, loading, cancelPoolEntry } = usePoolChallenges();
+  const { myEntries, myChallenges, loading, cancelPoolEntry, refreshChallenges } = usePoolChallenges();
+  const [showAllCompleted, setShowAllCompleted] = useState(false);
 
   const waitingEntries = myEntries.filter(e => e.status === 'waiting');
   const activeChallenges = myChallenges.filter(c => c.status === 'active');
   const completedChallenges = myChallenges.filter(c => c.status === 'completed');
+
+  // Check for expired challenges and trigger completion
+  useEffect(() => {
+    const checkExpiredChallenges = async () => {
+      const hasExpired = activeChallenges.some(c => new Date(c.end_date) < new Date());
+      if (hasExpired) {
+        try {
+          await supabase.functions.invoke('complete-pool-challenges');
+          refreshChallenges();
+        } catch (error) {
+          console.error('Error completing challenges:', error);
+        }
+      }
+    };
+
+    if (activeChallenges.length > 0) {
+      checkExpiredChallenges();
+    }
+  }, [activeChallenges, refreshChallenges]);
 
   if (loading) {
     return (
@@ -47,6 +69,20 @@ export function PoolChallenges() {
       </div>
     );
   }
+
+  const displayedCompleted = showAllCompleted ? completedChallenges : completedChallenges.slice(0, 4);
+
+  // Calculate stats
+  const totalWins = completedChallenges.filter(c => c.winner_id === myChallenges[0]?.participants?.find(p => p.user_id)?.user_id).length;
+  const totalXpWon = completedChallenges
+    .filter(c => c.winner_id && c.participants?.some(p => p.user_id === c.winner_id))
+    .reduce((acc, c) => {
+      const meParticipant = c.participants?.find(p => p.user_id);
+      if (meParticipant && c.winner_id === meParticipant.user_id) {
+        return acc + c.xp_reward;
+      }
+      return acc;
+    }, 0);
 
   return (
     <motion.div
@@ -148,15 +184,39 @@ export function PoolChallenges() {
       {/* Completed Challenges */}
       {completedChallenges.length > 0 && (
         <motion.div variants={itemVariants} className="space-y-4">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-muted-foreground" />
-            Avslutade utmaningar
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <History className="w-5 h-5 text-muted-foreground" />
+              Avslutade utmaningar
+              <Badge variant="secondary">{completedChallenges.length}</Badge>
+            </h3>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2">
-            {completedChallenges.slice(0, 4).map((challenge) => (
+            {displayedCompleted.map((challenge) => (
               <PoolChallengeCard key={challenge.id} challenge={challenge} />
             ))}
           </div>
+
+          {completedChallenges.length > 4 && (
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => setShowAllCompleted(!showAllCompleted)}
+            >
+              {showAllCompleted ? (
+                <>
+                  <ChevronUp className="w-4 h-4 mr-2" />
+                  Visa färre
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-2" />
+                  Visa alla ({completedChallenges.length})
+                </>
+              )}
+            </Button>
+          )}
         </motion.div>
       )}
 
