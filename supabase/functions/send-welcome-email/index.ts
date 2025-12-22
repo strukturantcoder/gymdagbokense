@@ -53,7 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </ul>
               </div>
               <div style="text-align: center; margin: 30px 0;">
-                <a href="https://gymdagboken.com/dashboard" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                <a href="https://gymdagboken.se/dashboard" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: bold; font-size: 16px;">
                   Börja träna nu →
                 </a>
               </div>
