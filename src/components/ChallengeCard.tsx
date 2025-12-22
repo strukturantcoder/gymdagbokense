@@ -4,15 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Timer, Dumbbell, Target, Check, X } from 'lucide-react';
+import { Trophy, Timer, Dumbbell, Target, Check, X, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface ChallengeCardProps {
   challenge: Challenge;
   onAccept?: () => void;
   onDecline?: () => void;
+  onCancel?: () => void;
 }
 
 const challengeTypeLabels = {
@@ -27,7 +39,7 @@ const challengeTypeIcons = {
   minutes: Timer
 };
 
-export default function ChallengeCard({ challenge, onAccept, onDecline }: ChallengeCardProps) {
+export default function ChallengeCard({ challenge, onAccept, onDecline, onCancel }: ChallengeCardProps) {
   const { user } = useAuth();
   const isChallenger = challenge.challenger_id === user?.id;
   const opponent = isChallenger ? challenge.challenged_profile : challenge.challenger_profile;
@@ -38,7 +50,9 @@ export default function ChallengeCard({ challenge, onAccept, onDecline }: Challe
   const isPending = challenge.status === 'pending';
   const isActive = challenge.status === 'active';
   const isCompleted = challenge.status === 'completed';
+  const isDeclined = challenge.status === 'declined';
   const canRespond = isPending && !isChallenger;
+  const canCancel = (isPending || isActive) && onCancel;
   
   const daysLeft = Math.max(0, Math.ceil((new Date(challenge.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
   
@@ -113,6 +127,33 @@ export default function ChallengeCard({ challenge, onAccept, onDecline }: Challe
               <X className="w-4 h-4 mr-2" />
               Avvisa
             </Button>
+          </div>
+        )}
+        
+        {canCancel && (
+          <div className="flex justify-end pt-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Avbryt utmaning
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Avbryt utmaning?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Är du säker på att du vill avbryta denna utmaning? Detta kan inte ångras.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Nej, behåll</AlertDialogCancel>
+                  <AlertDialogAction onClick={onCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Ja, avbryt
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
       </CardContent>

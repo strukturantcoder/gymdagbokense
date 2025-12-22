@@ -1255,6 +1255,7 @@ export type Database = {
     }
     Functions: {
       abbreviate_name: { Args: { full_name: string }; Returns: string }
+      complete_friend_challenges: { Args: never; Returns: undefined }
       complete_pool_challenges: { Args: never; Returns: undefined }
       get_friend_profile: {
         Args: { friend_user_id: string }
