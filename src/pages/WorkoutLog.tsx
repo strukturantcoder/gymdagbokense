@@ -220,6 +220,96 @@ export default function WorkoutLog() {
     setGoalWeight('');
   };
 
+  const checkWorkoutAchievements = async () => {
+    if (!user) return;
+
+    // Fetch user's total workouts count
+    const { count: totalWorkouts } = await supabase
+      .from('workout_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+
+    // Fetch user's total sets and minutes
+    const { data: statsData } = await supabase
+      .from('user_stats')
+      .select('total_sets, total_minutes')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!totalWorkouts) return;
+
+    // Fetch all workout-related achievements
+    const { data: achievements } = await supabase
+      .from('achievements')
+      .select('*')
+      .in('requirement_type', ['workouts', 'sets', 'minutes']);
+
+    if (!achievements) return;
+
+    // Fetch user's earned achievements
+    const { data: earnedAchievements } = await supabase
+      .from('user_achievements')
+      .select('achievement_id')
+      .eq('user_id', user.id);
+
+    const earnedIds = new Set(earnedAchievements?.map(e => e.achievement_id) || []);
+
+    // Check each achievement
+    for (const achievement of achievements) {
+      if (earnedIds.has(achievement.id)) continue;
+
+      let currentValue = 0;
+      switch (achievement.requirement_type) {
+        case 'workouts':
+          currentValue = totalWorkouts;
+          break;
+        case 'sets':
+          currentValue = statsData?.total_sets || 0;
+          break;
+        case 'minutes':
+          currentValue = statsData?.total_minutes || 0;
+          break;
+      }
+
+      if (currentValue >= achievement.requirement_value) {
+        // Award achievement
+        const { error } = await supabase
+          .from('user_achievements')
+          .insert({ user_id: user.id, achievement_id: achievement.id });
+
+        if (!error) {
+          // Get current XP and update
+          const { data: stats } = await supabase
+            .from('user_stats')
+            .select('total_xp')
+            .eq('user_id', user.id)
+            .single();
+
+          if (stats) {
+            await supabase
+              .from('user_stats')
+              .update({ total_xp: stats.total_xp + achievement.xp_reward })
+              .eq('user_id', user.id);
+          }
+
+          // Show celebration
+          toast.success(`🏆 Milstolpe: ${achievement.name}! +${achievement.xp_reward} XP`, {
+            duration: 6000,
+            icon: achievement.icon
+          });
+          
+          // Big confetti for milestones
+          confetti({ 
+            particleCount: 150, 
+            spread: 100, 
+            origin: { y: 0.5 },
+            colors: ['#FFD700', '#FFA500', '#FF6347', '#9333EA']
+          });
+        }
+      }
+    }
+  };
+
   const handleProgramChange = (programId: string) => {
     setSelectedProgram(programId);
     setSelectedDay('');
@@ -451,6 +541,9 @@ export default function WorkoutLog() {
 
       toast.success('Träningspass sparat!');
       setIsLogging(false);
+      
+      // Check for workout milestone achievements
+      await checkWorkoutAchievements();
       
       // Show share dialog after a short delay
       setTimeout(() => {
