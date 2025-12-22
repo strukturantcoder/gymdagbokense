@@ -37,7 +37,9 @@ import {
   TrendingDown,
   Minus,
   CalendarIcon,
-  Plus
+  Plus,
+  Copy,
+  History
 } from 'lucide-react';
 import {
   Select,
@@ -88,6 +90,8 @@ interface LastUsedWeight {
   exercise_name: string;
   last_weight_kg: number;
   suggested_weight_kg: number;
+  previous_set_details?: SetDetail[];
+  previous_date?: string;
 }
 
 interface ExerciseGoal {
@@ -317,19 +321,25 @@ export default function WorkoutSession() {
         const log = recentLogs[0];
         // Get the max weight from set_details if available, otherwise use weight_kg
         let lastWeight = 0;
+        let previousSetDetails: SetDetail[] | undefined;
+        
         if (log.set_details && Array.isArray(log.set_details)) {
           const details = log.set_details as unknown as SetDetail[];
           lastWeight = Math.max(...details.map(s => s.weight || 0), 0);
+          previousSetDetails = details;
         } else if (log.weight_kg) {
           lastWeight = Number(log.weight_kg);
         }
         
         if (lastWeight > 0) {
           const increment = getSuggestedIncrement(exerciseName, lastWeight);
+          const workoutLog = log.workout_logs as unknown as { completed_at: string };
           weightMap.set(exerciseName, {
             exercise_name: exerciseName,
             last_weight_kg: lastWeight,
-            suggested_weight_kg: lastWeight + increment
+            suggested_weight_kg: lastWeight + increment,
+            previous_set_details: previousSetDetails,
+            previous_date: workoutLog?.completed_at
           });
         }
       }
@@ -413,6 +423,44 @@ export default function WorkoutSession() {
     });
     
     toast.success(`${suggestedWeight} kg applicerat på alla set`);
+  }, [sessionData, currentExerciseIndex, lastUsedWeights]);
+
+  const copyPreviousWorkout = useCallback(() => {
+    if (!sessionData) return;
+    
+    const lastUsed = lastUsedWeights.get(sessionData.exercises[currentExerciseIndex].exercise_name);
+    if (!lastUsed?.previous_set_details) return;
+    
+    const previousSets = lastUsed.previous_set_details;
+    
+    setSessionData(prev => {
+      if (!prev) return prev;
+      const newExercises = [...prev.exercises];
+      const exercise = { ...newExercises[currentExerciseIndex] };
+      
+      // Copy weights and reps from previous workout
+      const newSetDetails = exercise.set_details.map((set, idx) => {
+        if (idx < previousSets.length) {
+          return {
+            ...set,
+            weight: previousSets[idx].weight || 0,
+            reps: previousSets[idx].reps || set.reps
+          };
+        }
+        return set;
+      });
+      
+      const maxWeight = Math.max(...newSetDetails.map(s => s.weight));
+      
+      exercise.set_details = newSetDetails;
+      exercise.weight_kg = maxWeight > 0 ? maxWeight.toString() : '';
+      exercise.reps_completed = newSetDetails.map(s => s.reps).join(', ');
+      newExercises[currentExerciseIndex] = exercise;
+      
+      return { ...prev, exercises: newExercises };
+    });
+    
+    toast.success('Vikter och reps kopierade från förra passet');
   }, [sessionData, currentExerciseIndex, lastUsedWeights]);
 
   const toggleSetComplete = useCallback((setIndex: number) => {
@@ -1135,6 +1183,41 @@ export default function WorkoutSession() {
                   </Badge>
                 )}
               </div>
+              
+              {/* Previous workout details */}
+              {lastUsedWeights.get(currentExercise.exercise_name)?.previous_set_details && (
+                <div className="bg-secondary/30 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <History className="w-3 h-3" />
+                      <span>
+                        Förra passet
+                        {lastUsedWeights.get(currentExercise.exercise_name)?.previous_date && (
+                          <span className="ml-1 opacity-70">
+                            ({format(new Date(lastUsedWeights.get(currentExercise.exercise_name)!.previous_date!), 'd MMM', { locale: sv })})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs gap-1"
+                      onClick={copyPreviousWorkout}
+                    >
+                      <Copy className="w-3 h-3" />
+                      Kopiera
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {lastUsedWeights.get(currentExercise.exercise_name)!.previous_set_details!.map((set, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs font-mono">
+                        {set.weight}kg × {set.reps}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
               {isNewPB && (
                 <motion.div
                   initial={{ scale: 0 }}
