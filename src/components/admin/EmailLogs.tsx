@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, XCircle, Clock, Mail, AlertTriangle } from "lucide-react";
+import { Trash2, CheckCircle, XCircle, Clock, Mail, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
@@ -20,12 +20,26 @@ interface EmailLog {
   created_at: string;
 }
 
+interface ScheduledEmail {
+  id: string;
+  subject: string;
+  content: string;
+  template: string;
+  scheduled_for: string;
+  status: string;
+  sent_at: string | null;
+  sent_count: number;
+  created_at: string;
+}
+
 const emailTypeLabels: Record<string, string> = {
   weekly_summary: "Veckosammanfattning",
   reminder: "Påminnelse",
   welcome: "Välkomstmejl",
   inactive_user: "Inaktiv användare",
   custom: "Anpassat mejl",
+  motivation: "Motivationsmejl",
+  feature_update: "Ny funktion",
 };
 
 export const EmailLogs = () => {
@@ -45,6 +59,19 @@ export const EmailLogs = () => {
     },
   });
 
+  const { data: scheduledEmails } = useQuery({
+    queryKey: ["scheduled-emails"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("scheduled_emails")
+        .select("*")
+        .order("scheduled_for", { ascending: true });
+
+      if (error) throw error;
+      return data as ScheduledEmail[];
+    },
+  });
+
   const deleteLogMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("email_logs").delete().eq("id", id);
@@ -56,6 +83,20 @@ export const EmailLogs = () => {
     },
     onError: () => {
       toast.error("Kunde inte radera logg");
+    },
+  });
+
+  const deleteScheduledMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("scheduled_emails").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scheduled-emails"] });
+      toast.success("Schemalagt mejl raderat");
+    },
+    onError: () => {
+      toast.error("Kunde inte radera");
     },
   });
 
@@ -78,6 +119,8 @@ export const EmailLogs = () => {
     sent: logs?.filter((l) => l.status === "sent").length || 0,
     failed: logs?.filter((l) => l.status === "failed").length || 0,
   };
+
+  const pendingScheduled = scheduledEmails?.filter(e => e.status === "pending") || [];
 
   return (
     <div className="space-y-6">
@@ -123,6 +166,45 @@ export const EmailLogs = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Scheduled emails */}
+      {pendingScheduled.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Schemalagda mejl
+            </CardTitle>
+            <CardDescription>{pendingScheduled.length} mejl väntar på att skickas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingScheduled.map((email) => (
+                <div key={email.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      <Clock className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{email.subject}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(email.scheduled_for), "d MMMM HH:mm", { locale: sv })}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteScheduledMutation.mutate(email.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Actions */}
       <div className="flex justify-end">

@@ -36,6 +36,7 @@ interface NotificationPreferences {
   workout_reminders: boolean;
   community_challenges: boolean;
   push_enabled: boolean;
+  weekly_summary_emails: boolean;
 }
 
 const defaultPreferences: NotificationPreferences = {
@@ -45,6 +46,7 @@ const defaultPreferences: NotificationPreferences = {
   workout_reminders: true,
   community_challenges: true,
   push_enabled: true,
+  weekly_summary_emails: true,
 };
 export default function Account() {
   const { user, loading, signOut } = useAuth();
@@ -144,6 +146,7 @@ export default function Account() {
         workout_reminders: data.workout_reminders,
         community_challenges: data.community_challenges,
         push_enabled: data.push_enabled,
+        weekly_summary_emails: data.weekly_summary_emails ?? true,
       });
     }
   };
@@ -726,6 +729,25 @@ export default function Account() {
               <Switch
                 checked={notificationPrefs.community_challenges}
                 onCheckedChange={(checked) => updateNotificationPreference('community_challenges', checked)}
+                disabled={isSavingPrefs}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Mail className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Veckovisa sammanfattningar</p>
+                  <p className="text-xs text-muted-foreground">Få mejl med din träningsstatistik</p>
+                </div>
+              </div>
+              <Switch
+                checked={notificationPrefs.weekly_summary_emails}
+                onCheckedChange={(checked) => updateNotificationPreference('weekly_summary_emails', checked)}
                 disabled={isSavingPrefs}
               />
             </div>
