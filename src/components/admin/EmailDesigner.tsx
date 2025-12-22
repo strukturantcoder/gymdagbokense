@@ -5,10 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Eye, Send, Users, User, Loader2 } from "lucide-react";
+import { Sparkles, Eye, Send, Users, User, Loader2, Calendar, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { EmailPreview } from "./EmailPreview";
+import { format } from "date-fns";
 
 const emailTemplates = [
   { id: "custom", name: "Egen mall" },
@@ -25,7 +26,9 @@ export const EmailDesigner = () => {
   const [testEmail, setTestEmail] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("16:00");
 
   const generateWithAI = async () => {
     if (!template || template === "custom") {
@@ -112,6 +115,43 @@ export const EmailDesigner = () => {
       toast.error("Kunde inte skicka mejl");
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const scheduleEmail = async () => {
+    if (!subject || !content) {
+      toast.error("Fyll i ämne och innehåll");
+      return;
+    }
+    if (!scheduleDate || !scheduleTime) {
+      toast.error("Välj datum och tid");
+      return;
+    }
+
+    const scheduledFor = new Date(`${scheduleDate}T${scheduleTime}:00`);
+    if (scheduledFor <= new Date()) {
+      toast.error("Välj ett datum i framtiden");
+      return;
+    }
+
+    setIsScheduling(true);
+    try {
+      const { error } = await supabase.from("scheduled_emails").insert({
+        subject,
+        content,
+        template,
+        scheduled_for: scheduledFor.toISOString(),
+      });
+
+      if (error) throw error;
+      toast.success(`Mejl schemalagt för ${format(scheduledFor, "d MMM HH:mm")}`);
+      setScheduleDate("");
+      setScheduleTime("16:00");
+    } catch (error) {
+      console.error("Error scheduling email:", error);
+      toast.error("Kunde inte schemalägga mejl");
+    } finally {
+      setIsScheduling(false);
     }
   };
 
@@ -204,6 +244,40 @@ export const EmailDesigner = () => {
               </div>
             </div>
 
+            {/* Scheduling section */}
+            <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+              <Label className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Schemalägg utskick
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="date"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+                <Input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                />
+              </div>
+              <Button
+                onClick={scheduleEmail}
+                disabled={isScheduling || !subject || !content || !scheduleDate}
+                variant="outline"
+                className="w-full"
+              >
+                {isScheduling ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Clock className="h-4 w-4 mr-2" />
+                )}
+                Schemalägg
+              </Button>
+            </div>
+
             <Button
               onClick={sendToAllUsers}
               disabled={isSending || !subject || !content}
@@ -215,7 +289,7 @@ export const EmailDesigner = () => {
               ) : (
                 <Users className="h-4 w-4 mr-2" />
               )}
-              Skicka till alla användare
+              Skicka till alla NU
             </Button>
           </div>
         </CardContent>

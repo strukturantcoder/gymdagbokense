@@ -720,6 +720,7 @@ export type Database = {
           push_enabled: boolean
           updated_at: string
           user_id: string
+          weekly_summary_emails: boolean
           workout_reminders: boolean
         }
         Insert: {
@@ -732,6 +733,7 @@ export type Database = {
           push_enabled?: boolean
           updated_at?: string
           user_id: string
+          weekly_summary_emails?: boolean
           workout_reminders?: boolean
         }
         Update: {
@@ -744,6 +746,7 @@ export type Database = {
           push_enabled?: boolean
           updated_at?: string
           user_id?: string
+          weekly_summary_emails?: boolean
           workout_reminders?: boolean
         }
         Relationships: []
@@ -1050,6 +1053,45 @@ export type Database = {
           name?: string
           scaling?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      scheduled_emails: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          scheduled_for: string
+          sent_at: string | null
+          sent_count: number | null
+          status: string
+          subject: string
+          template: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          scheduled_for: string
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string
+          subject: string
+          template?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string
+          subject?: string
+          template?: string | null
         }
         Relationships: []
       }

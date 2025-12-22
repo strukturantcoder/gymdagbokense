@@ -68,3 +68,6 @@ verify_jwt = true
 
 [functions.send-custom-email]
 verify_jwt = true
+
+[functions.send-scheduled-emails]
+verify_jwt = false
