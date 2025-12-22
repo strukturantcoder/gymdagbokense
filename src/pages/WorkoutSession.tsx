@@ -496,15 +496,18 @@ export default function WorkoutSession() {
       }
     }
 
+    // Use last weight as default (same as regular exercises)
+    const defaultWeight = lastWeight > 0 ? lastWeight : 0;
+
     const newExercise: ExerciseLogEntry = {
       exercise_name: exerciseName,
       sets_completed: bonusExerciseSets,
       reps_completed: Array(bonusExerciseSets).fill(bonusExerciseReps).join(', '),
-      weight_kg: '',
+      weight_kg: defaultWeight > 0 ? defaultWeight.toString() : '',
       notes: '',
       set_details: Array.from({ length: bonusExerciseSets }, () => ({
         reps: bonusExerciseReps,
-        weight: 0,
+        weight: defaultWeight,
         completed: false
       })),
       programSets: bonusExerciseSets,
