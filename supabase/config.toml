@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.send-inactive-user-emails]
 verify_jwt = false
+
+[functions.send-weekly-summary]
+verify_jwt = false
