@@ -26,7 +26,8 @@ import SortableExercise from '@/components/SortableExercise';
 import { NotificationBell } from '@/components/NotificationBell';
 import QuickActions from '@/components/QuickActions';
 import NextMilestoneWidget from '@/components/NextMilestoneWidget';
-import WeeklyCalendar from '@/components/WeeklyCalendar';
+// Weekly calendar temporarily disabled
+// import WeeklyCalendar from '@/components/WeeklyCalendar';
 import {
   DndContext,
   closestCenter,
@@ -502,10 +503,11 @@ export default function Dashboard() {
           <NextMilestoneWidget />
         </div>
 
-        {/* Weekly Calendar */}
+        {/* Weekly Calendar temporarily disabled
         <div className="mb-6">
           <WeeklyCalendar />
         </div>
+        */}
         
         {/* Quick link to challenges */}
         <Card 
