@@ -20,6 +20,7 @@ import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
 import ExerciseInfo from '@/components/ExerciseInfo';
 import WelcomeGuide from '@/components/WelcomeGuide';
+import OnboardingChecklist from '@/components/OnboardingChecklist';
 import ProgramRefineDialog from '@/components/ProgramRefineDialog';
 import SortableExercise from '@/components/SortableExercise';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -489,6 +490,9 @@ export default function Dashboard() {
       <main className="container px-4 py-8">
         {/* Ad Banner - horizontal on top */}
         <AdBanner format="horizontal" placement="dashboard_top" className="mb-6" />
+
+        {/* Onboarding Checklist for new users */}
+        {user && <OnboardingChecklist userId={user.id} />}
 
         {/* Quick Actions with Streak and Weekly Stats */}
         <QuickActions />
