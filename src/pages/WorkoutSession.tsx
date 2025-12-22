@@ -84,6 +84,12 @@ interface PersonalBest {
   best_reps: number | null;
 }
 
+interface LastUsedWeight {
+  exercise_name: string;
+  last_weight_kg: number;
+  suggested_weight_kg: number;
+}
+
 interface ExerciseGoal {
   exercise_name: string;
   target_weight_kg: number | null;
@@ -147,6 +153,7 @@ export default function WorkoutSession() {
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [personalBests, setPersonalBests] = useState<Map<string, PersonalBest>>(new Map());
   const [exerciseGoals, setExerciseGoals] = useState<Map<string, ExerciseGoal>>(new Map());
+  const [lastUsedWeights, setLastUsedWeights] = useState<Map<string, LastUsedWeight>>(new Map());
   const [showSummary, setShowSummary] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showPRShareDialog, setShowPRShareDialog] = useState(false);
@@ -194,11 +201,12 @@ export default function WorkoutSession() {
     }
   }, [navigate]);
 
-  // Fetch personal bests and goals
+  // Fetch personal bests, goals and last used weights
   useEffect(() => {
     if (user && sessionData) {
       fetchPersonalBests();
       fetchExerciseGoals();
+      fetchLastUsedWeights();
     }
   }, [user, sessionData]);
 
@@ -218,6 +226,83 @@ export default function WorkoutSession() {
       data.forEach(goal => map.set(goal.exercise_name, goal));
       setExerciseGoals(map);
     }
+  };
+
+  // Helper function to calculate suggested weight increment based on exercise type
+  const getSuggestedIncrement = (exerciseName: string, currentWeight: number): number => {
+    const lowerName = exerciseName.toLowerCase();
+    
+    // Small muscle groups / isolation exercises - smaller increments
+    if (lowerName.includes('curl') || 
+        lowerName.includes('tricep') || 
+        lowerName.includes('lateral') ||
+        lowerName.includes('raise') ||
+        lowerName.includes('fly') ||
+        lowerName.includes('extension') ||
+        lowerName.includes('shrug')) {
+      return currentWeight >= 20 ? 1 : 0.5;
+    }
+    
+    // Medium muscle groups - moderate increments
+    if (lowerName.includes('row') || 
+        lowerName.includes('pulldown') ||
+        lowerName.includes('pull-down') ||
+        lowerName.includes('press') && !lowerName.includes('bench') && !lowerName.includes('leg')) {
+      return currentWeight >= 40 ? 2.5 : 1.25;
+    }
+    
+    // Large compound movements - larger increments
+    if (lowerName.includes('squat') || 
+        lowerName.includes('deadlift') ||
+        lowerName.includes('bench') ||
+        lowerName.includes('leg press')) {
+      return currentWeight >= 100 ? 5 : 2.5;
+    }
+    
+    // Default increment
+    return currentWeight >= 30 ? 2.5 : 1.25;
+  };
+
+  const fetchLastUsedWeights = async () => {
+    if (!sessionData) return;
+    
+    // Get unique exercise names from current session
+    const exerciseNames = [...new Set(sessionData.exercises.map(ex => ex.exercise_name))];
+    
+    const weightMap = new Map<string, LastUsedWeight>();
+    
+    for (const exerciseName of exerciseNames) {
+      // Find the most recent workout log with this exercise
+      const { data: recentLogs } = await supabase
+        .from('exercise_logs')
+        .select('weight_kg, set_details, workout_log_id, workout_logs!inner(completed_at)')
+        .eq('exercise_name', exerciseName)
+        .order('workout_logs(completed_at)', { ascending: false })
+        .limit(1);
+      
+      if (recentLogs && recentLogs.length > 0) {
+        const log = recentLogs[0];
+        // Get the max weight from set_details if available, otherwise use weight_kg
+        let lastWeight = 0;
+        if (log.set_details && Array.isArray(log.set_details)) {
+          const details = log.set_details as unknown as SetDetail[];
+          lastWeight = Math.max(...details.map(s => s.weight || 0), 0);
+        } else if (log.weight_kg) {
+          lastWeight = Number(log.weight_kg);
+        }
+        
+        if (lastWeight > 0) {
+          const increment = getSuggestedIncrement(exerciseName, lastWeight);
+          weightMap.set(exerciseName, {
+            exercise_name: exerciseName,
+            last_weight_kg: lastWeight,
+            suggested_weight_kg: lastWeight + increment
+          });
+        }
+      }
+    }
+    
+    setLastUsedWeights(weightMap);
   };
 
   // Timer
@@ -339,14 +424,53 @@ export default function WorkoutSession() {
     setShowDurationDialog(true);
   };
 
-  const addBonusExercise = () => {
+  const addBonusExercise = async () => {
     if (!sessionData || !bonusExerciseName.trim()) {
       toast.error('Ange ett övningsnamn');
       return;
     }
 
+    const exerciseName = bonusExerciseName.trim();
+    
+    // Fetch last used weight for this bonus exercise
+    let lastWeight = 0;
+    let suggestedWeight = 0;
+    
+    const { data: recentLogs } = await supabase
+      .from('exercise_logs')
+      .select('weight_kg, set_details, workout_log_id, workout_logs!inner(completed_at)')
+      .eq('exercise_name', exerciseName)
+      .order('workout_logs(completed_at)', { ascending: false })
+      .limit(1);
+    
+    if (recentLogs && recentLogs.length > 0) {
+      const log = recentLogs[0];
+      if (log.set_details && Array.isArray(log.set_details)) {
+        const details = log.set_details as unknown as SetDetail[];
+        lastWeight = Math.max(...details.map(s => s.weight || 0), 0);
+      } else if (log.weight_kg) {
+        lastWeight = Number(log.weight_kg);
+      }
+      
+      if (lastWeight > 0) {
+        const increment = getSuggestedIncrement(exerciseName, lastWeight);
+        suggestedWeight = lastWeight + increment;
+        
+        // Add to lastUsedWeights map
+        setLastUsedWeights(prev => {
+          const newMap = new Map(prev);
+          newMap.set(exerciseName, {
+            exercise_name: exerciseName,
+            last_weight_kg: lastWeight,
+            suggested_weight_kg: suggestedWeight
+          });
+          return newMap;
+        });
+      }
+    }
+
     const newExercise: ExerciseLogEntry = {
-      exercise_name: bonusExerciseName.trim(),
+      exercise_name: exerciseName,
       sets_completed: bonusExerciseSets,
       reps_completed: Array(bonusExerciseSets).fill(bonusExerciseReps).join(', '),
       weight_kg: '',
@@ -374,7 +498,7 @@ export default function WorkoutSession() {
     setBonusExerciseName('');
     setBonusExerciseSets(3);
     setBonusExerciseReps(10);
-    toast.success(`Bonusövning "${bonusExerciseName.trim()}" tillagd!`);
+    toast.success(`Bonusövning "${exerciseName}" tillagd!`);
   };
 
   const handleSaveWorkout = async () => {
@@ -936,6 +1060,12 @@ export default function WorkoutSession() {
                     Mål: {goal.target_weight_kg} kg
                   </Badge>
                 )}
+                {lastUsedWeights.get(currentExercise.exercise_name) && (
+                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    Förslag: {lastUsedWeights.get(currentExercise.exercise_name)!.suggested_weight_kg} kg
+                  </Badge>
+                )}
               </div>
               {isNewPB && (
                 <motion.div
@@ -1006,7 +1136,11 @@ export default function WorkoutSession() {
                             className="h-10 text-center font-mono text-lg"
                             step="0.5"
                             min="0"
-                            placeholder="0"
+                            placeholder={
+                              lastUsedWeights.get(currentExercise.exercise_name)
+                                ? lastUsedWeights.get(currentExercise.exercise_name)!.suggested_weight_kg.toString()
+                                : "0"
+                            }
                           />
                         </div>
                         <div className="space-y-1">
