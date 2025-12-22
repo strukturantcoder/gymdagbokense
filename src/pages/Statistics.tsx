@@ -253,24 +253,37 @@ export default function Statistics() {
     return Object.values(grouped);
   };
 
-  // Calculate stats
+  // Helper function to calculate weeks since first log
+  const getWeeksSinceStart = (logs: { completed_at?: string; created_at?: string }[]): number => {
+    if (logs.length === 0) return 1;
+    const firstDate = logs[0].completed_at || logs[0].created_at;
+    if (!firstDate) return 1;
+    const diffMs = Date.now() - parseISO(firstDate).getTime();
+    const weeks = Math.max(1, Math.ceil(diffMs / (7 * 24 * 60 * 60 * 1000)));
+    return weeks;
+  };
+
+  // Calculate stats with user's actual active period
   const totalWorkouts = workoutLogs.length;
   const totalMinutes = workoutLogs.reduce((sum, w) => sum + (w.duration_minutes || 0), 0);
-  const avgWorkoutsPerWeek = totalWorkouts > 0 ? (totalWorkouts / 12).toFixed(1) : '0';
+  const workoutWeeks = getWeeksSinceStart(workoutLogs);
+  const avgWorkoutsPerWeek = totalWorkouts > 0 ? (totalWorkouts / workoutWeeks).toFixed(1) : '0';
   const maxWeight = selectedExercise 
     ? Math.max(...exerciseLogs.filter(e => e.exercise_name === selectedExercise).map(e => e.weight_kg || 0))
     : 0;
 
-  // Cardio stats
+  // Cardio stats with user's actual active period
   const totalCardioSessions = cardioLogs.length;
   const totalCardioMinutes = cardioLogs.reduce((sum, c) => sum + c.duration_minutes, 0);
   const totalCardioDistance = cardioLogs.reduce((sum, c) => sum + (c.distance_km || 0), 0);
-  const avgCardioPerWeek = totalCardioSessions > 0 ? (totalCardioSessions / 12).toFixed(1) : '0';
+  const cardioWeeks = getWeeksSinceStart(cardioLogs);
+  const avgCardioPerWeek = totalCardioSessions > 0 ? (totalCardioSessions / cardioWeeks).toFixed(1) : '0';
 
-  // CrossFit/WOD stats
+  // CrossFit/WOD stats with user's actual active period
   const totalWods = wodLogs.length;
   const totalWodXP = totalWods * XP_PER_WOD;
-  const avgWodsPerWeek = totalWods > 0 ? (totalWods / 12).toFixed(1) : '0';
+  const wodWeeks = getWeeksSinceStart(wodLogs);
+  const avgWodsPerWeek = totalWods > 0 ? (totalWods / wodWeeks).toFixed(1) : '0';
   const wodFormats = wodLogs.reduce((acc, wod) => {
     acc[wod.wod_format] = (acc[wod.wod_format] || 0) + 1;
     return acc;
