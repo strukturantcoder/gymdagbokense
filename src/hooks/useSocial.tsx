@@ -373,6 +373,46 @@ export function useSocial() {
     }
   };
 
+  const cancelChallenge = async (challengeId: string) => {
+    if (!user) return;
+    
+    // Also delete related progress entries
+    await supabase
+      .from('challenge_progress')
+      .delete()
+      .eq('challenge_id', challengeId);
+    
+    const { error } = await supabase
+      .from('challenges')
+      .delete()
+      .eq('id', challengeId);
+    
+    if (error) {
+      toast.error('Kunde inte avbryta utmaningen');
+    } else {
+      toast.success('Utmaningen avbruten');
+      fetchChallenges();
+    }
+  };
+
+  const checkAndCompleteEndedChallenges = useCallback(async () => {
+    if (!user) return;
+    
+    // Check for any active challenges that have ended and complete them
+    const { data: endedChallenges } = await supabase
+      .from('challenges')
+      .select('*')
+      .eq('status', 'active')
+      .lt('end_date', new Date().toISOString())
+      .or(`challenger_id.eq.${user.id},challenged_id.eq.${user.id}`);
+    
+    if (endedChallenges && endedChallenges.length > 0) {
+      // Call the database function to complete challenges and send notifications
+      await supabase.rpc('complete_friend_challenges');
+      fetchChallenges();
+    }
+  }, [user, fetchChallenges]);
+
   const getLevelFromXP = (xp: number) => {
     // XP thresholds for each level
     const thresholds = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500];
@@ -386,6 +426,13 @@ export function useSocial() {
     const thresholds = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500];
     return thresholds[level] || thresholds[thresholds.length - 1] + 1000;
   };
+
+  // Check for ended challenges on mount
+  useEffect(() => {
+    if (user) {
+      checkAndCompleteEndedChallenges();
+    }
+  }, [user, checkAndCompleteEndedChallenges]);
 
   return {
     friends,
@@ -401,6 +448,8 @@ export function useSocial() {
     removeFriend,
     createChallenge,
     respondToChallenge,
+    cancelChallenge,
+    checkAndCompleteEndedChallenges,
     fetchChallenges,
     fetchFriends,
     fetchUserStats,

@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   Dumbbell, LogOut, Users, Swords, Trophy, UserPlus, 
-  Check, X, Loader2, ArrowLeft, Bell, Gift, Sparkles, Globe, Target
+  Check, X, Loader2, ArrowLeft, Bell, Gift, Sparkles, Globe, Target, Archive, ChevronDown, ChevronUp
 } from 'lucide-react';
 import UserSearch from '@/components/UserSearch';
 import ChallengeCard from '@/components/ChallengeCard';
@@ -61,6 +61,7 @@ export default function Social() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("friends");
+  const [showArchive, setShowArchive] = useState(false);
   const { 
     friends, 
     pendingRequests, 
@@ -71,7 +72,8 @@ export default function Social() {
     loading: socialLoading,
     respondToFriendRequest,
     removeFriend,
-    respondToChallenge
+    respondToChallenge,
+    cancelChallenge
   } = useSocial();
 
   useEffect(() => {
@@ -100,7 +102,9 @@ export default function Social() {
 
   const activeChallenges = challenges.filter(c => c.status === 'active');
   const pendingChallenges = challenges.filter(c => c.status === 'pending');
-  const completedChallenges = challenges.filter(c => c.status === 'completed');
+  const completedChallenges = challenges.filter(c => c.status === 'completed' || c.status === 'declined');
+  const recentCompleted = completedChallenges.slice(0, 3);
+  const archivedChallenges = completedChallenges.slice(3);
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">
@@ -561,6 +565,7 @@ export default function Social() {
                           challenge={challenge}
                           onAccept={() => respondToChallenge(challenge.id, true)}
                           onDecline={() => respondToChallenge(challenge.id, false)}
+                          onCancel={() => cancelChallenge(challenge.id)}
                         />
                       </motion.div>
                     ))}
@@ -591,25 +596,28 @@ export default function Social() {
                         transition={{ delay: index * 0.1 }}
                         whileHover={{ scale: 1.01 }}
                       >
-                        <ChallengeCard challenge={challenge} />
+                        <ChallengeCard 
+                          challenge={challenge} 
+                          onCancel={() => cancelChallenge(challenge.id)}
+                        />
                       </motion.div>
                     ))}
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Completed Challenges */}
+              {/* Completed Challenges - Recent */}
               <AnimatePresence>
-                {completedChallenges.length > 0 && (
+                {recentCompleted.length > 0 && (
                   <motion.div 
                     variants={itemVariants}
                     className="space-y-4"
                   >
                     <h3 className="font-medium text-muted-foreground flex items-center gap-2">
                       <Trophy className="w-4 h-4 text-gym-amber" />
-                      Avslutade
+                      Nyligen avslutade
                     </h3>
-                    {completedChallenges.map((challenge, index) => (
+                    {recentCompleted.map((challenge, index) => (
                       <motion.div
                         key={challenge.id}
                         initial={{ opacity: 0 }}
@@ -620,6 +628,51 @@ export default function Social() {
                         <ChallengeCard challenge={challenge} />
                       </motion.div>
                     ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Archive Section */}
+              <AnimatePresence>
+                {archivedChallenges.length > 0 && (
+                  <motion.div 
+                    variants={itemVariants}
+                    className="space-y-4"
+                  >
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowArchive(!showArchive)}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Archive className="w-4 h-4" />
+                        Arkiv ({archivedChallenges.length} äldre utmaningar)
+                      </span>
+                      {showArchive ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
+                    
+                    <AnimatePresence>
+                      {showArchive && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="space-y-4 overflow-hidden"
+                        >
+                          {archivedChallenges.map((challenge, index) => (
+                            <motion.div
+                              key={challenge.id}
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.05 }}
+                              whileHover={{ scale: 1.01 }}
+                            >
+                              <ChallengeCard challenge={challenge} />
+                            </motion.div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 )}
               </AnimatePresence>
