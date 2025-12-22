@@ -168,6 +168,9 @@ export default function WorkoutSession() {
   const [bonusExerciseName, setBonusExerciseName] = useState('');
   const [bonusExerciseSets, setBonusExerciseSets] = useState(3);
   const [bonusExerciseReps, setBonusExerciseReps] = useState(10);
+  const [previousExercises, setPreviousExercises] = useState<string[]>([]);
+  const [showExerciseSuggestions, setShowExerciseSuggestions] = useState(false);
+  const [filteredExercises, setFilteredExercises] = useState<string[]>([]);
   const [summaryData, setSummaryData] = useState<{
     totalSets: number;
     totalReps: number;
@@ -201,14 +204,44 @@ export default function WorkoutSession() {
     }
   }, [navigate]);
 
-  // Fetch personal bests, goals and last used weights
+  // Fetch personal bests, goals, last used weights, and previous exercises
   useEffect(() => {
     if (user && sessionData) {
       fetchPersonalBests();
       fetchExerciseGoals();
       fetchLastUsedWeights();
+      fetchPreviousExercises();
     }
   }, [user, sessionData]);
+
+  // Fetch unique exercise names from previous workouts
+  const fetchPreviousExercises = async () => {
+    const { data } = await supabase
+      .from('exercise_logs')
+      .select('exercise_name')
+      .order('created_at', { ascending: false });
+    
+    if (data) {
+      // Get unique exercise names
+      const uniqueNames = [...new Set(data.map(d => d.exercise_name))];
+      setPreviousExercises(uniqueNames);
+    }
+  };
+
+  // Filter exercises based on input
+  useEffect(() => {
+    if (bonusExerciseName.trim().length > 0) {
+      const searchTerm = bonusExerciseName.toLowerCase();
+      const filtered = previousExercises
+        .filter(name => name.toLowerCase().includes(searchTerm))
+        .slice(0, 6);
+      setFilteredExercises(filtered);
+      setShowExerciseSuggestions(filtered.length > 0);
+    } else {
+      setFilteredExercises(previousExercises.slice(0, 6));
+      setShowExerciseSuggestions(false);
+    }
+  }, [bonusExerciseName, previousExercises]);
 
   const fetchPersonalBests = async () => {
     const { data } = await supabase.from('personal_bests').select('*');
@@ -1357,13 +1390,45 @@ export default function WorkoutSession() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <label className="text-sm font-medium text-foreground">Övningsnamn</label>
               <Input
-                placeholder="T.ex. Biceps Curls, Plankan..."
+                placeholder="Börja skriva för att söka..."
                 value={bonusExerciseName}
                 onChange={(e) => setBonusExerciseName(e.target.value)}
+                onFocus={() => {
+                  if (previousExercises.length > 0) {
+                    setFilteredExercises(
+                      bonusExerciseName.trim() 
+                        ? previousExercises.filter(n => n.toLowerCase().includes(bonusExerciseName.toLowerCase())).slice(0, 6)
+                        : previousExercises.slice(0, 6)
+                    );
+                    setShowExerciseSuggestions(true);
+                  }
+                }}
+                onBlur={() => {
+                  // Delay to allow click on suggestion
+                  setTimeout(() => setShowExerciseSuggestions(false), 200);
+                }}
               />
+              {showExerciseSuggestions && filteredExercises.length > 0 && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                  {filteredExercises.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setBonusExerciseName(name);
+                        setShowExerciseSuggestions(false);
+                      }}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
