@@ -1020,6 +1020,30 @@ export type Database = {
         }
         Relationships: []
       }
+      reminder_logs: {
+        Row: {
+          id: string
+          reminder_date: string
+          reminder_type: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          reminder_date: string
+          reminder_type: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          reminder_date?: string
+          reminder_type?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       saved_wods: {
         Row: {
           created_at: string
@@ -1308,6 +1332,42 @@ export type Database = {
           id?: string
           name?: string
           program_data?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workout_reminders: {
+        Row: {
+          created_at: string
+          days_of_week: number[]
+          id: string
+          is_enabled: boolean
+          minutes_before: number | null
+          reminder_time: string
+          reminder_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_of_week?: number[]
+          id?: string
+          is_enabled?: boolean
+          minutes_before?: number | null
+          reminder_time?: string
+          reminder_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          days_of_week?: number[]
+          id?: string
+          is_enabled?: boolean
+          minutes_before?: number | null
+          reminder_time?: string
+          reminder_type?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
