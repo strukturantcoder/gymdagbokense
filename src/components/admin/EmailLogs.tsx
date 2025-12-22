@@ -1,10 +1,11 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, XCircle, Clock, Mail, Calendar } from "lucide-react";
+import { Trash2, CheckCircle, XCircle, Clock, Mail, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
@@ -42,17 +43,32 @@ const emailTypeLabels: Record<string, string> = {
   feature_update: "Ny funktion",
 };
 
+const PAGE_SIZE = 50;
+
 export const EmailLogs = () => {
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(0);
+
+  const { data: totalCount } = useQuery({
+    queryKey: ["email-logs-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("email_logs")
+        .select("*", { count: "exact", head: true });
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
 
   const { data: logs, isLoading } = useQuery({
-    queryKey: ["email-logs"],
+    queryKey: ["email-logs", page],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("email_logs")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(100);
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       if (error) throw error;
       return data as EmailLog[];
@@ -114,12 +130,24 @@ export const EmailLogs = () => {
     },
   });
 
-  const stats = {
-    total: logs?.length || 0,
-    sent: logs?.filter((l) => l.status === "sent").length || 0,
-    failed: logs?.filter((l) => l.status === "failed").length || 0,
-  };
+  const { data: allStats } = useQuery({
+    queryKey: ["email-logs-stats"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_logs")
+        .select("status");
 
+      if (error) throw error;
+      return {
+        total: data.length,
+        sent: data.filter((l) => l.status === "sent").length,
+        failed: data.filter((l) => l.status === "failed").length,
+      };
+    },
+  });
+
+  const stats = allStats || { total: 0, sent: 0, failed: 0 };
+  const totalPages = Math.ceil((totalCount || 0) / PAGE_SIZE);
   const pendingScheduled = scheduledEmails?.filter(e => e.status === "pending") || [];
 
   return (
@@ -225,8 +253,37 @@ export const EmailLogs = () => {
       {/* Logs table */}
       <Card>
         <CardHeader>
-          <CardTitle>Mejlloggar</CardTitle>
-          <CardDescription>Senaste 100 skickade mejl</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Mejlloggar</CardTitle>
+              <CardDescription>
+                Visar {page * PAGE_SIZE + 1}-{Math.min((page + 1) * PAGE_SIZE, totalCount || 0)} av {totalCount || 0} mejl
+              </CardDescription>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {page + 1} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
