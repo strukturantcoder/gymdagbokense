@@ -62,6 +62,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResults: { email: string; success: boolean; error?: string }[] = [];
+    const emailSubject = "Vi saknar dig på Gymdagboken! 💪";
 
     for (const profile of inactiveProfiles) {
       const authUser = authData.users.find(u => u.id === profile.user_id);
@@ -77,7 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
         const emailResponse = await resend.emails.send({
           from: "Gymdagboken <noreply@gymdagboken.se>",
           to: [authUser.email],
-          subject: "Vi saknar dig på Gymdagboken! 💪",
+          subject: emailSubject,
           html: `
             <!DOCTYPE html>
             <html>
@@ -125,9 +126,28 @@ const handler = async (req: Request): Promise<Response> => {
 
         console.log(`Email sent to ${authUser.email}:`, emailResponse);
         emailResults.push({ email: authUser.email, success: true });
+
+        // Log successful email to database
+        await supabaseAdmin.from("email_logs").insert({
+          user_id: profile.user_id,
+          email: authUser.email,
+          email_type: "inactive_user_reminder",
+          subject: emailSubject,
+          status: "sent"
+        });
       } catch (emailError: any) {
         console.error(`Failed to send email to ${authUser.email}:`, emailError);
         emailResults.push({ email: authUser.email, success: false, error: emailError.message });
+
+        // Log failed email to database
+        await supabaseAdmin.from("email_logs").insert({
+          user_id: profile.user_id,
+          email: authUser.email,
+          email_type: "inactive_user_reminder",
+          subject: emailSubject,
+          status: "failed",
+          error_message: emailError.message
+        });
       }
     }
 

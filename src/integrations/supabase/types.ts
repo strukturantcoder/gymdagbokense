@@ -551,6 +551,39 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          created_at: string
+          email: string
+          email_type: string
+          error_message: string | null
+          id: string
+          status: string
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          email_type: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       exercise_goals: {
         Row: {
           created_at: string
