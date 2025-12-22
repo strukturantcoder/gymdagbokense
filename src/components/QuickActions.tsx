@@ -22,6 +22,7 @@ interface WeeklyStats {
   cardioSessions: number;
   totalMinutes: number;
   streak: number;
+  weekStreak: number;
 }
 
 export default function QuickActions() {
@@ -33,6 +34,7 @@ export default function QuickActions() {
     cardioSessions: 0,
     totalMinutes: 0,
     streak: 0,
+    weekStreak: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -107,14 +109,15 @@ export default function QuickActions() {
         };
       }
 
-      // Calculate streak
-      const streak = await calculateStreak();
+      // Calculate streaks
+      const { dayStreak, weekStreak } = await calculateStreaks();
 
       setWeeklyStats({
         workouts: workouts?.length || 0,
         cardioSessions: cardio?.length || 0,
         totalMinutes: workoutMinutes + cardioMinutes,
-        streak,
+        streak: dayStreak,
+        weekStreak,
       });
       setRecentActivity(recent);
     } catch (error) {
@@ -124,22 +127,22 @@ export default function QuickActions() {
     }
   };
 
-  const calculateStreak = async (): Promise<number> => {
-    if (!user) return 0;
+  const calculateStreaks = async (): Promise<{ dayStreak: number; weekStreak: number }> => {
+    if (!user) return { dayStreak: 0, weekStreak: 0 };
 
-    // Get all workout and cardio logs from last 60 days
-    const sixtyDaysAgo = subDays(new Date(), 60);
+    // Get all workout and cardio logs from last 120 days for week streak calculation
+    const oneHundredTwentyDaysAgo = subDays(new Date(), 120);
 
     const [{ data: workouts }, { data: cardio }] = await Promise.all([
       supabase
         .from("workout_logs")
         .select("completed_at")
-        .gte("completed_at", sixtyDaysAgo.toISOString())
+        .gte("completed_at", oneHundredTwentyDaysAgo.toISOString())
         .order("completed_at", { ascending: false }),
       supabase
         .from("cardio_logs")
         .select("completed_at")
-        .gte("completed_at", sixtyDaysAgo.toISOString())
+        .gte("completed_at", oneHundredTwentyDaysAgo.toISOString())
         .order("completed_at", { ascending: false }),
     ]);
 
@@ -149,26 +152,46 @@ export default function QuickActions() {
     cardio?.forEach((c) => activityDates.add(format(new Date(c.completed_at), "yyyy-MM-dd")));
 
     // Calculate consecutive days from today/yesterday
-    let streak = 0;
+    let dayStreak = 0;
     let checkDate = new Date();
     const today = format(checkDate, "yyyy-MM-dd");
     const yesterday = format(subDays(checkDate, 1), "yyyy-MM-dd");
 
     // Start from today or yesterday
-    if (!activityDates.has(today) && !activityDates.has(yesterday)) {
-      return 0;
+    if (activityDates.has(today) || activityDates.has(yesterday)) {
+      if (!activityDates.has(today)) {
+        checkDate = subDays(checkDate, 1);
+      }
+
+      while (activityDates.has(format(checkDate, "yyyy-MM-dd"))) {
+        dayStreak++;
+        checkDate = subDays(checkDate, 1);
+      }
     }
 
-    if (!activityDates.has(today)) {
-      checkDate = subDays(checkDate, 1);
+    // Calculate week streak (weeks in a row with at least 1 activity)
+    let weekStreak = 0;
+    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    
+    // Check if current week has activity
+    let weekToCheck = currentWeekStart;
+    const hasActivityInWeek = (weekStart: Date): boolean => {
+      const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+      for (let d = weekStart; d <= weekEnd; d = new Date(d.getTime() + 86400000)) {
+        if (activityDates.has(format(d, "yyyy-MM-dd"))) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Count consecutive weeks with activity (including current week if it has activity)
+    while (hasActivityInWeek(weekToCheck)) {
+      weekStreak++;
+      weekToCheck = subDays(weekToCheck, 7); // Go to previous week
     }
 
-    while (activityDates.has(format(checkDate, "yyyy-MM-dd"))) {
-      streak++;
-      checkDate = subDays(checkDate, 1);
-    }
-
-    return streak;
+    return { dayStreak, weekStreak };
   };
 
   const activityTypeLabels: Record<string, string> = {
@@ -211,13 +234,20 @@ export default function QuickActions() {
       {/* Weekly Stats & Streak */}
       <Card className="bg-gradient-to-br from-card to-primary/5 border-primary/20">
         <CardContent className="py-4">
-          <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="grid grid-cols-5 gap-2 text-center">
             <div className="space-y-1">
               <div className="flex items-center justify-center">
                 <Flame className="w-5 h-5 text-gym-orange" />
               </div>
               <p className="text-2xl font-bold">{weeklyStats.streak}</p>
-              <p className="text-xs text-muted-foreground">Streak</p>
+              <p className="text-xs text-muted-foreground">Dagar</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-purple-500" />
+              </div>
+              <p className="text-2xl font-bold">{weeklyStats.weekStreak}</p>
+              <p className="text-xs text-muted-foreground">Veckor</p>
             </div>
             <div className="space-y-1">
               <div className="flex items-center justify-center">

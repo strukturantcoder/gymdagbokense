@@ -21,6 +21,7 @@ import InviteFriends from '@/components/InviteFriends';
 import AdBanner from '@/components/AdBanner';
 import { CommunityChallenges } from '@/components/CommunityChallenges';
 import { PoolChallenges } from '@/components/PoolChallenges';
+import FriendsLeaderboard from '@/components/FriendsLeaderboard';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -278,6 +279,11 @@ export default function Social() {
               animate="visible"
               className="space-y-6"
             >
+              {/* Leaderboard */}
+              <motion.div variants={itemVariants}>
+                <FriendsLeaderboard />
+              </motion.div>
+
               {/* Invite Friends Card */}
               {user && (
                 <motion.div variants={itemVariants}>

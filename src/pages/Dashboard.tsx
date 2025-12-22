@@ -24,6 +24,8 @@ import ProgramRefineDialog from '@/components/ProgramRefineDialog';
 import SortableExercise from '@/components/SortableExercise';
 import { NotificationBell } from '@/components/NotificationBell';
 import QuickActions from '@/components/QuickActions';
+import NextMilestoneWidget from '@/components/NextMilestoneWidget';
+import WeeklyCalendar from '@/components/WeeklyCalendar';
 import {
   DndContext,
   closestCenter,
@@ -490,6 +492,16 @@ export default function Dashboard() {
 
         {/* Quick Actions with Streak and Weekly Stats */}
         <QuickActions />
+
+        {/* Next Milestone Widget */}
+        <div className="mb-6">
+          <NextMilestoneWidget />
+        </div>
+
+        {/* Weekly Calendar */}
+        <div className="mb-6">
+          <WeeklyCalendar />
+        </div>
         
         {/* Quick link to challenges */}
         <Card 
