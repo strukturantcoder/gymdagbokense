@@ -64,7 +64,13 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/dashboard` } });
+      // Use the app's base URL for redirect, the auth listener will handle navigation to dashboard
+      const { error } = await supabase.auth.signInWithOAuth({ 
+        provider: 'google', 
+        options: { 
+          redirectTo: window.location.origin
+        } 
+      });
       if (error) toast.error(t('auth.googleError'));
     } catch {
       toast.error(t('auth.genericError'));
