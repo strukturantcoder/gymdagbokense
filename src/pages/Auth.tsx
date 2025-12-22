@@ -86,7 +86,13 @@ export default function Auth() {
         if (!validation.success) { toast.error(validation.error.errors[0].message); setIsLoading(false); return; }
         const { error } = await signUp(email, password, displayName);
         if (error) { toast.error(error.message.includes('already registered') ? t('auth.emailAlreadyRegistered') : error.message); }
-        else { toast.success(t('auth.accountCreated')); }
+        else { 
+          toast.success(t('auth.accountCreated')); 
+          // Send welcome email
+          supabase.functions.invoke('send-welcome-email', {
+            body: { email, displayName }
+          }).catch(err => console.error('Failed to send welcome email:', err));
+        }
       } else {
         const validation = z.object({ email: z.string().email(t('auth.invalidEmail')), password: z.string().min(1, t('auth.passwordRequired')) }).safeParse({ email, password });
         if (!validation.success) { toast.error(validation.error.errors[0].message); setIsLoading(false); return; }
