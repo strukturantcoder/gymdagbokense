@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.send-welcome-email]
 verify_jwt = false
+
+[functions.send-inactive-user-emails]
+verify_jwt = false
