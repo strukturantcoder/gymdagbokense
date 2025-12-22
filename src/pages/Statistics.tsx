@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dumbbell, ArrowLeft, Loader2, TrendingUp, Calendar, Flame, Weight, Footprints, MapPin, Timer, Zap, Sparkles } from 'lucide-react';
+import { Dumbbell, ArrowLeft, Loader2, TrendingUp, TrendingDown, Calendar, Flame, Weight, Footprints, MapPin, Timer, Zap, Sparkles, Minus } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
 import TrainingAIAnalysis from '@/components/TrainingAIAnalysis';
 import {
@@ -24,8 +24,16 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
-import { format, subDays, startOfWeek, eachWeekOfInterval, parseISO } from 'date-fns';
+import { format, subDays, startOfWeek, eachWeekOfInterval, parseISO, addDays, differenceInDays } from 'date-fns';
 import { sv } from 'date-fns/locale';
+
+interface ProgressionData {
+  firstMonthAvg: number;
+  recentAvg: number;
+  percentChange: number;
+  isImproving: boolean;
+  hasEnoughData: boolean;
+}
 
 interface ExerciseLog {
   exercise_name: string;
@@ -290,9 +298,87 @@ export default function Statistics() {
   }, {} as Record<string, number>);
   const mostPopularFormat = Object.entries(wodFormats).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
 
+  // Calculate progression comparing first month vs recent month
+  const calculateProgression = (logs: { completed_at: string }[]): ProgressionData => {
+    if (logs.length < 2) {
+      return { firstMonthAvg: 0, recentAvg: 0, percentChange: 0, isImproving: false, hasEnoughData: false };
+    }
+
+    const sortedLogs = [...logs].sort((a, b) => 
+      parseISO(a.completed_at).getTime() - parseISO(b.completed_at).getTime()
+    );
+
+    const firstLogDate = parseISO(sortedLogs[0].completed_at);
+    const lastLogDate = parseISO(sortedLogs[sortedLogs.length - 1].completed_at);
+    const totalDays = differenceInDays(lastLogDate, firstLogDate);
+
+    // Need at least 30 days of data for meaningful comparison
+    if (totalDays < 30) {
+      return { firstMonthAvg: 0, recentAvg: 0, percentChange: 0, isImproving: false, hasEnoughData: false };
+    }
+
+    const firstMonthEnd = addDays(firstLogDate, 30);
+    const recentMonthStart = subDays(new Date(), 30);
+
+    const firstMonthLogs = sortedLogs.filter(log => {
+      const date = parseISO(log.completed_at);
+      return date >= firstLogDate && date <= firstMonthEnd;
+    });
+
+    const recentMonthLogs = sortedLogs.filter(log => {
+      const date = parseISO(log.completed_at);
+      return date >= recentMonthStart;
+    });
+
+    const firstMonthAvg = firstMonthLogs.length / 4; // Weekly avg
+    const recentAvg = recentMonthLogs.length / 4; // Weekly avg
+
+    const percentChange = firstMonthAvg > 0 
+      ? Math.round(((recentAvg - firstMonthAvg) / firstMonthAvg) * 100)
+      : recentAvg > 0 ? 100 : 0;
+
+    return {
+      firstMonthAvg,
+      recentAvg,
+      percentChange,
+      isImproving: recentAvg >= firstMonthAvg,
+      hasEnoughData: true
+    };
+  };
+
+  const workoutProgression = calculateProgression(workoutLogs.map(w => ({ completed_at: w.completed_at })));
+  const cardioProgression = calculateProgression(cardioLogs.map(c => ({ completed_at: c.completed_at })));
+  const wodProgression = calculateProgression(wodLogs.map(w => ({ completed_at: w.completed_at })));
+
   const weeklyData = getWeeklyData();
   const cardioWeeklyData = getCardioWeeklyData();
   const exerciseProgress = getExerciseProgress();
+
+  // Progression indicator component
+  const ProgressionIndicator = ({ progression, label }: { progression: ProgressionData; label: string }) => {
+    if (!progression.hasEnoughData) {
+      return (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Minus className="w-3 h-3" />
+          <span>Behöver mer data</span>
+        </div>
+      );
+    }
+
+    const isPositive = progression.percentChange >= 0;
+    const Icon = isPositive ? TrendingUp : TrendingDown;
+    const colorClass = isPositive ? 'text-green-500' : 'text-red-500';
+    const bgClass = isPositive ? 'bg-green-500/10' : 'bg-red-500/10';
+
+    return (
+      <div className={`flex items-center gap-2 text-xs ${colorClass} px-2 py-1 rounded-full ${bgClass}`}>
+        <Icon className="w-3 h-3" />
+        <span>
+          {isPositive ? '+' : ''}{progression.percentChange}% vs första månaden
+        </span>
+      </div>
+    );
+  };
 
   if (loading || isLoading) {
     return (
@@ -346,6 +432,52 @@ export default function Statistics() {
 
           {/* Strength Tab */}
           <TabsContent value="strength" className="space-y-6">
+            {/* Progression Banner */}
+            {workoutProgression.hasEnoughData && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Card className={`border-2 ${workoutProgression.isImproving ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5'}`}>
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-3">
+                        {workoutProgression.isImproving ? (
+                          <div className="p-2 bg-green-500/20 rounded-full">
+                            <TrendingUp className="w-5 h-5 text-green-500" />
+                          </div>
+                        ) : (
+                          <div className="p-2 bg-amber-500/20 rounded-full">
+                            <TrendingDown className="w-5 h-5 text-amber-500" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium">
+                            {workoutProgression.isImproving 
+                              ? 'Du förbättrar dig! 💪' 
+                              : 'Lite lägre aktivitet just nu'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {workoutProgression.percentChange >= 0 ? '+' : ''}{workoutProgression.percentChange}% jämfört med din första månad
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-4 text-sm">
+                        <div className="text-center">
+                          <p className="text-muted-foreground">Första månaden</p>
+                          <p className="font-bold">{workoutProgression.firstMonthAvg.toFixed(1)} pass/vecka</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-muted-foreground">Senaste månaden</p>
+                          <p className="font-bold">{workoutProgression.recentAvg.toFixed(1)} pass/vecka</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
             {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -617,6 +749,52 @@ export default function Statistics() {
 
           {/* Cardio Tab */}
           <TabsContent value="cardio" className="space-y-6">
+            {/* Progression Banner */}
+            {cardioProgression.hasEnoughData && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Card className={`border-2 ${cardioProgression.isImproving ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5'}`}>
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-3">
+                        {cardioProgression.isImproving ? (
+                          <div className="p-2 bg-green-500/20 rounded-full">
+                            <TrendingUp className="w-5 h-5 text-green-500" />
+                          </div>
+                        ) : (
+                          <div className="p-2 bg-amber-500/20 rounded-full">
+                            <TrendingDown className="w-5 h-5 text-amber-500" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium">
+                            {cardioProgression.isImproving 
+                              ? 'Bra konditionsträning! 🏃' 
+                              : 'Lite mindre kondition just nu'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {cardioProgression.percentChange >= 0 ? '+' : ''}{cardioProgression.percentChange}% jämfört med din första månad
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-4 text-sm">
+                        <div className="text-center">
+                          <p className="text-muted-foreground">Första månaden</p>
+                          <p className="font-bold">{cardioProgression.firstMonthAvg.toFixed(1)} pass/vecka</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-muted-foreground">Senaste månaden</p>
+                          <p className="font-bold">{cardioProgression.recentAvg.toFixed(1)} pass/vecka</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
             {/* Cardio Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -849,6 +1027,52 @@ export default function Statistics() {
 
           {/* CrossFit Tab */}
           <TabsContent value="crossfit" className="space-y-6">
+            {/* Progression Banner */}
+            {wodProgression.hasEnoughData && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Card className={`border-2 ${wodProgression.isImproving ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5'}`}>
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-3">
+                        {wodProgression.isImproving ? (
+                          <div className="p-2 bg-green-500/20 rounded-full">
+                            <TrendingUp className="w-5 h-5 text-green-500" />
+                          </div>
+                        ) : (
+                          <div className="p-2 bg-amber-500/20 rounded-full">
+                            <TrendingDown className="w-5 h-5 text-amber-500" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium">
+                            {wodProgression.isImproving 
+                              ? 'Stark WOD-utveckling! ⚡' 
+                              : 'Lite färre WODs just nu'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {wodProgression.percentChange >= 0 ? '+' : ''}{wodProgression.percentChange}% jämfört med din första månad
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-4 text-sm">
+                        <div className="text-center">
+                          <p className="text-muted-foreground">Första månaden</p>
+                          <p className="font-bold">{wodProgression.firstMonthAvg.toFixed(1)} WODs/vecka</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-muted-foreground">Senaste månaden</p>
+                          <p className="font-bold">{wodProgression.recentAvg.toFixed(1)} WODs/vecka</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
             {/* CrossFit Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
