@@ -355,6 +355,33 @@ export default function WorkoutSession() {
     });
   }, [sessionData, currentExerciseIndex]);
 
+  const applySuggestedWeight = useCallback(() => {
+    if (!sessionData) return;
+    
+    const lastUsed = lastUsedWeights.get(sessionData.exercises[currentExerciseIndex].exercise_name);
+    if (!lastUsed) return;
+    
+    const suggestedWeight = lastUsed.suggested_weight_kg;
+    
+    setSessionData(prev => {
+      if (!prev) return prev;
+      const newExercises = [...prev.exercises];
+      const exercise = { ...newExercises[currentExerciseIndex] };
+      const newSetDetails = exercise.set_details.map(set => ({
+        ...set,
+        weight: suggestedWeight
+      }));
+      
+      exercise.set_details = newSetDetails;
+      exercise.weight_kg = suggestedWeight.toString();
+      newExercises[currentExerciseIndex] = exercise;
+      
+      return { ...prev, exercises: newExercises };
+    });
+    
+    toast.success(`${suggestedWeight} kg applicerat på alla set`);
+  }, [sessionData, currentExerciseIndex, lastUsedWeights]);
+
   const toggleSetComplete = useCallback((setIndex: number) => {
     if (!sessionData) return;
     
@@ -1061,9 +1088,14 @@ export default function WorkoutSession() {
                   </Badge>
                 )}
                 {lastUsedWeights.get(currentExercise.exercise_name) && (
-                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                  <Badge 
+                    variant="secondary" 
+                    className="text-xs bg-primary/10 text-primary border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
+                    onClick={applySuggestedWeight}
+                  >
                     <TrendingUp className="w-3 h-3 mr-1" />
                     Förslag: {lastUsedWeights.get(currentExercise.exercise_name)!.suggested_weight_kg} kg
+                    <span className="ml-1 text-[10px] opacity-70">Tryck för att använda</span>
                   </Badge>
                 )}
               </div>
