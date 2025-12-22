@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell, Image, Megaphone } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell, Image, Megaphone, Mail } from "lucide-react";
 import { AdminStats } from "@/components/AdminStats";
 import { AdminPushNotification } from "@/components/AdminPushNotification";
 import { format } from "date-fns";
@@ -309,26 +309,30 @@ export default function AdminChallenges() {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <Tabs defaultValue="stats" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+          <TabsList className="grid w-full grid-cols-6 max-w-3xl">
             <TabsTrigger value="stats" className="gap-2">
               <BarChart3 className="h-4 w-4" />
-              Statistik
+              <span className="hidden sm:inline">Statistik</span>
             </TabsTrigger>
             <TabsTrigger value="challenges" className="gap-2">
               <Trophy className="h-4 w-4" />
-              Tävlingar
+              <span className="hidden sm:inline">Tävlingar</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" />
-              Notiser
+              <span className="hidden sm:inline">Notiser</span>
+            </TabsTrigger>
+            <TabsTrigger value="emails" className="gap-2" onClick={() => navigate("/admin/emails")}>
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">Mejl</span>
             </TabsTrigger>
             <TabsTrigger value="ads" className="gap-2" onClick={() => navigate("/admin/ads")}>
               <Megaphone className="h-4 w-4" />
-              Annonser
+              <span className="hidden sm:inline">Annonser</span>
             </TabsTrigger>
             <TabsTrigger value="instagram" className="gap-2" onClick={() => navigate("/admin/instagram")}>
               <Image className="h-4 w-4" />
-              Instagram
+              <span className="hidden sm:inline">Instagram</span>
             </TabsTrigger>
           </TabsList>
 
