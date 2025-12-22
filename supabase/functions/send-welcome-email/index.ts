@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -18,10 +19,15 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+
   try {
     const { email, displayName }: WelcomeEmailRequest = await req.json();
 
-    console.log(`Sending welcome email to ${email} (${displayName})`);
+    console.log(`[WELCOME-EMAIL] Sending to ${email} (${displayName})`);
 
     const emailResponse = await resend.emails.send({
       from: "Gymdagboken <noreply@gymdagboken.se>",
@@ -72,14 +78,37 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Welcome email sent successfully:", emailResponse);
+    console.log("[WELCOME-EMAIL] Sent successfully:", emailResponse);
+
+    // Log to database
+    await supabase.from("email_logs").insert({
+      email,
+      email_type: "welcome",
+      subject: "Välkommen till Gymdagboken! 💪",
+      status: "sent",
+    });
 
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Error sending welcome email:", error);
+    console.error("[WELCOME-EMAIL] Error:", error);
+
+    // Log error to database
+    try {
+      const body = await req.clone().json().catch(() => ({}));
+      await supabase.from("email_logs").insert({
+        email: body.email || "unknown",
+        email_type: "welcome",
+        subject: "Välkommen till Gymdagboken! 💪",
+        status: "failed",
+        error_message: error.message,
+      });
+    } catch (logError) {
+      console.error("[WELCOME-EMAIL] Failed to log error:", logError);
+    }
+
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
