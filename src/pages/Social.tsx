@@ -23,6 +23,8 @@ import { CommunityChallenges } from '@/components/CommunityChallenges';
 import { PoolChallenges } from '@/components/PoolChallenges';
 import FriendsLeaderboard from '@/components/FriendsLeaderboard';
 import { StreakLeaderboard } from '@/components/StreakLeaderboard';
+import { TeamsSection } from '@/components/teams/TeamsSection';
+import { UsersRound } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -238,9 +240,10 @@ export default function Social() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <TabsList className="grid w-full grid-cols-5 bg-secondary/50 backdrop-blur-sm">
+            <TabsList className="grid w-full grid-cols-6 bg-secondary/50 backdrop-blur-sm">
               {[
                 { value: "friends", icon: Users, label: "Vänner", badge: pendingRequests.length },
+                { value: "teams", icon: UsersRound, label: "Lag", badge: 0 },
                 { value: "challenges", icon: Swords, label: "Utmaningar", badge: pendingChallenges.filter(c => c.challenged_id === user?.id).length },
                 { value: "pool", icon: Target, label: "Matchning", badge: 0 },
                 { value: "community", icon: Globe, label: "Tävlingar", badge: 0 },
@@ -275,6 +278,11 @@ export default function Social() {
               ))}
             </TabsList>
           </motion.div>
+
+          {/* Teams Tab */}
+          <TabsContent value="teams" className="space-y-6">
+            <TeamsSection />
+          </TabsContent>
 
           {/* Friends Tab */}
           <TabsContent value="friends" className="space-y-6">

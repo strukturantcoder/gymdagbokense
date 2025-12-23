@@ -1181,6 +1181,106 @@ export type Database = {
           },
         ]
       }
+      team_invitations: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string
+          invited_user_id: string
+          status: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by: string
+          invited_user_id: string
+          status?: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string
+          invited_user_id?: string
+          status?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_invitations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          id: string
+          invited_by: string | null
+          joined_at: string
+          role: Database["public"]["Enums"]["team_role"]
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: Database["public"]["Enums"]["team_role"]
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: Database["public"]["Enums"]["team_role"]
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          leader_id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          leader_id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          leader_id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -1528,6 +1628,28 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_team_competition_leaderboard: {
+        Args: { limit_count?: number }
+        Returns: {
+          avatar_url: string
+          invited_joined_count: number
+          leader_id: string
+          leader_name: string
+          member_count: number
+          team_id: string
+          team_name: string
+          total_xp: number
+        }[]
+      }
+      get_team_stats: {
+        Args: { team_uuid: string }
+        Returns: {
+          invited_count: number
+          total_members: number
+          total_workouts: number
+          total_xp: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1554,6 +1676,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       challenge_type: "workouts" | "sets" | "minutes"
+      team_role: "leader" | "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1683,6 +1806,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       challenge_type: ["workouts", "sets", "minutes"],
+      team_role: ["leader", "admin", "member"],
     },
   },
 } as const
