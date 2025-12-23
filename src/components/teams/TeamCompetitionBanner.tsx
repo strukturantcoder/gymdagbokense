@@ -1,9 +1,55 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Users, Gift, Sparkles } from 'lucide-react';
+import { Trophy, Users, Gift, Sparkles, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+
+// Competition end date - January 31, 2025
+const COMPETITION_END_DATE = new Date('2025-01-31T23:59:59');
+
+const useCountdown = (targetDate: Date) => {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    isExpired: false
+  });
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime();
+      const target = targetDate.getTime();
+      const difference = target - now;
+
+      if (difference <= 0) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
+      }
+
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        isExpired: false
+      };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+    const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
+    return () => clearInterval(timer);
+  }, [targetDate]);
+
+  return timeLeft;
+};
 
 export const TeamCompetitionBanner = () => {
+  const { days, hours, minutes, seconds, isExpired } = useCountdown(COMPETITION_END_DATE);
+
+  if (isExpired) {
+    return null;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -40,15 +86,25 @@ export const TeamCompetitionBanner = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="text-center p-3 bg-background/50 rounded-lg">
-                <Users className="h-5 w-5 mx-auto mb-1 text-primary" />
-                <span className="font-medium">Max 10</span>
+            <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
+              <div className="text-center p-2 sm:p-3 bg-background/50 rounded-lg">
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-1 text-gym-orange" />
+                <div className="flex gap-1 font-mono font-bold text-xs sm:text-sm">
+                  <span className="bg-gym-orange/20 px-1 rounded">{days}d</span>
+                  <span className="bg-gym-orange/20 px-1 rounded">{hours}h</span>
+                  <span className="bg-gym-orange/20 px-1 rounded">{minutes}m</span>
+                  <span className="bg-gym-orange/20 px-1 rounded hidden sm:inline">{seconds}s</span>
+                </div>
+                <p className="text-xs mt-1">kvar</p>
+              </div>
+              <div className="text-center p-2 sm:p-3 bg-background/50 rounded-lg">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-1 text-primary" />
+                <span className="font-medium text-xs sm:text-sm">Max 10</span>
                 <p className="text-xs">per lag</p>
               </div>
-              <div className="text-center p-3 bg-background/50 rounded-lg">
-                <Gift className="h-5 w-5 mx-auto mb-1 text-gym-orange" />
-                <span className="font-medium">1000 kr</span>
+              <div className="text-center p-2 sm:p-3 bg-background/50 rounded-lg">
+                <Gift className="h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-1 text-gym-orange" />
+                <span className="font-medium text-xs sm:text-sm">1000 kr</span>
                 <p className="text-xs">Atletbutiken</p>
               </div>
             </div>
