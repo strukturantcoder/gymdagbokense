@@ -16,6 +16,20 @@ interface TeamCompetitionContent {
   deadline: string;
   instagramHandle: string;
   captionText?: string;
+  // Editable texts for each image template
+  mainTitle?: string;
+  mainSubtitle?: string;
+  mainPrizeText?: string;
+  mainSwipeText?: string;
+  howItWorksTitle?: string;
+  howItWorksSteps?: string[];
+  howItWorksBottomText?: string;
+  prizeTitle?: string;
+  prizeBottomEmoji?: string;
+  winnerTitle?: string;
+  winnerSubtitle?: string;
+  winnerInfoText?: string;
+  winnerLuckText?: string;
 }
 
 interface TeamCompetitionGeneratorProps {
@@ -131,12 +145,12 @@ export const TeamCompetitionGenerator = ({ content, setContent, logoImage }: Tea
     titleGradient.addColorStop(0, COLORS.orangeLight);
     titleGradient.addColorStop(1, COLORS.orange);
     ctx.fillStyle = titleGradient;
-    ctx.fillText("LAGTÄVLING", width / 2, centerY - 160);
+    ctx.fillText(content.mainTitle || "LAGTÄVLING", width / 2, centerY - 160);
 
     // Subtitle
     ctx.font = "bold 56px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.white;
-    ctx.fillText("BYGG DITT LAG &", width / 2, centerY - 60);
+    ctx.fillText(content.mainSubtitle || "BYGG DITT LAG &", width / 2, centerY - 60);
 
     // Prize highlight
     const prizeGradient = ctx.createLinearGradient(0, centerY, 0, centerY + 100);
@@ -144,7 +158,7 @@ export const TeamCompetitionGenerator = ({ content, setContent, logoImage }: Tea
     prizeGradient.addColorStop(1, COLORS.orangeDark);
     ctx.fillStyle = prizeGradient;
     ctx.font = "bold 100px 'Oswald', sans-serif";
-    ctx.fillText(`VINN ${content.prizeValue}`, width / 2, centerY + 60);
+    ctx.fillText(content.mainPrizeText || `VINN ${content.prizeValue}`, width / 2, centerY + 60);
 
     // Sponsor
     ctx.font = "bold 48px 'Oswald', sans-serif";
@@ -158,7 +172,7 @@ export const TeamCompetitionGenerator = ({ content, setContent, logoImage }: Tea
     // Bottom text
     ctx.font = "36px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.whiteMuted;
-    ctx.fillText("Svajpa för att se hur du deltar →", width / 2, height - 100);
+    ctx.fillText(content.mainSwipeText || "Svajpa för att se hur du deltar →", width / 2, height - 100);
   };
 
   const drawHowItWorksTemplate = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
@@ -168,30 +182,32 @@ export const TeamCompetitionGenerator = ({ content, setContent, logoImage }: Tea
     ctx.font = "bold 72px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.orange;
     ctx.textAlign = "center";
-    ctx.fillText("SÅ VINNER DU", width / 2, startY);
+    ctx.fillText(content.howItWorksTitle || "SÅ VINNER DU", width / 2, startY);
 
     // Arrow
     ctx.font = "60px sans-serif";
     ctx.fillText("👇", width / 2, startY + 80);
 
-    // Steps
-    const steps = [
-      { emoji: "1️⃣", text: "Registrera dig på gymdagboken.se" },
-      { emoji: "2️⃣", text: "Skapa ett lag" },
-      { emoji: "3️⃣", text: "Bjud in vänner via länk" },
-      { emoji: "4️⃣", text: "Få flest att gå med!" },
+    // Steps - use custom steps if available
+    const defaultSteps = [
+      "Registrera dig på gymdagboken.se",
+      "Skapa ett lag",
+      "Bjud in vänner via länk",
+      "Få flest att gå med!",
     ];
+    const stepTexts = content.howItWorksSteps || defaultSteps;
+    const emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"];
 
     ctx.fillStyle = COLORS.white;
 
     let yPos = startY + 180;
-    steps.forEach((step) => {
+    stepTexts.forEach((text, index) => {
       ctx.font = "48px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(step.emoji, width / 2 - 340, yPos);
+      ctx.fillText(emojis[index] || `${index + 1}️⃣`, width / 2 - 340, yPos);
       ctx.font = "bold 40px 'Oswald', sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText(step.text, width / 2 - 280, yPos);
+      ctx.fillText(text, width / 2 - 280, yPos);
       ctx.textAlign = "center";
       yPos += 100;
     });
@@ -203,7 +219,7 @@ export const TeamCompetitionGenerator = ({ content, setContent, logoImage }: Tea
     // Bottom info
     ctx.font = "bold 36px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.orangeLight;
-    ctx.fillText("Lagledaren med flest inbjudna vinner!", width / 2, height - 150);
+    ctx.fillText(content.howItWorksBottomText || "Lagledaren med flest inbjudna vinner!", width / 2, height - 150);
 
     ctx.font = "32px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.whiteMuted;
@@ -221,7 +237,7 @@ export const TeamCompetitionGenerator = ({ content, setContent, logoImage }: Tea
     // Title
     ctx.font = "bold 64px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.orange;
-    ctx.fillText("PRISET", width / 2, centerY - 80);
+    ctx.fillText(content.prizeTitle || "PRISET", width / 2, centerY - 80);
 
     // Prize value
     ctx.font = "bold 120px 'Oswald', sans-serif";
@@ -248,7 +264,7 @@ export const TeamCompetitionGenerator = ({ content, setContent, logoImage }: Tea
 
     // Shopping emoji
     ctx.font = "60px sans-serif";
-    ctx.fillText("🛒💪", width / 2, height - 120);
+    ctx.fillText(content.prizeBottomEmoji || "🛒💪", width / 2, height - 120);
   };
 
   const drawWinnerTemplate = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
@@ -262,8 +278,10 @@ export const TeamCompetitionGenerator = ({ content, setContent, logoImage }: Tea
     // Title
     ctx.font = "bold 72px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.orange;
-    ctx.fillText("VINNAREN", width / 2, centerY);
-    ctx.fillText("UTSES", width / 2, centerY + 80);
+    const winnerTitleLines = (content.winnerTitle || "VINNAREN\nUTSES").split("\n");
+    winnerTitleLines.forEach((line, index) => {
+      ctx.fillText(line, width / 2, centerY + (index * 80));
+    });
 
     // Date
     ctx.font = "bold 56px 'Oswald', sans-serif";
@@ -273,14 +291,14 @@ export const TeamCompetitionGenerator = ({ content, setContent, logoImage }: Tea
     // Info
     ctx.font = "36px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.whiteMuted;
-    ctx.fillText("Vinnaren kontaktas via appen", width / 2, centerY + 250);
+    ctx.fillText(content.winnerInfoText || "Vinnaren kontaktas via appen", width / 2, centerY + 250);
 
     // Good luck
     ctx.font = "60px sans-serif";
     ctx.fillText("🍀", width / 2, height - 150);
     ctx.font = "bold 40px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.orange;
-    ctx.fillText("Lycka till!", width / 2, height - 80);
+    ctx.fillText(content.winnerLuckText || "Lycka till!", width / 2, height - 80);
   };
 
   // Update preview
@@ -499,6 +517,172 @@ Dags att rekrytera ditt gäng! 🔥
                 />
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Template-specific text editing */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              ✏️ Bildtexter för: {templates.find(t => t.id === selectedTemplate)?.label}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {selectedTemplate === "main" && (
+              <>
+                <div className="space-y-2">
+                  <Label>Huvudtitel (orange)</Label>
+                  <Input
+                    value={content.mainTitle || ""}
+                    onChange={(e) => setContent({ ...content, mainTitle: e.target.value })}
+                    placeholder="LAGTÄVLING"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Underrubrik (vit)</Label>
+                  <Input
+                    value={content.mainSubtitle || ""}
+                    onChange={(e) => setContent({ ...content, mainSubtitle: e.target.value })}
+                    placeholder="BYGG DITT LAG &"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Pristext (stor orange)</Label>
+                  <Input
+                    value={content.mainPrizeText || ""}
+                    onChange={(e) => setContent({ ...content, mainPrizeText: e.target.value })}
+                    placeholder={`VINN ${content.prizeValue}`}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Svajpa-text (nedre)</Label>
+                  <Input
+                    value={content.mainSwipeText || ""}
+                    onChange={(e) => setContent({ ...content, mainSwipeText: e.target.value })}
+                    placeholder="Svajpa för att se hur du deltar →"
+                  />
+                </div>
+              </>
+            )}
+
+            {selectedTemplate === "howItWorks" && (
+              <>
+                <div className="space-y-2">
+                  <Label>Titel</Label>
+                  <Input
+                    value={content.howItWorksTitle || ""}
+                    onChange={(e) => setContent({ ...content, howItWorksTitle: e.target.value })}
+                    placeholder="SÅ VINNER DU"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Steg 1</Label>
+                  <Input
+                    value={(content.howItWorksSteps || [])[0] || ""}
+                    onChange={(e) => {
+                      const steps = content.howItWorksSteps || ["Registrera dig på gymdagboken.se", "Skapa ett lag", "Bjud in vänner via länk", "Få flest att gå med!"];
+                      steps[0] = e.target.value;
+                      setContent({ ...content, howItWorksSteps: [...steps] });
+                    }}
+                    placeholder="Registrera dig på gymdagboken.se"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Steg 2</Label>
+                  <Input
+                    value={(content.howItWorksSteps || [])[1] || ""}
+                    onChange={(e) => {
+                      const steps = content.howItWorksSteps || ["Registrera dig på gymdagboken.se", "Skapa ett lag", "Bjud in vänner via länk", "Få flest att gå med!"];
+                      steps[1] = e.target.value;
+                      setContent({ ...content, howItWorksSteps: [...steps] });
+                    }}
+                    placeholder="Skapa ett lag"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Steg 3</Label>
+                  <Input
+                    value={(content.howItWorksSteps || [])[2] || ""}
+                    onChange={(e) => {
+                      const steps = content.howItWorksSteps || ["Registrera dig på gymdagboken.se", "Skapa ett lag", "Bjud in vänner via länk", "Få flest att gå med!"];
+                      steps[2] = e.target.value;
+                      setContent({ ...content, howItWorksSteps: [...steps] });
+                    }}
+                    placeholder="Bjud in vänner via länk"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Steg 4</Label>
+                  <Input
+                    value={(content.howItWorksSteps || [])[3] || ""}
+                    onChange={(e) => {
+                      const steps = content.howItWorksSteps || ["Registrera dig på gymdagboken.se", "Skapa ett lag", "Bjud in vänner via länk", "Få flest att gå med!"];
+                      steps[3] = e.target.value;
+                      setContent({ ...content, howItWorksSteps: [...steps] });
+                    }}
+                    placeholder="Få flest att gå med!"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Bottentext (orange)</Label>
+                  <Input
+                    value={content.howItWorksBottomText || ""}
+                    onChange={(e) => setContent({ ...content, howItWorksBottomText: e.target.value })}
+                    placeholder="Lagledaren med flest inbjudna vinner!"
+                  />
+                </div>
+              </>
+            )}
+
+            {selectedTemplate === "prize" && (
+              <>
+                <div className="space-y-2">
+                  <Label>Titel</Label>
+                  <Input
+                    value={content.prizeTitle || ""}
+                    onChange={(e) => setContent({ ...content, prizeTitle: e.target.value })}
+                    placeholder="PRISET"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Botten-emoji</Label>
+                  <Input
+                    value={content.prizeBottomEmoji || ""}
+                    onChange={(e) => setContent({ ...content, prizeBottomEmoji: e.target.value })}
+                    placeholder="🛒💪"
+                  />
+                </div>
+              </>
+            )}
+
+            {selectedTemplate === "winner" && (
+              <>
+                <div className="space-y-2">
+                  <Label>Titel (använd \n för ny rad)</Label>
+                  <Input
+                    value={content.winnerTitle || ""}
+                    onChange={(e) => setContent({ ...content, winnerTitle: e.target.value })}
+                    placeholder="VINNAREN\nUTSES"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Info-text</Label>
+                  <Input
+                    value={content.winnerInfoText || ""}
+                    onChange={(e) => setContent({ ...content, winnerInfoText: e.target.value })}
+                    placeholder="Vinnaren kontaktas via appen"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Lycka till-text</Label>
+                  <Input
+                    value={content.winnerLuckText || ""}
+                    onChange={(e) => setContent({ ...content, winnerLuckText: e.target.value })}
+                    placeholder="Lycka till!"
+                  />
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
