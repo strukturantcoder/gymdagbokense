@@ -5,23 +5,27 @@ import { RefreshCw, CheckCircle, Download, X, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useAdmin } from '@/hooks/useAdmin';
 
 // App version - increment this when deploying updates
-export const APP_VERSION = '2.1.0';
+export const APP_VERSION = '2.2.0';
 const VERSION_KEY = 'gymdagboken_app_version';
+const PUSH_SENT_KEY = 'gymdagboken_push_sent_version';
 
 // Update check interval in milliseconds (30 seconds)
 const UPDATE_CHECK_INTERVAL = 30 * 1000;
 
 // Version history with release notes
-const VERSION_NOTES: Record<string, string> = {
+export const VERSION_NOTES: Record<string, string> = {
+  '2.2.0': 'Automatisk push-notis till användare vid nya versioner.',
   '2.1.0': 'Ny uppdateringsbanderoll med versionsinfo och klickbara övningar i programförhandsvisningen.',
   '2.0.1': 'Förbättrad finjusteringsruta för träningsprogram.',
   '2.0.0': 'Stor uppdatering med nya funktioner och förbättringar.',
 };
 
 // Get the release notes for the current version
-const getCurrentReleaseNotes = () => {
+export const getCurrentReleaseNotes = () => {
   return VERSION_NOTES[APP_VERSION] || 'Buggfixar och prestandaförbättringar.';
 };
 
@@ -86,11 +90,47 @@ const checkVersionAndUpdate = async () => {
 
 export const PWAUpdateNotification = () => {
   const { t } = useTranslation();
+  const { isAdmin } = useAdmin();
   const [showUpdateBanner, setShowUpdateBanner] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const hasShownBanner = useRef(false);
   const updateCheckTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasCheckedVersion = useRef(false);
+  const hasSentPushNotification = useRef(false);
+
+  // Send push notification for new version (admin only, once per version)
+  const sendVersionPushNotification = useCallback(async () => {
+    if (!isAdmin || hasSentPushNotification.current) return;
+    
+    const sentVersion = localStorage.getItem(PUSH_SENT_KEY);
+    if (sentVersion === APP_VERSION) return;
+    
+    hasSentPushNotification.current = true;
+    
+    try {
+      console.log(`Admin detected - sending push notification for version ${APP_VERSION}`);
+      
+      const { data, error } = await supabase.functions.invoke('notify-app-update', {
+        body: { 
+          version: APP_VERSION, 
+          message: getCurrentReleaseNotes()
+        },
+      });
+
+      if (error) {
+        console.error('Failed to send version push notification:', error);
+        return;
+      }
+
+      // Mark this version as notified
+      localStorage.setItem(PUSH_SENT_KEY, APP_VERSION);
+      
+      console.log(`Push notification sent for version ${APP_VERSION}:`, data);
+      toast.success(`Push-notis skickad till ${data.sent} användare om version ${APP_VERSION}`);
+    } catch (error) {
+      console.error('Error sending version push notification:', error);
+    }
+  }, [isAdmin]);
 
   // Check version on mount
   useEffect(() => {
@@ -99,6 +139,13 @@ export const PWAUpdateNotification = () => {
       checkVersionAndUpdate();
     }
   }, []);
+
+  // Send push notification when admin loads the app with a new version
+  useEffect(() => {
+    if (isAdmin) {
+      sendVersionPushNotification();
+    }
+  }, [isAdmin, sendVersionPushNotification]);
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
