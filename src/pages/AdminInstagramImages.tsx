@@ -7,10 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Image, Sparkles, Trophy, Gift, Dumbbell, FolderDown, Megaphone, Share2, Smartphone } from "lucide-react";
+import { Download, Image, Sparkles, Trophy, Gift, Dumbbell, FolderDown, Megaphone, Share2, Smartphone, Users } from "lucide-react";
 import { toast } from "sonner";
 import MarketingImageGenerator from "@/components/admin/MarketingImageGenerator";
 import AppScreenshotGenerator from "@/components/admin/AppScreenshotGenerator";
+import { TeamCompetitionGenerator } from "@/components/admin/TeamCompetitionGenerator";
 
 // Competition content configuration
 interface CompetitionContent {
@@ -60,13 +61,47 @@ const AdminInstagramImages = () => {
     return {
       prizeValue: "1000 KR",
       prizeDescription: "PRESENTKORT",
-      sponsor: "GYMGROSSISTEN",
+      sponsor: "ATLETBUTIKEN",
       commentQuestion: "Vad är ett måste i din träning?",
       tagCount: "2",
-      deadline: "19 december kl. 12:00",
+      deadline: "31 januari kl. 12:00",
       instagramHandle: "@gymdagbokense",
     };
   });
+
+  // Team competition content
+  interface TeamCompetitionContent {
+    prizeValue: string;
+    prizeDescription: string;
+    sponsor: string;
+    sponsorUrl: string;
+    deadline: string;
+    instagramHandle: string;
+  }
+
+  const [teamContent, setTeamContent] = useState<TeamCompetitionContent>(() => {
+    const saved = localStorage.getItem('instagram-team-competition-content');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // fallback to defaults
+      }
+    }
+    return {
+      prizeValue: "1000 KR",
+      prizeDescription: "PRESENTKORT",
+      sponsor: "ATLETBUTIKEN",
+      sponsorUrl: "atletbutiken.se",
+      deadline: "31 januari 2025",
+      instagramHandle: "@gymdagbokense",
+    };
+  });
+
+  // Save team content to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('instagram-team-competition-content', JSON.stringify(teamContent));
+  }, [teamContent]);
 
   // Save content to localStorage when it changes
   useEffect(() => {
@@ -508,23 +543,40 @@ const AdminInstagramImages = () => {
       </div>
 
       <Tabs defaultValue="screenshots" className="space-y-6">
-        <TabsList className="grid w-full max-w-lg grid-cols-3">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="screenshots" className="gap-2">
             <Smartphone className="h-4 w-4" />
-            App-screenshots
+            <span className="hidden sm:inline">App-screenshots</span>
+            <span className="sm:hidden">Screenshots</span>
+          </TabsTrigger>
+          <TabsTrigger value="team-competition" className="gap-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Lagtävling</span>
+            <span className="sm:hidden">Lag</span>
           </TabsTrigger>
           <TabsTrigger value="competition" className="gap-2">
             <Trophy className="h-4 w-4" />
-            Tävling
+            <span className="hidden sm:inline">Tävling</span>
+            <span className="sm:hidden">Tävling</span>
           </TabsTrigger>
           <TabsTrigger value="marketing" className="gap-2">
             <Megaphone className="h-4 w-4" />
-            Marknadsföring
+            <span className="hidden sm:inline">Marknadsföring</span>
+            <span className="sm:hidden">Mark.</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="screenshots">
           <AppScreenshotGenerator />
+        </TabsContent>
+
+        {/* Team Competition Tab */}
+        <TabsContent value="team-competition">
+          <TeamCompetitionGenerator 
+            content={teamContent} 
+            setContent={setTeamContent}
+            logoImage={logoImage}
+          />
         </TabsContent>
 
         <TabsContent value="competition">

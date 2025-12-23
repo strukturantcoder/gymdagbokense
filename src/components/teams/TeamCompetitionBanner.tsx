@@ -28,7 +28,7 @@ export const TeamCompetitionBanner = () => {
             
             <div className="flex-1 text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                <h3 className="text-xl font-bold">Bygg ditt lag!</h3>
+                <h3 className="text-xl font-bold">Lagtävling – Vinn 1000 kr!</h3>
                 <Badge className="bg-gym-orange text-white animate-pulse">
                   <Sparkles className="h-3 w-3 mr-1" />
                   Tävling
@@ -36,7 +36,7 @@ export const TeamCompetitionBanner = () => {
               </div>
               <p className="text-muted-foreground">
                 Skapa ett lag och bjud in dina vänner! Lagledaren med flest inbjudna som går med vinner ett 
-                <span className="font-semibold text-primary"> träningsrelaterat pris</span> 🎁
+                <span className="font-semibold text-gym-orange"> presentkort på 1000 kr hos Atletbutiken</span> 🎁
               </p>
             </div>
 
@@ -48,8 +48,8 @@ export const TeamCompetitionBanner = () => {
               </div>
               <div className="text-center p-3 bg-background/50 rounded-lg">
                 <Gift className="h-5 w-5 mx-auto mb-1 text-gym-orange" />
-                <span className="font-medium">Pris</span>
-                <p className="text-xs">till vinnaren</p>
+                <span className="font-medium">1000 kr</span>
+                <p className="text-xs">Atletbutiken</p>
               </div>
             </div>
           </div>
