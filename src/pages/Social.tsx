@@ -24,7 +24,6 @@ import { PoolChallenges } from '@/components/PoolChallenges';
 import FriendsLeaderboard from '@/components/FriendsLeaderboard';
 import { StreakLeaderboard } from '@/components/StreakLeaderboard';
 import { TeamsSection } from '@/components/teams/TeamsSection';
-import { UsersRound } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -240,35 +239,30 @@ export default function Social() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <TabsList className="grid w-full grid-cols-6 bg-secondary/50 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-6 bg-secondary/50 backdrop-blur-sm p-1">
               {[
-                { value: "friends", icon: Users, label: "Vänner", badge: pendingRequests.length },
-                { value: "teams", icon: UsersRound, label: "Lag", badge: 0 },
-                { value: "challenges", icon: Swords, label: "Utmaningar", badge: pendingChallenges.filter(c => c.challenged_id === user?.id).length },
-                { value: "pool", icon: Target, label: "Matchning", badge: 0 },
-                { value: "community", icon: Globe, label: "Tävlingar", badge: 0 },
-                { value: "achievements", icon: Trophy, label: "Prestationer", badge: 0 }
+                { value: "friends", label: "Vänner", badge: pendingRequests.length },
+                { value: "teams", label: "Lag", badge: 0 },
+                { value: "challenges", label: "Utmaningar", badge: pendingChallenges.filter(c => c.challenged_id === user?.id).length },
+                { value: "pool", label: "Matchning", badge: 0 },
+                { value: "community", label: "Tävlingar", badge: 0 },
+                { value: "achievements", label: "Prestationer", badge: 0 }
               ].map((tab) => (
                 <TabsTrigger 
                   key={tab.value}
                   value={tab.value} 
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="relative text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
-                  <motion.div
-                    animate={activeTab === tab.value ? { scale: [1, 1.2, 1] } : {}}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <tab.icon className="w-4 h-4" />
-                  </motion.div>
-                  <span className="hidden sm:inline">{tab.label}</span>
+                  {tab.label}
                   <AnimatePresence>
                     {tab.badge > 0 && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         exit={{ scale: 0 }}
+                        className="absolute -top-1 -right-1"
                       >
-                        <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center">
+                        <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
                           {tab.badge}
                         </Badge>
                       </motion.div>
