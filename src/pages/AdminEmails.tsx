@@ -4,9 +4,54 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Sparkles, Mail } from "lucide-react";
+import { ArrowLeft, Sparkles, Mail, Calendar, FileText } from "lucide-react";
 import { EmailDesigner } from "@/components/admin/EmailDesigner";
 import { EmailLogs } from "@/components/admin/EmailLogs";
+import { ScheduledEmails } from "@/components/admin/ScheduledEmails";
+import { EmailDrafts } from "@/components/admin/EmailDrafts";
+
+const EmailDesignerWithDrafts = () => {
+  const [draftToLoad, setDraftToLoad] = useState<{ subject: string; content: string; template: string } | null>(null);
+
+  return (
+    <Tabs defaultValue="designer" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+        <TabsTrigger value="designer" className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4" />
+          Designer
+        </TabsTrigger>
+        <TabsTrigger value="drafts" className="flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          Utkast
+        </TabsTrigger>
+        <TabsTrigger value="scheduled" className="flex items-center gap-2">
+          <Calendar className="h-4 w-4" />
+          Schemalagda
+        </TabsTrigger>
+        <TabsTrigger value="logs" className="flex items-center gap-2">
+          <Mail className="h-4 w-4" />
+          Loggar
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="designer">
+        <EmailDesigner initialDraft={draftToLoad} onDraftLoaded={() => setDraftToLoad(null)} />
+      </TabsContent>
+
+      <TabsContent value="drafts">
+        <EmailDrafts onLoadDraft={(draft) => setDraftToLoad(draft)} />
+      </TabsContent>
+
+      <TabsContent value="scheduled">
+        <ScheduledEmails />
+      </TabsContent>
+
+      <TabsContent value="logs">
+        <EmailLogs />
+      </TabsContent>
+    </Tabs>
+  );
+};
 
 const AdminEmails = () => {
   const { user, loading: authLoading } = useAuth();
@@ -45,26 +90,7 @@ const AdminEmails = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="designer" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
-            <TabsTrigger value="designer" className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              Designer
-            </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              Loggar
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="designer">
-            <EmailDesigner />
-          </TabsContent>
-
-          <TabsContent value="logs">
-            <EmailLogs />
-          </TabsContent>
-        </Tabs>
+        <EmailDesignerWithDrafts />
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Eye, Send, Users, User, Loader2, Calendar, Clock, Link, Plus, Trash2, LinkIcon, Check, X } from "lucide-react";
+import { Sparkles, Eye, Send, Users, User, Loader2, Calendar, Clock, Link, Plus, Trash2, LinkIcon, Check, X, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { EmailPreview } from "./EmailPreview";
@@ -26,6 +26,11 @@ interface DetectedLink {
   suggestedUrl?: string;
 }
 
+interface EmailDesignerProps {
+  initialDraft?: { subject: string; content: string; template: string } | null;
+  onDraftLoaded?: () => void;
+}
+
 const emailTemplates = [
   { id: "custom", name: "Egen mall" },
   { id: "weekly_summary", name: "Veckosammanfattning" },
@@ -34,7 +39,7 @@ const emailTemplates = [
   { id: "reminder", name: "Påminnelse" },
 ];
 
-export const EmailDesigner = () => {
+export const EmailDesigner = ({ initialDraft, onDraftLoaded }: EmailDesignerProps) => {
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
   const [template, setTemplate] = useState("custom");
@@ -51,7 +56,19 @@ export const EmailDesigner = () => {
   const [appliedLinkKeys, setAppliedLinkKeys] = useState<Record<string, boolean>>({});
   const [isDetectingLinks, setIsDetectingLinks] = useState(false);
   
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  
   const debouncedContent = useDebounce(content, 1000);
+
+  // Load initial draft if provided
+  useEffect(() => {
+    if (initialDraft) {
+      setSubject(initialDraft.subject);
+      setContent(initialDraft.content);
+      setTemplate(initialDraft.template);
+      onDraftLoaded?.();
+    }
+  }, [initialDraft, onDraftLoaded]);
 
   // Load saved affiliate links from ads table
   useEffect(() => {
@@ -319,6 +336,30 @@ export const EmailDesigner = () => {
     }
   };
 
+  const saveDraft = async () => {
+    if (!subject && !content) {
+      toast.error("Fyll i ämne eller innehåll för att spara utkast");
+      return;
+    }
+
+    setIsSavingDraft(true);
+    try {
+      const { error } = await supabase.from("email_drafts").insert({
+        subject,
+        content,
+        template,
+      });
+
+      if (error) throw error;
+      toast.success("Utkast sparat");
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      toast.error("Kunde inte spara utkast");
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
@@ -546,19 +587,34 @@ export const EmailDesigner = () => {
             )}
           </div>
 
-          <Button
-            onClick={generateWithAI}
-            disabled={isGenerating || template === "custom"}
-            variant="outline"
-            className="w-full"
-          >
-            {isGenerating ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4 mr-2" />
-            )}
-            Få AI-förslag
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={generateWithAI}
+              disabled={isGenerating || template === "custom"}
+              variant="outline"
+              className="flex-1"
+            >
+              {isGenerating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              AI-förslag
+            </Button>
+            <Button
+              onClick={saveDraft}
+              disabled={isSavingDraft || (!subject && !content)}
+              variant="outline"
+              className="flex-1"
+            >
+              {isSavingDraft ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Spara utkast
+            </Button>
+          </div>
 
           <div className="border-t pt-4 space-y-4">
             <div className="space-y-2">
