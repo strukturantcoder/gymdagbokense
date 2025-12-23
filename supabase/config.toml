@@ -77,3 +77,9 @@ verify_jwt = false
 
 [functions.send-workout-reminders]
 verify_jwt = false
+
+[functions.send-community-challenge-email]
+verify_jwt = true
+
+[functions.admin-user-lookup]
+verify_jwt = true

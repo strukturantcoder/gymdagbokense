@@ -27,6 +27,7 @@ import { NotificationBell } from '@/components/NotificationBell';
 import QuickActions from '@/components/QuickActions';
 import GamificationHero from '@/components/GamificationHero';
 import NextMilestoneWidget from '@/components/NextMilestoneWidget';
+import DailyStreakBonus from '@/components/DailyStreakBonus';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
 import {
   DndContext,
@@ -494,6 +495,9 @@ export default function Dashboard() {
 
         {/* Onboarding Checklist for new users */}
         {user && <OnboardingChecklist userId={user.id} />}
+
+        {/* Daily Streak Bonus */}
+        <DailyStreakBonus />
 
         {/* Gamification Hero - XP, Level, Achievements */}
         <GamificationHero />
