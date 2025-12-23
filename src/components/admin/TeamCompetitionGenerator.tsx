@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Download, Share2, Users, Trophy, Gift, Sparkles, Image } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,6 +15,7 @@ interface TeamCompetitionContent {
   sponsorUrl: string;
   deadline: string;
   instagramHandle: string;
+  captionText?: string;
 }
 
 interface TeamCompetitionGeneratorProps {
@@ -349,9 +351,9 @@ export const TeamCompetitionGenerator = ({ content, setContent, logoImage }: Tea
     { id: "winner", label: "Vinnare", icon: <Sparkles className="h-4 w-4" /> },
   ];
 
-  const competitionText = `👥 LAGTÄVLING - VINN ${content.prizeValue}! 👥
+  const getDefaultTeamCaptionText = (c: TeamCompetitionContent) => `👥 LAGTÄVLING - VINN ${c.prizeValue}! 👥
 
-Bygg ditt drömlag och vinn ett presentkort på ${content.prizeValue.toLowerCase()} hos ${content.sponsor}! 🎁
+Bygg ditt drömlag och vinn ett presentkort på ${c.prizeValue.toLowerCase()} hos ${c.sponsor}! 🎁
 
 🏆 SÅ VINNER DU:
 1️⃣ Registrera dig på gymdagboken.se
@@ -360,12 +362,12 @@ Bygg ditt drömlag och vinn ett presentkort på ${content.prizeValue.toLowerCase
 4️⃣ Lagledaren med flest inbjudna som går med vinner!
 
 💪 Max 10 medlemmar per lag
-📅 Tävlingen avslutas ${content.deadline}
+📅 Tävlingen avslutas ${c.deadline}
 🏆 Vinnaren kontaktas via appen
 
 Dags att rekrytera ditt gäng! 🔥
 
-#gymdagboken #lagtävling #träning #fitness #giveaway #${content.sponsor.toLowerCase().replace(/\s+/g, "")}`;
+#gymdagboken #lagtävling #träning #fitness #giveaway #${c.sponsor.toLowerCase().replace(/\s+/g, "")}`;
 
   return (
     <div className="grid gap-8 lg:grid-cols-2">
@@ -530,17 +532,29 @@ Dags att rekrytera ditt gäng! 🔥
         {/* Competition text */}
         <Card>
           <CardHeader>
-            <CardTitle>Tävlingstext (för kopiering)</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Tävlingstext (för Instagram)</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setContent({ ...content, captionText: getDefaultTeamCaptionText(content) })}
+              >
+                Återställ standardtext
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-lg overflow-x-auto">
-              {competitionText}
-            </pre>
+            <Textarea
+              value={content.captionText || getDefaultTeamCaptionText(content)}
+              onChange={(e) => setContent({ ...content, captionText: e.target.value })}
+              className="min-h-[350px] font-mono text-sm"
+              placeholder="Skriv din lagtävlingstext här..."
+            />
             <Button
               variant="outline"
               className="mt-4"
               onClick={() => {
-                navigator.clipboard.writeText(competitionText);
+                navigator.clipboard.writeText(content.captionText || getDefaultTeamCaptionText(content));
                 toast.success("Text kopierad!");
               }}
             >
