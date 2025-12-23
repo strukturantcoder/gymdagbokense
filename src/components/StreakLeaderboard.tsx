@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -15,13 +15,17 @@ interface StreakUser {
   longest_streak: number;
 }
 
-export const StreakLeaderboard = () => {
+const StreakLeaderboardComponent = () => {
   const { user } = useAuth();
   const [leaders, setLeaders] = useState<StreakUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
+      if (hasFetched.current) return;
+      hasFetched.current = true;
+      
       const { data, error } = await supabase.rpc('get_streak_leaderboard', { limit_count: 10 });
       
       if (!error && data) {
@@ -33,7 +37,7 @@ export const StreakLeaderboard = () => {
     fetchLeaderboard();
   }, []);
 
-  const getRankIcon = (index: number) => {
+  const getRankIcon = useCallback((index: number) => {
     switch (index) {
       case 0:
         return <Trophy className="h-5 w-5 text-yellow-500" />;
@@ -44,14 +48,14 @@ export const StreakLeaderboard = () => {
       default:
         return <span className="w-5 text-center text-sm font-medium text-muted-foreground">{index + 1}</span>;
     }
-  };
+  }, []);
 
-  const getStreakColor = (streak: number) => {
+  const getStreakColor = useCallback((streak: number) => {
     if (streak >= 30) return 'text-red-500';
     if (streak >= 14) return 'text-orange-500';
     if (streak >= 7) return 'text-yellow-500';
     return 'text-muted-foreground';
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -150,3 +154,6 @@ export const StreakLeaderboard = () => {
     </Card>
   );
 };
+
+// Memoized export for better performance
+export const StreakLeaderboard = memo(StreakLeaderboardComponent);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
@@ -219,8 +219,12 @@ export function useSocial() {
     }
   }, [user]);
 
+  // Use ref to prevent duplicate fetches
+  const hasFetched = useRef(false);
+  
   useEffect(() => {
-    if (user) {
+    if (user && !hasFetched.current) {
+      hasFetched.current = true;
       setLoading(true);
       Promise.all([
         fetchUserStats(),
@@ -229,6 +233,11 @@ export function useSocial() {
         fetchAchievements()
       ]).finally(() => setLoading(false));
     }
+    
+    // Reset on user change
+    return () => {
+      if (!user) hasFetched.current = false;
+    };
   }, [user, fetchUserStats, fetchFriends, fetchChallenges, fetchAchievements]);
 
   // Realtime subscription for challenge progress updates

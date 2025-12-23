@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -187,8 +187,14 @@ export const useTeams = () => {
     }
   }, []);
 
+  // Use ref to prevent duplicate fetches on mount
+  const hasFetched = useRef(false);
+  
   useEffect(() => {
     const loadData = async () => {
+      if (hasFetched.current) return;
+      hasFetched.current = true;
+      
       setLoading(true);
       await Promise.all([
         fetchMyTeams(),
@@ -201,6 +207,10 @@ export const useTeams = () => {
     if (user) {
       loadData();
     }
+    
+    return () => {
+      if (!user) hasFetched.current = false;
+    };
   }, [user, fetchMyTeams, fetchPendingInvitations, fetchLeaderboard]);
 
   const createTeam = async (name: string, description?: string) => {

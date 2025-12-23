@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useTeams } from '@/hooks/useTeams';
 import { TeamCompetitionBanner } from './TeamCompetitionBanner';
@@ -10,20 +10,21 @@ import { InviteFriendToTeamDialog } from './InviteFriendToTeamDialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Users } from 'lucide-react';
 
+// Reduce animation complexity for better performance
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 }
+    transition: { staggerChildren: 0.05 } // Reduced from 0.1
   }
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 10 }, // Reduced from y: 20
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: { type: "spring" as const, stiffness: 100 }
+    transition: { duration: 0.2 } // Simplified animation
   }
 };
 
@@ -54,9 +55,12 @@ export const TeamsSection = () => {
     return inviteToTeam(selectedTeamId, friendId);
   };
 
-  const selectedTeamMembers = selectedTeamId 
-    ? myTeams.find(t => t.team.id === selectedTeamId)?.members || []
-    : [];
+  const selectedTeamMembers = useMemo(() => 
+    selectedTeamId 
+      ? myTeams.find(t => t.team.id === selectedTeamId)?.members || []
+      : [],
+    [selectedTeamId, myTeams]
+  );
 
   return (
     <motion.div
