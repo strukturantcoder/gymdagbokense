@@ -6,8 +6,7 @@ import CardioLogContent from '@/components/training/CardioLogContent';
 import CrossFitWOD from '@/components/CrossFitWOD';
 import TrainingOnboardingGuide from '@/components/TrainingOnboardingGuide';
 import AdBanner from '@/components/AdBanner';
-// Calendar sync temporarily disabled
-// import CalendarSyncDialog from '@/components/CalendarSyncDialog';
+import CalendarSyncDialog from '@/components/CalendarSyncDialog';
 import WorkoutReminderSettings from '@/components/WorkoutReminderSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -65,7 +64,6 @@ export default function Training() {
                 </Button>
               }
             />
-            {/* Calendar sync temporarily disabled
             <CalendarSyncDialog
               trigger={
                 <Button variant="outline" size="sm" className="gap-2">
@@ -74,7 +72,6 @@ export default function Training() {
                 </Button>
               }
             />
-            */}
           </div>
         </div>
         
