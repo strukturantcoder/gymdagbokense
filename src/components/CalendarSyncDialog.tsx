@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,7 +21,7 @@ interface CalendarSyncDialogProps {
 }
 
 export default function CalendarSyncDialog({ trigger }: CalendarSyncDialogProps) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [includeStrength, setIncludeStrength] = useState(true);
   const [includeCardio, setIncludeCardio] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -30,7 +31,6 @@ export default function CalendarSyncDialog({ trigger }: CalendarSyncDialogProps)
   
   const getCalendarUrl = (format: "download" | "subscribe") => {
     const params = new URLSearchParams({
-      user_id: user?.id || "",
       strength: includeStrength.toString(),
       cardio: includeCardio.toString(),
       format,
@@ -41,14 +41,19 @@ export default function CalendarSyncDialog({ trigger }: CalendarSyncDialogProps)
   const subscriptionUrl = getCalendarUrl("subscribe");
 
   const handleDownload = async () => {
-    if (!user) {
+    if (!user || !session) {
       toast.error("Du måste vara inloggad");
       return;
     }
 
     setIsDownloading(true);
     try {
-      const response = await fetch(getCalendarUrl("download"));
+      // Use authenticated request with session token
+      const response = await fetch(getCalendarUrl("download"), {
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
       
       if (!response.ok) {
         const error = await response.json();
@@ -75,19 +80,11 @@ export default function CalendarSyncDialog({ trigger }: CalendarSyncDialogProps)
   };
 
   const handleCopyUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(subscriptionUrl);
-      setCopied(true);
-      toast.success("Länk kopierad!");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Kunde inte kopiera länk");
-    }
+    toast.info("Prenumeration via URL kräver att kalenderappar stöder autentisering. Använd nedladdning istället för bästa kompatibilitet.");
   };
 
   const handleAddToGoogleCalendar = () => {
-    const googleUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(subscriptionUrl)}`;
-    window.open(googleUrl, "_blank");
+    toast.info("Google Kalender-prenumeration stöds inte med autentisering. Ladda ner .ics-filen och importera den manuellt istället.");
   };
 
   return (
@@ -139,78 +136,36 @@ export default function CalendarSyncDialog({ trigger }: CalendarSyncDialogProps)
             </div>
           </div>
 
-          {/* Download option */}
+          {/* Download option - Primary method */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Ladda ner fil</Label>
+            <Label className="text-sm font-medium">Ladda ner kalender</Label>
             <Button
               onClick={handleDownload}
-              disabled={isDownloading || (!includeStrength && !includeCardio)}
+              disabled={isDownloading || (!includeStrength && !includeCardio) || !session}
               className="w-full gap-2"
-              variant="outline"
             >
               <Download className="h-4 w-4" />
               {isDownloading ? "Laddar ner..." : "Ladda ner .ics-fil"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Importera filen manuellt till din kalender-app
+              Importera filen till din kalender-app (Apple, Google, Outlook m.fl.)
             </p>
-          </div>
-
-          {/* Subscription URL */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Prenumerations-URL</Label>
-            <div className="flex gap-2">
-              <Input
-                value={subscriptionUrl}
-                readOnly
-                className="text-xs font-mono"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleCopyUrl}
-                className="shrink-0"
-              >
-                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Lägg till denna URL i din kalender-app för automatisk synk
-            </p>
-          </div>
-
-          {/* Quick add buttons */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Snabbval</Label>
-            <div className="grid grid-cols-1 gap-2">
-              <Button
-                variant="outline"
-                onClick={handleAddToGoogleCalendar}
-                disabled={!includeStrength && !includeCardio}
-                className="justify-start gap-2"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Lägg till i Google Kalender
-              </Button>
-            </div>
           </div>
 
           {/* Instructions */}
           <div className="rounded-lg bg-muted/50 p-3 space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Smartphone className="h-4 w-4" />
-              Instruktioner
+              Så importerar du
             </div>
             <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-              <li><strong>iPhone:</strong> Kopiera URL → Inställningar → Kalender → Konton → Lägg till prenumererad kalender</li>
-              <li><strong>Android:</strong> Kopiera URL → Google Kalender → Inställningar → Lägg till kalender → Från URL</li>
-              <li><strong>Outlook:</strong> Kopiera URL → Lägg till kalender → Prenumerera från webben</li>
+              <li><strong>iPhone:</strong> Öppna filen → välj "Lägg till alla"</li>
+              <li><strong>Google Kalender:</strong> Inställningar → Importera → välj filen</li>
+              <li><strong>Outlook:</strong> Arkiv → Importera → välj filen</li>
             </ul>
+            <p className="text-xs text-muted-foreground mt-2">
+              💡 Ladda ner en ny fil när du uppdaterar ditt schema
+            </p>
           </div>
         </div>
       </DialogContent>
