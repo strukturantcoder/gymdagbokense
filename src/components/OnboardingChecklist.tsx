@@ -36,6 +36,7 @@ export default function OnboardingChecklist({ userId }: OnboardingChecklistProps
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(true);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [hasShownCompletion, setHasShownCompletion] = useState(false);
   const [hasProgram, setHasProgram] = useState(false);
   const [hasWorkout, setHasWorkout] = useState(false);
   const [hasFriend, setHasFriend] = useState(false);
@@ -44,8 +45,12 @@ export default function OnboardingChecklist({ userId }: OnboardingChecklistProps
 
   useEffect(() => {
     const dismissed = localStorage.getItem(`onboarding_dismissed_${userId}`);
+    const completionShown = localStorage.getItem(`onboarding_completed_${userId}`);
     if (dismissed) {
       setIsDismissed(true);
+    }
+    if (completionShown) {
+      setHasShownCompletion(true);
     }
     fetchProgress();
   }, [userId]);
@@ -123,11 +128,14 @@ export default function OnboardingChecklist({ userId }: OnboardingChecklistProps
   const progressPercentage = (completedCount / items.length) * 100;
   const allCompleted = completedCount === items.length;
 
-  // Don't show if dismissed or all completed or still loading
+  // Don't show if dismissed or still loading
   if (isDismissed || loading) return null;
 
-  // Show celebration briefly when all completed, then hide
-  if (allCompleted) {
+  // If all completed and already shown completion message before, don't show anything
+  if (allCompleted && hasShownCompletion) return null;
+
+  // Show celebration briefly when all completed for the first time, then hide forever
+  if (allCompleted && !hasShownCompletion) {
     return (
       <AnimatePresence>
         <motion.div
@@ -135,7 +143,11 @@ export default function OnboardingChecklist({ userId }: OnboardingChecklistProps
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           onAnimationComplete={() => {
-            setTimeout(() => setIsVisible(false), 3000);
+            setTimeout(() => {
+              localStorage.setItem(`onboarding_completed_${userId}`, 'true');
+              setHasShownCompletion(true);
+              setIsVisible(false);
+            }, 3000);
           }}
         >
           {isVisible && (
