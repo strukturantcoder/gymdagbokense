@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dumbbell, Footprints, Clock, Bell, Trash2, Calendar } from "lucide-react";
+import { Dumbbell, Footprints, Clock, Bell, Trash2, Calendar, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
@@ -76,10 +76,15 @@ export default function ScheduleWorkoutDialog({
   const [programs, setPrograms] = useState<WorkoutProgram[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [editingWorkout, setEditingWorkout] = useState<ScheduledWorkout | null>(null);
 
   useEffect(() => {
     if (open && user) {
       fetchPrograms();
+    }
+    if (!open) {
+      resetForm();
+      setEditingWorkout(null);
     }
   }, [open, user]);
 
@@ -123,6 +128,24 @@ export default function ScheduleWorkoutDialog({
     setReminderMinutes("60");
     setSelectedProgramId("");
     setSelectedDayName("");
+    setEditingWorkout(null);
+  };
+
+  const startEditing = (workout: ScheduledWorkout) => {
+    setEditingWorkout(workout);
+    setWorkoutType(workout.workout_type as "strength" | "cardio" | "other");
+    setTitle(workout.title);
+    setDescription(workout.description || "");
+    setDurationMinutes(workout.duration_minutes?.toString() || "");
+    setScheduledTime(workout.scheduled_time?.slice(0, 5) || "");
+    setReminderEnabled(workout.reminder_enabled);
+    setReminderMinutes(workout.reminder_minutes_before?.toString() || "60");
+    setSelectedProgramId(workout.workout_program_id || "");
+    setSelectedDayName(workout.workout_day_name || "");
+  };
+
+  const cancelEditing = () => {
+    resetForm();
   };
 
   const handleSubmit = async () => {
@@ -133,28 +156,50 @@ export default function ScheduleWorkoutDialog({
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.from("scheduled_workouts").insert({
-        user_id: user.id,
-        scheduled_date: format(selectedDate, "yyyy-MM-dd"),
-        scheduled_time: scheduledTime || null,
-        title: title.trim(),
-        workout_type: workoutType,
-        description: description.trim() || null,
-        duration_minutes: durationMinutes ? parseInt(durationMinutes) : null,
-        reminder_enabled: reminderEnabled,
-        reminder_minutes_before: reminderEnabled ? parseInt(reminderMinutes) : null,
-        workout_program_id: selectedProgramId || null,
-        workout_day_name: selectedDayName || null,
-      });
+      if (editingWorkout) {
+        // Update existing workout
+        const { error } = await supabase
+          .from("scheduled_workouts")
+          .update({
+            scheduled_time: scheduledTime || null,
+            title: title.trim(),
+            workout_type: workoutType,
+            description: description.trim() || null,
+            duration_minutes: durationMinutes ? parseInt(durationMinutes) : null,
+            reminder_enabled: reminderEnabled,
+            reminder_minutes_before: reminderEnabled ? parseInt(reminderMinutes) : null,
+            workout_program_id: selectedProgramId || null,
+            workout_day_name: selectedDayName || null,
+          })
+          .eq("id", editingWorkout.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success("Pass uppdaterat!");
+      } else {
+        // Create new workout
+        const { error } = await supabase.from("scheduled_workouts").insert({
+          user_id: user.id,
+          scheduled_date: format(selectedDate, "yyyy-MM-dd"),
+          scheduled_time: scheduledTime || null,
+          title: title.trim(),
+          workout_type: workoutType,
+          description: description.trim() || null,
+          duration_minutes: durationMinutes ? parseInt(durationMinutes) : null,
+          reminder_enabled: reminderEnabled,
+          reminder_minutes_before: reminderEnabled ? parseInt(reminderMinutes) : null,
+          workout_program_id: selectedProgramId || null,
+          workout_day_name: selectedDayName || null,
+        });
 
-      toast.success("Träningspass schemalagt!");
+        if (error) throw error;
+        toast.success("Träningspass schemalagt!");
+      }
+
       resetForm();
       onWorkoutsChange();
     } catch (error) {
-      console.error("Error scheduling workout:", error);
-      toast.error("Kunde inte schemalägga pass");
+      console.error("Error saving workout:", error);
+      toast.error(editingWorkout ? "Kunde inte uppdatera pass" : "Kunde inte schemalägga pass");
     } finally {
       setIsLoading(false);
     }
@@ -171,6 +216,9 @@ export default function ScheduleWorkoutDialog({
       if (error) throw error;
 
       toast.success("Pass borttaget");
+      if (editingWorkout?.id === workoutId) {
+        resetForm();
+      }
       onWorkoutsChange();
     } catch (error) {
       console.error("Error deleting workout:", error);
@@ -191,13 +239,13 @@ export default function ScheduleWorkoutDialog({
             {format(selectedDate, "EEEE d MMMM", { locale: sv })}
           </DialogTitle>
           <DialogDescription>
-            Schemalägg träningspass för denna dag
+            {editingWorkout ? "Redigera träningspass" : "Schemalägg träningspass för denna dag"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* Existing workouts for this day */}
-          {existingWorkouts.length > 0 && (
+          {existingWorkouts.length > 0 && !editingWorkout && (
             <div className="space-y-2">
               <Label className="text-sm font-medium">Schemalagda pass</Label>
               <div className="space-y-2">
@@ -210,40 +258,62 @@ export default function ScheduleWorkoutDialog({
                         : "bg-secondary/50"
                     }`}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                       {workout.workout_type === "cardio" ? (
-                        <Footprints className="h-4 w-4 text-green-500" />
+                        <Footprints className="h-4 w-4 text-green-500 flex-shrink-0" />
                       ) : (
-                        <Dumbbell className="h-4 w-4 text-primary" />
+                        <Dumbbell className="h-4 w-4 text-primary flex-shrink-0" />
                       )}
-                      <span className="text-sm font-medium">{workout.title}</span>
+                      <span className="text-sm font-medium truncate">{workout.title}</span>
                       {workout.scheduled_time && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground flex-shrink-0">
                           kl {workout.scheduled_time.slice(0, 5)}
                         </span>
                       )}
                       {workout.completed_at && (
-                        <span className="text-xs text-green-500">✓ Klar</span>
+                        <span className="text-xs text-green-500 flex-shrink-0">✓ Klar</span>
                       )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(workout.id)}
-                      disabled={isDeleting === workout.id}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {!workout.completed_at && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => startEditing(workout)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(workout.id)}
+                        disabled={isDeleting === workout.id}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Add new workout */}
+          {/* Form section */}
           <div className="space-y-4 pt-2 border-t">
-            <Label className="text-sm font-medium">Lägg till nytt pass</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">
+                {editingWorkout ? `Redigerar: ${editingWorkout.title}` : "Lägg till nytt pass"}
+              </Label>
+              {editingWorkout && (
+                <Button variant="ghost" size="sm" onClick={cancelEditing} className="gap-1">
+                  <X className="h-4 w-4" />
+                  Avbryt
+                </Button>
+              )}
+            </div>
 
             {/* Workout type */}
             <div className="flex gap-2">
@@ -407,7 +477,9 @@ export default function ScheduleWorkoutDialog({
               disabled={isLoading || !title.trim()}
               className="w-full"
             >
-              {isLoading ? "Schemalägger..." : "Lägg till pass"}
+              {isLoading 
+                ? (editingWorkout ? "Sparar..." : "Schemalägger...") 
+                : (editingWorkout ? "Spara ändringar" : "Lägg till pass")}
             </Button>
           </div>
         </div>
