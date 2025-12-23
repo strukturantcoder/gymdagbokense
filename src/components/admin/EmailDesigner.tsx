@@ -129,20 +129,30 @@ export const EmailDesigner = () => {
       return;
     }
     
-    // Replace the text with markdown-style link
-    const before = content.substring(0, link.startIndex);
-    const after = content.substring(link.endIndex);
-    const newContent = `${before}[${link.text}](${url})${after}`;
+    // Find the actual position of the text in content (don't rely on AI's index)
+    const textToFind = link.text;
+    const actualIndex = content.indexOf(textToFind);
+    
+    if (actualIndex === -1) {
+      toast.error(`Kunde inte hitta "${textToFind}" i texten`);
+      return;
+    }
+    
+    // Replace the first occurrence of the text with a markdown link
+    const before = content.substring(0, actualIndex);
+    const after = content.substring(actualIndex + textToFind.length);
+    const newContent = `${before}[${textToFind}](${url})${after}`;
     setContent(newContent);
     
     // Remove from detected links
-    setDetectedLinks(detectedLinks.filter(l => l.startIndex !== link.startIndex));
+    setDetectedLinks(detectedLinks.filter(l => l.text !== link.text));
     setLinkUrls(prev => {
       const updated = { ...prev };
       delete updated[`${link.startIndex}-${link.endIndex}`];
       return updated;
     });
     
+    toast.success(`Länk tillagd för "${textToFind}"`);
     toast.success(`Länk tillagd för "${link.text}"`);
   };
 
