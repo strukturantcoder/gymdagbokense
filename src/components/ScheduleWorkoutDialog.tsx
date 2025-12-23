@@ -44,6 +44,7 @@ interface ScheduledWorkout {
   workout_program_id: string | null;
   workout_day_name: string | null;
   scheduled_date: string;
+  scheduled_time: string | null;
   completed_at: string | null;
 }
 
@@ -67,6 +68,7 @@ export default function ScheduleWorkoutDialog({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [reminderMinutes, setReminderMinutes] = useState("60");
   const [selectedProgramId, setSelectedProgramId] = useState<string>("");
@@ -116,6 +118,7 @@ export default function ScheduleWorkoutDialog({
     setTitle("");
     setDescription("");
     setDurationMinutes("");
+    setScheduledTime("");
     setReminderEnabled(true);
     setReminderMinutes("60");
     setSelectedProgramId("");
@@ -133,6 +136,7 @@ export default function ScheduleWorkoutDialog({
       const { error } = await supabase.from("scheduled_workouts").insert({
         user_id: user.id,
         scheduled_date: format(selectedDate, "yyyy-MM-dd"),
+        scheduled_time: scheduledTime || null,
         title: title.trim(),
         workout_type: workoutType,
         description: description.trim() || null,
@@ -213,6 +217,11 @@ export default function ScheduleWorkoutDialog({
                         <Dumbbell className="h-4 w-4 text-primary" />
                       )}
                       <span className="text-sm font-medium">{workout.title}</span>
+                      {workout.scheduled_time && (
+                        <span className="text-xs text-muted-foreground">
+                          kl {workout.scheduled_time.slice(0, 5)}
+                        </span>
+                      )}
                       {workout.completed_at && (
                         <span className="text-xs text-green-500">✓ Klar</span>
                       )}
@@ -329,6 +338,23 @@ export default function ScheduleWorkoutDialog({
                 placeholder="Anteckningar..."
                 rows={2}
               />
+            </div>
+
+            {/* Scheduled Time */}
+            <div className="space-y-2">
+              <Label htmlFor="scheduled-time" className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Tid för pass (valfritt)
+              </Label>
+              <Input
+                id="scheduled-time"
+                type="time"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Ange tid för mer precisa påminnelser
+              </p>
             </div>
 
             {/* Duration */}
