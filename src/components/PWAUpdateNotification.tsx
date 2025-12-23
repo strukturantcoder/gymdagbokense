@@ -1,24 +1,29 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { toast } from 'sonner';
-import { RefreshCw, CheckCircle, Download } from 'lucide-react';
+import { RefreshCw, CheckCircle, Download, X, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// App version - increment this when deploying critical updates
-export const APP_VERSION = '2.0.1';
+// App version - increment this when deploying updates
+export const APP_VERSION = '2.1.0';
 const VERSION_KEY = 'gymdagboken_app_version';
 
 // Update check interval in milliseconds (30 seconds)
 const UPDATE_CHECK_INTERVAL = 30 * 1000;
+
+// Version history with release notes
+const VERSION_NOTES: Record<string, string> = {
+  '2.1.0': 'Ny uppdateringsbanderoll med versionsinfo och klickbara övningar i programförhandsvisningen.',
+  '2.0.1': 'Förbättrad finjusteringsruta för träningsprogram.',
+  '2.0.0': 'Stor uppdatering med nya funktioner och förbättringar.',
+};
+
+// Get the release notes for the current version
+const getCurrentReleaseNotes = () => {
+  return VERSION_NOTES[APP_VERSION] || 'Buggfixar och prestandaförbättringar.';
+};
 
 // Force clear ALL caches - more aggressive for Safari
 const forceCleanAllCaches = async () => {
@@ -81,9 +86,9 @@ const checkVersionAndUpdate = async () => {
 
 export const PWAUpdateNotification = () => {
   const { t } = useTranslation();
-  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [showUpdateBanner, setShowUpdateBanner] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const hasShownDialog = useRef(false);
+  const hasShownBanner = useRef(false);
   const updateCheckTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasCheckedVersion = useRef(false);
 
@@ -132,9 +137,9 @@ export const PWAUpdateNotification = () => {
       // Check version first
       checkVersionAndUpdate();
       
-      if (needRefresh && !hasShownDialog.current) {
-        setShowUpdateDialog(true);
-        hasShownDialog.current = true;
+      if (needRefresh && !hasShownBanner.current) {
+        setShowUpdateBanner(true);
+        hasShownBanner.current = true;
       }
     }
   }, [needRefresh]);
@@ -144,9 +149,9 @@ export const PWAUpdateNotification = () => {
     console.log('Back online, checking for updates...');
     checkVersionAndUpdate();
     
-    if (needRefresh && !hasShownDialog.current) {
-      setShowUpdateDialog(true);
-      hasShownDialog.current = true;
+    if (needRefresh && !hasShownBanner.current) {
+      setShowUpdateBanner(true);
+      hasShownBanner.current = true;
     }
   }, [needRefresh]);
 
@@ -165,18 +170,18 @@ export const PWAUpdateNotification = () => {
     };
   }, [handleVisibilityChange, handleOnline]);
 
-  // Show dialog when needRefresh becomes true
+  // Show banner when needRefresh becomes true
   useEffect(() => {
-    if (needRefresh && !hasShownDialog.current) {
-      hasShownDialog.current = true;
-      setShowUpdateDialog(true);
+    if (needRefresh && !hasShownBanner.current) {
+      hasShownBanner.current = true;
+      setShowUpdateBanner(true);
     }
   }, [needRefresh]);
 
   // Reset the flag when needRefresh changes to false
   useEffect(() => {
     if (!needRefresh) {
-      hasShownDialog.current = false;
+      hasShownBanner.current = false;
     }
   }, [needRefresh]);
 
@@ -203,45 +208,84 @@ export const PWAUpdateNotification = () => {
       toast.error('Uppdateringen misslyckades. Försök igen.');
     } finally {
       setIsUpdating(false);
-      setShowUpdateDialog(false);
+      setShowUpdateBanner(false);
     }
   };
 
+  const handleDismiss = () => {
+    setShowUpdateBanner(false);
+  };
+
   return (
-    <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
-      <AlertDialogContent className="max-w-sm">
-        <AlertDialogHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Download className="h-8 w-8 text-primary" />
+    <AnimatePresence>
+      {showUpdateBanner && (
+        <motion.div
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -100, opacity: 0 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          className="fixed top-0 left-0 right-0 z-[100] safe-area-top"
+        >
+          <div className="bg-gradient-to-r from-primary via-primary to-primary/90 text-primary-foreground shadow-lg">
+            <div className="container mx-auto px-4 py-3">
+              <div className="flex items-start gap-3">
+                {/* Icon */}
+                <div className="flex-shrink-0 mt-0.5">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-sm">
+                      Ny version tillgänglig!
+                    </h3>
+                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-mono">
+                      v{APP_VERSION}
+                    </span>
+                  </div>
+                  <p className="text-xs text-primary-foreground/90 line-clamp-2">
+                    {getCurrentReleaseNotes()}
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button
+                    onClick={handleUpdate}
+                    disabled={isUpdating}
+                    size="sm"
+                    variant="secondary"
+                    className="bg-white text-primary hover:bg-white/90 font-semibold h-9"
+                  >
+                    {isUpdating ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
+                        Uppdaterar...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-1.5" />
+                        Uppdatera
+                      </>
+                    )}
+                  </Button>
+                  <button
+                    onClick={handleDismiss}
+                    className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                    aria-label="Stäng"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <AlertDialogTitle className="text-center">
-            {t('update.available', 'Ny version tillgänglig!')}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="text-center">
-            {t('update.description', 'En ny version av Gymdagboken finns tillgänglig. Uppdatera nu för att få de senaste funktionerna och förbättringarna.')}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-          <AlertDialogAction 
-            onClick={handleUpdate} 
-            disabled={isUpdating}
-            className="w-full"
-          >
-            {isUpdating ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                {t('update.updating', 'Uppdaterar...')}
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4 mr-2" />
-                {t('update.updateNow', 'Uppdatera nu')}
-              </>
-            )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
