@@ -1,0 +1,152 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Flame, Trophy, Medal, Award } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Skeleton } from '@/components/ui/skeleton';
+
+interface StreakUser {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  current_streak: number;
+  longest_streak: number;
+}
+
+export const StreakLeaderboard = () => {
+  const { user } = useAuth();
+  const [leaders, setLeaders] = useState<StreakUser[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      const { data, error } = await supabase.rpc('get_streak_leaderboard', { limit_count: 10 });
+      
+      if (!error && data) {
+        setLeaders(data as StreakUser[]);
+      }
+      setLoading(false);
+    };
+
+    fetchLeaderboard();
+  }, []);
+
+  const getRankIcon = (index: number) => {
+    switch (index) {
+      case 0:
+        return <Trophy className="h-5 w-5 text-yellow-500" />;
+      case 1:
+        return <Medal className="h-5 w-5 text-gray-400" />;
+      case 2:
+        return <Award className="h-5 w-5 text-amber-600" />;
+      default:
+        return <span className="w-5 text-center text-sm font-medium text-muted-foreground">{index + 1}</span>;
+    }
+  };
+
+  const getStreakColor = (streak: number) => {
+    if (streak >= 30) return 'text-red-500';
+    if (streak >= 14) return 'text-orange-500';
+    if (streak >= 7) return 'text-yellow-500';
+    return 'text-muted-foreground';
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Flame className="h-5 w-5 text-orange-500" />
+            Streak-topplista
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Skeleton className="h-5 w-5" />
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1">
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="h-6 w-16" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (leaders.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Flame className="h-5 w-5 text-orange-500" />
+            Streak-topplista
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Inga aktiva streaks ännu. Börja träna för att starta din streak!
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Flame className="h-5 w-5 text-orange-500" />
+          Streak-topplista
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {leaders.map((leader, index) => {
+          const isCurrentUser = leader.user_id === user?.id;
+          
+          return (
+            <div 
+              key={leader.user_id}
+              className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
+                isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/50'
+              }`}
+            >
+              <div className="flex items-center justify-center w-6">
+                {getRankIcon(index)}
+              </div>
+              
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={leader.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {leader.display_name?.[0]?.toUpperCase() || '?'}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1 min-w-0">
+                <p className={`font-medium truncate ${isCurrentUser ? 'text-primary' : ''}`}>
+                  {leader.display_name || 'Anonym'}
+                  {isCurrentUser && <span className="text-xs ml-1">(du)</span>}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Längsta: {leader.longest_streak} dagar
+                </p>
+              </div>
+              
+              <Badge 
+                variant="secondary" 
+                className={`flex items-center gap-1 ${getStreakColor(leader.current_streak)}`}
+              >
+                <Flame className="h-3 w-3" />
+                {leader.current_streak}
+              </Badge>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+};

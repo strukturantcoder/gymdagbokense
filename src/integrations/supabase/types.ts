@@ -1518,6 +1518,16 @@ export type Database = {
           winner_type: string
         }[]
       }
+      get_streak_leaderboard: {
+        Args: { limit_count?: number }
+        Returns: {
+          avatar_url: string
+          current_streak: number
+          display_name: string
+          longest_streak: number
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -22,6 +22,7 @@ import AdBanner from '@/components/AdBanner';
 import { CommunityChallenges } from '@/components/CommunityChallenges';
 import { PoolChallenges } from '@/components/PoolChallenges';
 import FriendsLeaderboard from '@/components/FriendsLeaderboard';
+import { StreakLeaderboard } from '@/components/StreakLeaderboard';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -286,6 +287,11 @@ export default function Social() {
               {/* Leaderboard */}
               <motion.div variants={itemVariants}>
                 <FriendsLeaderboard />
+              </motion.div>
+
+              {/* Streak Leaderboard */}
+              <motion.div variants={itemVariants}>
+                <StreakLeaderboard />
               </motion.div>
 
               {/* Invite Friends Card */}
