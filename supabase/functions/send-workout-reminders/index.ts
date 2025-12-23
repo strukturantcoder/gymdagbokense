@@ -274,6 +274,108 @@ serve(async (req) => {
       }
     }
 
+    // 3. Process scheduled workout reminders
+    console.log("[WORKOUT-REMINDERS] Processing scheduled workout reminders...");
+    
+    // Get all scheduled workouts for today with reminders enabled
+    const { data: scheduledWorkouts, error: scheduledError } = await supabase
+      .from("scheduled_workouts")
+      .select("id, user_id, title, scheduled_date, reminder_minutes_before, workout_type")
+      .eq("scheduled_date", today)
+      .eq("reminder_enabled", true)
+      .is("completed_at", null);
+
+    if (scheduledError) {
+      console.error("[WORKOUT-REMINDERS] Error fetching scheduled workouts:", scheduledError);
+    } else if (scheduledWorkouts?.length) {
+      console.log(`[WORKOUT-REMINDERS] Found ${scheduledWorkouts.length} scheduled workouts for today`);
+
+      for (const workout of scheduledWorkouts) {
+        const minutesBefore = workout.reminder_minutes_before || 60;
+        
+        // For scheduled workouts, we send reminder at a reasonable time before
+        // Since we don't have exact time, we'll send based on minutes_before from a default time (e.g., 18:00)
+        const defaultWorkoutHour = 18; // Assume workouts are at 18:00 by default
+        const defaultWorkoutMinute = 0;
+        
+        // Calculate reminder send time
+        let reminderSendHour = defaultWorkoutHour;
+        let reminderSendMinute = defaultWorkoutMinute - minutesBefore;
+        
+        // Handle negative minutes
+        while (reminderSendMinute < 0) {
+          reminderSendMinute += 60;
+          reminderSendHour -= 1;
+        }
+
+        // Check if it's time to send (within 15 min window)
+        const isTimeToSend =
+          currentHour === reminderSendHour &&
+          currentMinute >= reminderSendMinute &&
+          currentMinute < reminderSendMinute + 15;
+
+        if (!isTimeToSend) {
+          continue;
+        }
+
+        // Check if already sent for this specific workout
+        const logKey = `scheduled_${workout.id}`;
+        const { data: existingLog } = await supabase
+          .from("reminder_logs")
+          .select("id")
+          .eq("user_id", workout.user_id)
+          .eq("reminder_type", logKey)
+          .eq("reminder_date", today)
+          .maybeSingle();
+
+        if (existingLog) {
+          console.log(`[WORKOUT-REMINDERS] Reminder already sent for scheduled workout ${workout.id}`);
+          continue;
+        }
+
+        // Get push subscriptions
+        const { data: subscriptions } = await supabase
+          .from("push_subscriptions")
+          .select("*")
+          .eq("user_id", workout.user_id);
+
+        if (subscriptions?.length) {
+          const workoutTypeEmoji = workout.workout_type === "cardio" ? "🏃" : "🏋️";
+          const payload = JSON.stringify({
+            title: `${workoutTypeEmoji} Schemalagt pass!`,
+            message: `Glöm inte: ${workout.title}`,
+            url: "/dashboard",
+          });
+
+          for (const sub of subscriptions) {
+            try {
+              const headers = await generateVapidHeaders(sub.endpoint, vapidPublicKey, vapidPrivateKey);
+              const response = await fetch(sub.endpoint, {
+                method: "POST",
+                headers,
+                body: payload,
+              });
+
+              if (response.status === 201 || response.status === 200) {
+                totalSent++;
+                console.log(`[WORKOUT-REMINDERS] Scheduled workout push sent for ${workout.id} to ${workout.user_id}`);
+              } else if (response.status === 410 || response.status === 404) {
+                await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+              }
+            } catch (e) {
+              console.error(`[WORKOUT-REMINDERS] Push error:`, e);
+            }
+          }
+
+          await supabase.from("reminder_logs").insert({
+            user_id: workout.user_id,
+            reminder_type: logKey,
+            reminder_date: today,
+          });
+        }
+      }
+    }
+
     // Cleanup old reminder logs (older than 7 days)
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
     await supabase.from("reminder_logs").delete().lt("reminder_date", weekAgo);
