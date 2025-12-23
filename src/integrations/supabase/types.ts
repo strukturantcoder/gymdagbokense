@@ -1216,6 +1216,50 @@ export type Database = {
           },
         ]
       }
+      team_invite_links: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          team_id: string
+          uses_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          team_id: string
+          uses_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          team_id?: string
+          uses_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_invite_links_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           id: string
@@ -1628,6 +1672,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_team_by_invite_code: {
+        Args: { invite_code: string }
+        Returns: {
+          is_valid: boolean
+          member_count: number
+          team_description: string
+          team_id: string
+          team_name: string
+        }[]
+      }
       get_team_competition_leaderboard: {
         Args: { limit_count?: number }
         Returns: {
@@ -1656,6 +1710,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      join_team_via_invite_link: {
+        Args: { invite_code: string }
+        Returns: Json
       }
       search_users_by_name: {
         Args: { search_query: string }

@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { TeamInviteLinkDialog } from './TeamInviteLinkDialog';
 
 interface TeamCardProps {
   team: Team;
@@ -153,9 +154,13 @@ export const TeamCard = ({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex flex-wrap gap-2 pt-2">
+          {canInvite && (
+            <TeamInviteLinkDialog teamId={team.id} teamName={team.name} />
+          )}
+          
           {canInvite && members.length < 10 && (
-            <Button variant="outline" className="flex-1 gap-2" onClick={onInviteFriend}>
+            <Button variant="outline" size="sm" className="gap-2" onClick={onInviteFriend}>
               <UserPlus className="h-4 w-4" />
               Bjud in vän
             </Button>

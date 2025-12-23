@@ -56,79 +56,95 @@ export interface TeamLeaderboardEntry {
   total_xp: number;
 }
 
+export interface MyTeamData {
+  team: Team;
+  members: TeamMember[];
+  stats: TeamStats | null;
+  myRole: 'leader' | 'admin' | 'member';
+}
+
 export const useTeams = () => {
   const { user } = useAuth();
-  const [myTeam, setMyTeam] = useState<Team | null>(null);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [myTeams, setMyTeams] = useState<MyTeamData[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<TeamInvitation[]>([]);
   const [leaderboard, setLeaderboard] = useState<TeamLeaderboardEntry[]>([]);
-  const [teamStats, setTeamStats] = useState<TeamStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [myRole, setMyRole] = useState<'leader' | 'admin' | 'member' | null>(null);
 
-  const fetchMyTeam = useCallback(async () => {
-    if (!user) return;
-
-    // Find the team where user is a member
-    const { data: membership } = await supabase
-      .from('team_members')
-      .select('team_id, role')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (membership) {
-      setMyRole(membership.role as 'leader' | 'admin' | 'member');
-      
-      const { data: team } = await supabase
-        .from('teams')
-        .select('*')
-        .eq('id', membership.team_id)
-        .single();
-
-      if (team) {
-        setMyTeam(team);
-        await fetchTeamMembers(team.id);
-        await fetchTeamStats(team.id);
-      }
-    } else {
-      setMyTeam(null);
-      setTeamMembers([]);
-      setTeamStats(null);
-      setMyRole(null);
-    }
-  }, [user]);
-
-  const fetchTeamMembers = async (teamId: string) => {
+  const fetchTeamMembersForTeam = async (teamId: string): Promise<TeamMember[]> => {
     const { data: members } = await supabase
       .from('team_members')
       .select('*')
       .eq('team_id', teamId)
       .order('role', { ascending: true });
 
-    if (members) {
-      // Fetch profiles for each member
-      const memberIds = members.map(m => m.user_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, avatar_url')
-        .in('user_id', memberIds);
+    if (!members) return [];
 
-      const membersWithProfiles = members.map(member => ({
-        ...member,
-        role: member.role as 'leader' | 'admin' | 'member',
-        profile: profiles?.find(p => p.user_id === member.user_id)
-      }));
+    // Fetch profiles for each member
+    const memberIds = members.map(m => m.user_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', memberIds);
 
-      setTeamMembers(membersWithProfiles);
-    }
+    return members.map(member => ({
+      ...member,
+      role: member.role as 'leader' | 'admin' | 'member',
+      profile: profiles?.find(p => p.user_id === member.user_id)
+    }));
   };
 
-  const fetchTeamStats = async (teamId: string) => {
+  const fetchTeamStatsForTeam = async (teamId: string): Promise<TeamStats | null> => {
     const { data } = await supabase.rpc('get_team_stats', { team_uuid: teamId });
     if (data && data[0]) {
-      setTeamStats(data[0] as TeamStats);
+      return data[0] as TeamStats;
     }
+    return null;
   };
+
+  const fetchMyTeams = useCallback(async () => {
+    if (!user) return;
+
+    // Find all teams where user is a member
+    const { data: memberships } = await supabase
+      .from('team_members')
+      .select('team_id, role')
+      .eq('user_id', user.id);
+
+    if (!memberships || memberships.length === 0) {
+      setMyTeams([]);
+      return;
+    }
+
+    // Fetch all teams
+    const teamIds = memberships.map(m => m.team_id);
+    const { data: teams } = await supabase
+      .from('teams')
+      .select('*')
+      .in('id', teamIds);
+
+    if (!teams) {
+      setMyTeams([]);
+      return;
+    }
+
+    // Fetch members and stats for each team
+    const teamsData: MyTeamData[] = await Promise.all(
+      teams.map(async (team) => {
+        const membership = memberships.find(m => m.team_id === team.id);
+        const members = await fetchTeamMembersForTeam(team.id);
+        const stats = await fetchTeamStatsForTeam(team.id);
+        
+        return {
+          team,
+          members,
+          stats,
+          myRole: membership?.role as 'leader' | 'admin' | 'member'
+        };
+      })
+    );
+
+    setMyTeams(teamsData);
+  }, [user]);
 
   const fetchPendingInvitations = useCallback(async () => {
     if (!user) return;
@@ -175,7 +191,7 @@ export const useTeams = () => {
     const loadData = async () => {
       setLoading(true);
       await Promise.all([
-        fetchMyTeam(),
+        fetchMyTeams(),
         fetchPendingInvitations(),
         fetchLeaderboard()
       ]);
@@ -185,16 +201,10 @@ export const useTeams = () => {
     if (user) {
       loadData();
     }
-  }, [user, fetchMyTeam, fetchPendingInvitations, fetchLeaderboard]);
+  }, [user, fetchMyTeams, fetchPendingInvitations, fetchLeaderboard]);
 
   const createTeam = async (name: string, description?: string) => {
     if (!user) return null;
-
-    // Check if user is already in a team
-    if (myTeam) {
-      toast.error('Du är redan med i ett lag');
-      return null;
-    }
 
     const { data: team, error } = await supabase
       .from('teams')
@@ -217,22 +227,25 @@ export const useTeams = () => {
       });
 
     toast.success('Laget skapades!');
-    await fetchMyTeam();
+    await fetchMyTeams();
     await fetchLeaderboard();
     return team;
   };
 
-  const inviteToTeam = async (friendId: string) => {
-    if (!user || !myTeam) return false;
+  const inviteToTeam = async (teamId: string, friendId: string) => {
+    if (!user) return false;
+    
+    const teamData = myTeams.find(t => t.team.id === teamId);
+    if (!teamData) return false;
 
     // Check team size
-    if (teamMembers.length >= 10) {
+    if (teamData.members.length >= 10) {
       toast.error('Laget har redan max antal medlemmar (10)');
       return false;
     }
 
     // Check if already a member
-    const isMember = teamMembers.some(m => m.user_id === friendId);
+    const isMember = teamData.members.some(m => m.user_id === friendId);
     if (isMember) {
       toast.error('Användaren är redan med i laget');
       return false;
@@ -241,7 +254,7 @@ export const useTeams = () => {
     const { error } = await supabase
       .from('team_invitations')
       .insert({
-        team_id: myTeam.id,
+        team_id: teamId,
         invited_user_id: friendId,
         invited_by: user.id
       });
@@ -266,9 +279,10 @@ export const useTeams = () => {
     if (!invitation) return;
 
     if (accept) {
-      // Check if user is already in a team
-      if (myTeam) {
-        toast.error('Du måste lämna ditt nuvarande lag först');
+      // Check if already a member of this specific team
+      const alreadyMember = myTeams.some(t => t.team.id === invitation.team_id);
+      if (alreadyMember) {
+        toast.error('Du är redan med i detta lag');
         return;
       }
 
@@ -295,13 +309,16 @@ export const useTeams = () => {
       .eq('id', invitationId);
 
     toast.success(accept ? 'Du gick med i laget!' : 'Inbjudan avböjd');
-    await fetchMyTeam();
+    await fetchMyTeams();
     await fetchPendingInvitations();
     await fetchLeaderboard();
   };
 
-  const updateMemberRole = async (memberId: string, newRole: 'admin' | 'member') => {
-    if (!user || !myTeam || myRole !== 'leader') return;
+  const updateMemberRole = async (teamId: string, memberId: string, newRole: 'admin' | 'member') => {
+    if (!user) return;
+    
+    const teamData = myTeams.find(t => t.team.id === teamId);
+    if (!teamData || teamData.myRole !== 'leader') return;
 
     const { error } = await supabase
       .from('team_members')
@@ -314,13 +331,16 @@ export const useTeams = () => {
     }
 
     toast.success(`Roll uppdaterad till ${newRole === 'admin' ? 'admin' : 'medlem'}`);
-    await fetchTeamMembers(myTeam.id);
+    await fetchMyTeams();
   };
 
-  const leaveTeam = async () => {
-    if (!user || !myTeam) return;
+  const leaveTeam = async (teamId: string) => {
+    if (!user) return;
+    
+    const teamData = myTeams.find(t => t.team.id === teamId);
+    if (!teamData) return;
 
-    if (myRole === 'leader') {
+    if (teamData.myRole === 'leader') {
       toast.error('Lagledaren kan inte lämna laget. Radera laget istället.');
       return;
     }
@@ -328,7 +348,7 @@ export const useTeams = () => {
     const { error } = await supabase
       .from('team_members')
       .delete()
-      .eq('team_id', myTeam.id)
+      .eq('team_id', teamId)
       .eq('user_id', user.id);
 
     if (error) {
@@ -337,17 +357,20 @@ export const useTeams = () => {
     }
 
     toast.success('Du lämnade laget');
-    await fetchMyTeam();
+    await fetchMyTeams();
     await fetchLeaderboard();
   };
 
-  const deleteTeam = async () => {
-    if (!user || !myTeam || myRole !== 'leader') return;
+  const deleteTeam = async (teamId: string) => {
+    if (!user) return;
+    
+    const teamData = myTeams.find(t => t.team.id === teamId);
+    if (!teamData || teamData.myRole !== 'leader') return;
 
     const { error } = await supabase
       .from('teams')
       .delete()
-      .eq('id', myTeam.id);
+      .eq('id', teamId);
 
     if (error) {
       toast.error('Kunde inte radera laget');
@@ -355,18 +378,15 @@ export const useTeams = () => {
     }
 
     toast.success('Laget raderades');
-    await fetchMyTeam();
+    await fetchMyTeams();
     await fetchLeaderboard();
   };
 
   return {
-    myTeam,
-    teamMembers,
+    myTeams,
     pendingInvitations,
     leaderboard,
-    teamStats,
     loading,
-    myRole,
     createTeam,
     inviteToTeam,
     respondToInvitation,
@@ -374,7 +394,7 @@ export const useTeams = () => {
     leaveTeam,
     deleteTeam,
     refetch: () => {
-      fetchMyTeam();
+      fetchMyTeams();
       fetchPendingInvitations();
       fetchLeaderboard();
     }
