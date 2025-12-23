@@ -1119,6 +1119,65 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_workouts: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          reminder_enabled: boolean | null
+          reminder_minutes_before: number | null
+          scheduled_date: string
+          title: string
+          updated_at: string
+          user_id: string
+          workout_day_name: string | null
+          workout_program_id: string | null
+          workout_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          reminder_enabled?: boolean | null
+          reminder_minutes_before?: number | null
+          scheduled_date: string
+          title: string
+          updated_at?: string
+          user_id: string
+          workout_day_name?: string | null
+          workout_program_id?: string | null
+          workout_type?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          reminder_enabled?: boolean | null
+          reminder_minutes_before?: number | null
+          scheduled_date?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workout_day_name?: string | null
+          workout_program_id?: string | null
+          workout_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_workouts_workout_program_id_fkey"
+            columns: ["workout_program_id"]
+            isOneToOne: false
+            referencedRelation: "workout_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_achievements: {
         Row: {
           achievement_id: string

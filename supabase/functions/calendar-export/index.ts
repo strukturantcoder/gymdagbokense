@@ -6,28 +6,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface WorkoutDay {
-  name: string;
-  exercises: Array<{
-    name: string;
-    sets: number;
-    reps: string;
-    rest?: string;
-  }>;
-}
-
-interface CardioSession {
-  day: string;
-  type: string;
-  duration?: string;
-  distance?: string;
-  intensity?: string;
-  description?: string;
-}
-
-interface CardioWeek {
-  week: number;
-  sessions: CardioSession[];
+interface ScheduledWorkout {
+  id: string;
+  scheduled_date: string;
+  title: string;
+  workout_type: string;
+  description: string | null;
+  duration_minutes: number | null;
+  reminder_enabled: boolean;
+  reminder_minutes_before: number | null;
+  workout_day_name: string | null;
 }
 
 // Generate unique ID for ICS events
@@ -43,23 +31,15 @@ function formatICSDate(date: Date): string {
   return `${year}${month}${day}`;
 }
 
-// Get next occurrence of a weekday
-function getNextWeekday(dayName: string, startFrom: Date = new Date()): Date {
-  const days: Record<string, number> = {
-    "Måndag": 1, "Tisdag": 2, "Onsdag": 3, "Torsdag": 4,
-    "Fredag": 5, "Lördag": 6, "Söndag": 0,
-    "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4,
-    "Friday": 5, "Saturday": 6, "Sunday": 0,
-    "Day 1": 1, "Day 2": 2, "Day 3": 3, "Day 4": 4, "Day 5": 5, "Day 6": 6, "Day 7": 0,
-    "Dag 1": 1, "Dag 2": 2, "Dag 3": 3, "Dag 4": 4, "Dag 5": 5, "Dag 6": 6, "Dag 7": 0,
-  };
-  
-  const targetDay = days[dayName] ?? 1;
-  const result = new Date(startFrom);
-  const currentDay = result.getDay();
-  const diff = (targetDay - currentDay + 7) % 7 || 7;
-  result.setDate(result.getDate() + diff);
-  return result;
+// Format datetime for ICS (YYYYMMDDTHHMMSS)
+function formatICSDateTime(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}${month}${day}T${hours}${minutes}${seconds}`;
 }
 
 // Escape special characters for ICS
@@ -71,66 +51,44 @@ function escapeICS(text: string): string {
     .replace(/\n/g, "\\n");
 }
 
-// Generate ICS content for workout programs
-function generateWorkoutICS(programs: Array<{ name: string; program_data: { days: WorkoutDay[] } }>): string {
+// Generate ICS content for scheduled workouts
+function generateScheduledWorkoutICS(workouts: ScheduledWorkout[]): string {
   let events = "";
-  const startDate = new Date();
-  
-  for (const program of programs) {
-    const days = program.program_data?.days || [];
-    
-    for (const day of days) {
-      const exerciseList = day.exercises?.map(e => `• ${e.name}: ${e.sets} set x ${e.reps}`).join("\\n") || "";
-      const eventDate = getNextWeekday(day.name, startDate);
-      
-      events += `BEGIN:VEVENT
-UID:${generateUID()}
-DTSTART;VALUE=DATE:${formatICSDate(eventDate)}
-DTEND;VALUE=DATE:${formatICSDate(eventDate)}
-SUMMARY:${escapeICS(`🏋️ ${program.name} - ${day.name}`)}
-DESCRIPTION:${escapeICS(`Träningspass: ${day.name}\\n\\nÖvningar:\\n${exerciseList}`)}
-RRULE:FREQ=WEEKLY;COUNT=12
-END:VEVENT
-`;
-    }
-  }
-  
-  return events;
-}
 
-// Generate ICS content for cardio plans
-function generateCardioICS(plans: Array<{ name: string; plan_data: { weeks: CardioWeek[] }; created_at: string }>): string {
-  let events = "";
-  
-  for (const plan of plans) {
-    const weeks = plan.plan_data?.weeks || [];
-    const planStartDate = new Date(plan.created_at);
+  for (const workout of workouts) {
+    const eventDate = new Date(workout.scheduled_date);
+    const icon = workout.workout_type === "cardio" ? "🏃" : "🏋️";
     
-    for (const week of weeks) {
-      for (const session of week.sessions || []) {
-        const eventDate = getNextWeekday(session.day, planStartDate);
-        eventDate.setDate(eventDate.getDate() + (week.week - 1) * 7);
-        
-        const description = [
-          session.type && `Typ: ${session.type}`,
-          session.duration && `Längd: ${session.duration}`,
-          session.distance && `Distans: ${session.distance}`,
-          session.intensity && `Intensitet: ${session.intensity}`,
-          session.description,
-        ].filter(Boolean).join("\\n");
-        
-        events += `BEGIN:VEVENT
-UID:${generateUID()}
+    let description = workout.workout_day_name || "";
+    if (workout.description) {
+      description += description ? `\\n\\n${workout.description}` : workout.description;
+    }
+    if (workout.duration_minutes) {
+      description += `\\n\\nPlanerad längd: ${workout.duration_minutes} minuter`;
+    }
+
+    events += `BEGIN:VEVENT
+UID:${workout.id}@gymdagboken.se
 DTSTART;VALUE=DATE:${formatICSDate(eventDate)}
 DTEND;VALUE=DATE:${formatICSDate(eventDate)}
-SUMMARY:${escapeICS(`🏃 ${plan.name} - ${session.type || session.day}`)}
-DESCRIPTION:${escapeICS(description)}
+SUMMARY:${escapeICS(`${icon} ${workout.title}`)}
+DESCRIPTION:${escapeICS(description || "Schemalagt träningspass")}`;
+
+    // Add alarm/reminder if enabled
+    if (workout.reminder_enabled && workout.reminder_minutes_before) {
+      events += `
+BEGIN:VALARM
+TRIGGER:-PT${workout.reminder_minutes_before}M
+ACTION:DISPLAY
+DESCRIPTION:Påminnelse: ${escapeICS(workout.title)}
+END:VALARM`;
+    }
+
+    events += `
 END:VEVENT
 `;
-      }
-    }
   }
-  
+
   return events;
 }
 
@@ -144,8 +102,8 @@ serve(async (req) => {
     const userId = url.searchParams.get("user_id");
     const includeStrength = url.searchParams.get("strength") !== "false";
     const includeCardio = url.searchParams.get("cardio") !== "false";
-    const format = url.searchParams.get("format") || "download"; // "download" or "subscribe"
-    
+    const format = url.searchParams.get("format") || "download";
+
     if (!userId) {
       return new Response(JSON.stringify({ error: "user_id is required" }), {
         status: 400,
@@ -163,44 +121,40 @@ serve(async (req) => {
     let events = "";
     const calendarName = "Gymdagboken Träningsschema";
 
-    // Fetch workout programs
-    if (includeStrength) {
-      const { data: programs, error: programError } = await supabase
-        .from("workout_programs")
-        .select("name, program_data")
-        .eq("user_id", userId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(5);
+    // Fetch scheduled workouts - this is the main source now
+    const today = new Date();
+    const threeMonthsAgo = new Date(today);
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const sixMonthsAhead = new Date(today);
+    sixMonthsAhead.setMonth(sixMonthsAhead.getMonth() + 6);
 
-      if (programError) {
-        console.error("[CALENDAR-EXPORT] Error fetching programs:", programError);
-      } else if (programs?.length) {
-        console.log(`[CALENDAR-EXPORT] Found ${programs.length} workout programs`);
-        events += generateWorkoutICS(programs);
-      }
+    let query = supabase
+      .from("scheduled_workouts")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("scheduled_date", threeMonthsAgo.toISOString().split("T")[0])
+      .lte("scheduled_date", sixMonthsAhead.toISOString().split("T")[0])
+      .is("completed_at", null) // Only include non-completed workouts
+      .order("scheduled_date", { ascending: true });
+
+    // Filter by workout type if needed
+    if (includeStrength && !includeCardio) {
+      query = query.neq("workout_type", "cardio");
+    } else if (!includeStrength && includeCardio) {
+      query = query.eq("workout_type", "cardio");
     }
 
-    // Fetch cardio plans
-    if (includeCardio) {
-      const { data: cardioPlans, error: cardioError } = await supabase
-        .from("cardio_plans")
-        .select("name, plan_data, created_at")
-        .eq("user_id", userId)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(3);
+    const { data: scheduledWorkouts, error: scheduledError } = await query;
 
-      if (cardioError) {
-        console.error("[CALENDAR-EXPORT] Error fetching cardio plans:", cardioError);
-      } else if (cardioPlans?.length) {
-        console.log(`[CALENDAR-EXPORT] Found ${cardioPlans.length} cardio plans`);
-        events += generateCardioICS(cardioPlans);
-      }
+    if (scheduledError) {
+      console.error("[CALENDAR-EXPORT] Error fetching scheduled workouts:", scheduledError);
+    } else if (scheduledWorkouts?.length) {
+      console.log(`[CALENDAR-EXPORT] Found ${scheduledWorkouts.length} scheduled workouts`);
+      events += generateScheduledWorkoutICS(scheduledWorkouts as ScheduledWorkout[]);
     }
 
     if (!events) {
-      return new Response(JSON.stringify({ error: "No programs or plans found" }), {
+      return new Response(JSON.stringify({ error: "No scheduled workouts found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -225,6 +179,11 @@ ${events}END:VCALENDAR`;
 
     if (format === "download") {
       headers["Content-Disposition"] = 'attachment; filename="gymdagboken-schema.ics"';
+    } else {
+      // For subscription, add cache control headers to ensure updates are fetched
+      headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+      headers["Pragma"] = "no-cache";
+      headers["Expires"] = "0";
     }
 
     return new Response(icsContent, { status: 200, headers });
