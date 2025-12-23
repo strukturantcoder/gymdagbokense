@@ -96,10 +96,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Send welcome email for new OAuth signups (e.g., Google)
+        if (event === 'SIGNED_IN' && session?.user) {
+          const user = session.user;
+          const isOAuthUser = user.app_metadata?.provider && user.app_metadata.provider !== 'email';
+          
+          // Check if this is a new user (created within last 60 seconds)
+          const createdAt = new Date(user.created_at).getTime();
+          const now = Date.now();
+          const isNewUser = (now - createdAt) < 60000; // 60 seconds
+          
+          if (isOAuthUser && isNewUser) {
+            const displayName = user.user_metadata?.full_name || user.user_metadata?.name || 'Träningsvän';
+            const email = user.email;
+            
+            if (email) {
+              // Check if we already sent a welcome email (using localStorage to prevent duplicates)
+              const welcomeEmailKey = `welcome_email_sent_${user.id}`;
+              if (!localStorage.getItem(welcomeEmailKey)) {
+                localStorage.setItem(welcomeEmailKey, 'true');
+                supabase.functions.invoke('send-welcome-email', {
+                  body: { email, displayName }
+                }).catch(err => console.error('Failed to send welcome email:', err));
+              }
+            }
+          }
+        }
       }
     );
 
