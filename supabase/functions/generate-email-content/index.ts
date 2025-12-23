@@ -52,19 +52,97 @@ serve(async (req) => {
   }
 
   try {
-    const { template, currentSubject, currentContent } = await req.json();
+    const body = await req.json();
+    const { template, currentSubject, currentContent, detectLinks, content } = body;
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    // Handle link detection mode
+    if (detectLinks && content) {
+      console.log("Detecting links in content:", content.substring(0, 100));
+      
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "system",
+              content: `Du är en assistent som identifierar texter i mejl som borde vara hyperlänkar.
+              
+Analysera texten och hitta fraser som:
+- Produktnamn eller varumärken (t.ex. "Nike", "Whey Protein")
+- Webbadresser eller domännamn
+- Call-to-actions (t.ex. "klicka här", "läs mer", "köp nu")
+- Referenser till externa resurser
+- Kampanjer eller erbjudanden
+
+Returnera ENDAST ett JSON-objekt med denna struktur:
+{
+  "links": [
+    {
+      "text": "den exakta texten som hittades",
+      "startIndex": 0,
+      "endIndex": 10,
+      "suggestedUrl": ""
+    }
+  ]
+}
+
+Om inga potentiella länkar hittas, returnera: {"links": []}
+Svara ENDAST med JSON, ingen annan text.`
+            },
+            {
+              role: "user",
+              content: `Analysera denna mejltext och hitta potentiella länkar:\n\n${content}`
+            }
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("AI API error:", errorText);
+        throw new Error("Failed to detect links");
+      }
+
+      const data = await response.json();
+      let aiResponse = data.choices?.[0]?.message?.content || "";
+      
+      // Clean up the response - remove markdown code blocks if present
+      aiResponse = aiResponse.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      
+      console.log("AI response for links:", aiResponse);
+      
+      try {
+        const parsed = JSON.parse(aiResponse);
+        return new Response(
+          JSON.stringify(parsed),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (parseError) {
+        console.error("Failed to parse AI response:", parseError);
+        return new Response(
+          JSON.stringify({ links: [] }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
     
+    // Handle template generation mode
     const templateInfo = templatePrompts[template];
     if (!templateInfo) {
       return new Response(
         JSON.stringify({ error: "Unknown template" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
