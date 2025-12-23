@@ -1,11 +1,120 @@
 import { Helmet } from 'react-helmet-async';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Calendar, Clock, User, ChevronRight, Dumbbell, Mountain, Shirt, Apple, Activity } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, User, ChevronRight, Dumbbell, Mountain, Shirt, Apple, Activity, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Footer from '@/components/Footer';
+
+// Affiliate links for each advertiser
+const affiliateLinks = {
+  gymgrossisten: 'https://clk.tradedoubler.com/click?p=70361&a=3465011&g=17342194',
+  bodystore: 'https://clk.tradedoubler.com/click?p=70363&a=3465011&g=26021418',
+  aboutYou: 'https://clk.tradedoubler.com/click?p=382764&a=3465011&g=25913394',
+  racket: 'https://clk.tradedoubler.com/click?p=311300&a=3465011&g=24930416',
+  alpinGaraget: 'https://statics.alpingaraget.se/click?p=374688&a=3465011&g=25827974',
+};
+
+interface AffiliateBox {
+  name: string;
+  description: string;
+  link: string;
+  cta: string;
+}
+
+const getAffiliateBoxes = (slug: string): AffiliateBox[] => {
+  switch (slug) {
+    case 'basta-kosttillskotten-for-muskelbyggande':
+      return [
+        {
+          name: 'Gymgrossisten',
+          description: 'Sveriges största sortiment av kosttillskott för träning. Protein, kreatin, BCAA och mycket mer.',
+          link: affiliateLinks.gymgrossisten,
+          cta: 'Handla kosttillskott →'
+        },
+        {
+          name: 'Bodystore',
+          description: 'Kvalitetsprodukter för hälsa och träning. Stort utbud av proteinpulver och vitaminer.',
+          link: affiliateLinks.bodystore,
+          cta: 'Se utbudet på Bodystore →'
+        }
+      ];
+    case 'traningskläder-som-forbattrar-din-prestation':
+      return [
+        {
+          name: 'About You',
+          description: 'Stilfulla träningskläder från ledande märken. Hitta kläder som kombinerar funktion och stil.',
+          link: affiliateLinks.aboutYou,
+          cta: 'Shoppa träningskläder →'
+        }
+      ];
+    case 'padel-och-tennis-komplett-guide':
+      return [
+        {
+          name: 'Racket',
+          description: 'Specialister på racketsport. Stort utbud av padel- och tennisracketar för alla nivåer.',
+          link: affiliateLinks.racket,
+          cta: 'Se racketar hos Racket →'
+        }
+      ];
+    case 'skidtraning-forbered-dig-for-sasongen':
+      return [
+        {
+          name: 'Alpin Garaget',
+          description: 'Din destination för skidutrustning. Skidor, pjäxor, kläder och tillbehör för vintersäsongen.',
+          link: affiliateLinks.alpinGaraget,
+          cta: 'Förbered säsongen →'
+        }
+      ];
+    case 'styrketraning-for-nyborjare':
+      return [
+        {
+          name: 'Gymgrossisten',
+          description: 'Komplettera din träning med rätt kosttillskott. Protein för återhämtning och muskelbyggande.',
+          link: affiliateLinks.gymgrossisten,
+          cta: 'Handla tillskott →'
+        }
+      ];
+    default:
+      return [];
+  }
+};
+
+const AffiliateSection = ({ boxes }: { boxes: AffiliateBox[] }) => {
+  if (boxes.length === 0) return null;
+  
+  return (
+    <div className="my-8 space-y-4">
+      <h3 className="font-display font-bold text-lg flex items-center gap-2">
+        <ExternalLink className="w-5 h-5 text-gym-orange" />
+        Rekommenderade produkter
+      </h3>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {boxes.map((box, index) => (
+          <a
+            key={index}
+            href={box.link}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="block p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all group"
+          >
+            <div className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
+              {box.name}
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">{box.description}</p>
+            <span className="text-sm font-medium text-gym-orange group-hover:text-gym-orange/80 transition-colors">
+              {box.cta}
+            </span>
+          </a>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground/70 italic">
+        * Länkarna ovan är affiliatelänkar. Vi kan få en liten provision vid köp, utan extra kostnad för dig.
+      </p>
+    </div>
+  );
+};
 
 interface BlogPost {
   slug: string;
@@ -375,6 +484,8 @@ export default function Blog() {
                     .replace(/^(?!<[hup])/gim, '<p>')
                 }}
               />
+
+              <AffiliateSection boxes={getAffiliateBoxes(post.slug)} />
 
               <div className="mt-12 p-6 bg-primary/10 rounded-xl border border-primary/30">
                 <h3 className="font-display font-bold text-lg mb-2">Börja logga din träning</h3>
