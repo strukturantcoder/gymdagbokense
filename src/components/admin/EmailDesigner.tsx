@@ -48,6 +48,7 @@ export const EmailDesigner = () => {
   const [savedAffiliateLinks, setSavedAffiliateLinks] = useState<AffiliateLink[]>([]);
   const [detectedLinks, setDetectedLinks] = useState<DetectedLink[]>([]);
   const [linkUrls, setLinkUrls] = useState<Record<string, string>>({});
+  const [appliedLinkKeys, setAppliedLinkKeys] = useState<Record<string, boolean>>({});
   const [isDetectingLinks, setIsDetectingLinks] = useState(false);
   
   const debouncedContent = useDebounce(content, 1000);
@@ -128,36 +129,47 @@ export const EmailDesigner = () => {
       toast.error("Ange en URL först");
       return;
     }
-    
-    // Find the actual position of the text in content (don't rely on AI's index)
+
+    const key = `${link.startIndex}-${link.endIndex}`;
+
+    // Find the actual position of the text in content (prefer near suggested startIndex)
     const textToFind = link.text;
-    const actualIndex = content.indexOf(textToFind);
-    
+    const preferredFrom = Math.max(0, (link.startIndex ?? 0) - 10);
+    let actualIndex = content.indexOf(textToFind, preferredFrom);
+    if (actualIndex === -1) {
+      actualIndex = content.indexOf(textToFind);
+    }
+
     if (actualIndex === -1) {
       toast.error(`Kunde inte hitta "${textToFind}" i texten`);
       return;
     }
-    
-    // Replace the first occurrence of the text with a markdown link
+
+    // Replace the occurrence with a markdown link (renders as a hyperlink in preview + sent email)
     const before = content.substring(0, actualIndex);
     const after = content.substring(actualIndex + textToFind.length);
     const newContent = `${before}[${textToFind}](${url})${after}`;
     setContent(newContent);
-    
-    // Remove from detected links
-    setDetectedLinks(detectedLinks.filter(l => l.text !== link.text));
-    setLinkUrls(prev => {
-      const updated = { ...prev };
-      delete updated[`${link.startIndex}-${link.endIndex}`];
-      return updated;
-    });
-    
-    toast.success(`Länk tillagd för "${textToFind}"`);
-    toast.success(`Länk tillagd för "${link.text}"`);
+
+    // Mark as applied (keep it in the list as "klar")
+    setAppliedLinkKeys((prev) => ({ ...prev, [key]: true }));
+
+    toast.success("Länk tillagd");
   };
 
   const dismissLink = (link: DetectedLink) => {
-    setDetectedLinks(detectedLinks.filter(l => l.startIndex !== link.startIndex));
+    const key = `${link.startIndex}-${link.endIndex}`;
+    setDetectedLinks(detectedLinks.filter((l) => `${l.startIndex}-${l.endIndex}` !== key));
+    setAppliedLinkKeys((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setLinkUrls((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   const addAffiliateLink = () => {
@@ -370,56 +382,85 @@ export const EmailDesigner = () => {
 
               {detectedLinks.map((link) => {
                 const key = `${link.startIndex}-${link.endIndex}`;
+                const isApplied = Boolean(appliedLinkKeys[key]);
+
                 return (
-                  <div key={key} className="bg-white dark:bg-background rounded-lg p-3 space-y-2 border border-blue-100 dark:border-blue-800">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">"{link.text}"</span>
+                  <div
+                    key={key}
+                    className={
+                      "rounded-lg p-3 space-y-2 border " +
+                      (isApplied
+                        ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800"
+                        : "bg-white dark:bg-background border-blue-100 dark:border-blue-800")
+                    }
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-medium text-foreground truncate">"{link.text}"</span>
+                        {isApplied && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                            <Check className="h-3 w-3" />
+                            Klar
+                          </span>
+                        )}
+                      </div>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
                         onClick={() => dismissLink(link)}
                         className="h-6 w-6"
+                        aria-label="Dölj förslag"
                       >
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
-                    <div className="flex gap-2">
-                      <Input
-                        value={linkUrls[key] || ""}
-                        onChange={(e) => setLinkUrls(prev => ({ ...prev, [key]: e.target.value }))}
-                        placeholder="Ange länk-URL..."
-                        className="h-8 text-sm flex-1"
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => applyLinkToContent(link, linkUrls[key] || "")}
-                        disabled={!linkUrls[key]}
-                        className="h-8"
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        Lägg till
-                      </Button>
-                    </div>
-                    {savedAffiliateLinks.length > 0 && (
-                      <Select onValueChange={(id) => {
-                        const savedLink = savedAffiliateLinks.find(l => l.id === id);
-                        if (savedLink) {
-                          setLinkUrls(prev => ({ ...prev, [key]: savedLink.url }));
-                        }
-                      }}>
-                        <SelectTrigger className="h-7 text-xs">
-                          <SelectValue placeholder="Eller välj från sparade annonser..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {savedAffiliateLinks.map(savedLink => (
-                            <SelectItem key={savedLink.id} value={savedLink.id}>
-                              {savedLink.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+
+                    {!isApplied && (
+                      <>
+                        <div className="flex gap-2">
+                          <Input
+                            value={linkUrls[key] || ""}
+                            onChange={(e) =>
+                              setLinkUrls((prev) => ({ ...prev, [key]: e.target.value }))
+                            }
+                            placeholder="Ange länk-URL..."
+                            className="h-8 text-sm flex-1"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => applyLinkToContent(link, linkUrls[key] || "")}
+                            disabled={!linkUrls[key]}
+                            className="h-8"
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Lägg till
+                          </Button>
+                        </div>
+
+                        {savedAffiliateLinks.length > 0 && (
+                          <Select
+                            onValueChange={(id) => {
+                              const savedLink = savedAffiliateLinks.find((l) => l.id === id);
+                              if (savedLink) {
+                                setLinkUrls((prev) => ({ ...prev, [key]: savedLink.url }));
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-7 text-xs">
+                              <SelectValue placeholder="Eller välj från sparade annonser..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {savedAffiliateLinks.map((savedLink) => (
+                                <SelectItem key={savedLink.id} value={savedLink.id}>
+                                  {savedLink.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </>
                     )}
                   </div>
                 );
