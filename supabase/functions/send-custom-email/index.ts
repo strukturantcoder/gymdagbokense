@@ -39,12 +39,19 @@ interface AffiliateLink {
 
 const generateEmailHtml = (subject: string, content: string, affiliateLinks: AffiliateLink[] = []) => {
   // Convert markdown-like syntax to HTML
-  const formattedContent = content
-    // Convert markdown links [text](url) to HTML links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color: #3b82f6; text-decoration: underline;">$1</a>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br/>');
+  let formattedContent = content;
+  
+  // Convert markdown links [text](url) to HTML links - use callback for proper replacement
+  formattedContent = formattedContent.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => {
+    return `<a href="${url}" style="color: #3b82f6; text-decoration: underline;">${linkText}</a>`;
+  });
+  
+  // Convert bold and italic
+  formattedContent = formattedContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  formattedContent = formattedContent.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  
+  // Convert newlines
+  formattedContent = formattedContent.replace(/\n/g, '<br/>');
 
   return `
     <!DOCTYPE html>
