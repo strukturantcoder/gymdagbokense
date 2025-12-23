@@ -25,6 +25,7 @@ import ProgramRefineDialog from '@/components/ProgramRefineDialog';
 import SortableExercise from '@/components/SortableExercise';
 import { NotificationBell } from '@/components/NotificationBell';
 import QuickActions from '@/components/QuickActions';
+import GamificationHero from '@/components/GamificationHero';
 import NextMilestoneWidget from '@/components/NextMilestoneWidget';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
 import {
@@ -493,6 +494,9 @@ export default function Dashboard() {
 
         {/* Onboarding Checklist for new users */}
         {user && <OnboardingChecklist userId={user.id} />}
+
+        {/* Gamification Hero - XP, Level, Achievements */}
+        <GamificationHero />
 
         {/* Quick Actions with Streak and Weekly Stats */}
         <QuickActions />
