@@ -239,7 +239,7 @@ export default function Social() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-          <TabsList className="grid w-full grid-cols-6 bg-secondary/50 backdrop-blur-sm p-1">
+          <TabsList className="flex flex-wrap justify-center gap-1 sm:grid sm:grid-cols-6 w-full bg-secondary/50 backdrop-blur-sm p-1 h-auto">
               {[
                 { value: "friends", label: "Vänner", badge: pendingRequests.length },
                 { value: "teams", label: "Lag", badge: 0 },
@@ -251,7 +251,7 @@ export default function Social() {
                 <TabsTrigger 
                   key={tab.value}
                   value={tab.value} 
-                  className="relative text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="relative text-xs sm:text-sm font-medium px-3 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
                   {tab.label}
                   <AnimatePresence>
@@ -262,7 +262,7 @@ export default function Social() {
                         exit={{ scale: 0 }}
                         className="absolute -top-1 -right-1"
                       >
-                        <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
+                        <Badge variant="destructive" className="h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[10px] sm:text-xs">
                           {tab.badge}
                         </Badge>
                       </motion.div>
