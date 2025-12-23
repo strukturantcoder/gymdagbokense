@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, Sparkles, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -38,14 +37,20 @@ export default function ProgramRefineDialog({
   onComplete
 }: ProgramRefineDialogProps) {
   const isMobile = useIsMobile();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: program.followUpQuestion || 'Ditt program är klart! Vill du göra några justeringar? Du kan be mig lägga till supersets, ändra övningar, justera sets/reps, eller något annat.'
+      content: program.followUpQuestion || 'Ditt program är klart! Vill du göra några justeringar?\n\n💡 Tips: Du kan be mig:\n• Lägga till fler träningsdagar\n• Ändra övningar\n• Lägga till supersets\n• Justera sets/reps\n• Och mycket mer!'
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -92,72 +97,96 @@ export default function ProgramRefineDialog({
     onOpenChange(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   const content = (
-    <>
-      <ScrollArea className="h-[300px] pr-4">
-        <div className="space-y-4">
+    <div className="flex flex-col h-full">
+      {/* Messages area - takes remaining space */}
+      <div className="flex-1 overflow-y-auto min-h-0 mb-4">
+        <div className="space-y-3 pr-2">
           {messages.map((message, index) => (
             <div
               key={index}
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] rounded-lg px-4 py-2 ${
+                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                   message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground'
+                    ? 'bg-primary text-primary-foreground rounded-br-md'
+                    : 'bg-muted text-foreground rounded-bl-md'
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
               </div>
             </div>
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-secondary rounded-lg px-4 py-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
+              <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Bearbetar...</span>
+                </div>
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
-      </ScrollArea>
-
-      <div className="flex gap-2 mt-4">
-        <Input
-          placeholder="Skriv dina önskemål..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-          disabled={isLoading}
-        />
-        <Button onClick={handleSend} disabled={isLoading || !input.trim()}>
-          <Send className="w-4 h-4" />
-        </Button>
       </div>
 
-      <div className="flex justify-between mt-4">
-        <Button variant="ghost" onClick={() => onOpenChange(false)}>
-          Avbryt
-        </Button>
-        <Button variant="hero" onClick={handleComplete}>
-          <Check className="w-4 h-4 mr-2" />
-          Klar - Spara program
-        </Button>
+      {/* Input area - fixed at bottom */}
+      <div className="flex-shrink-0 border-t border-border pt-4 space-y-3">
+        <div className="flex gap-2 items-end">
+          <Textarea
+            placeholder="Skriv dina önskemål här... (Enter för att skicka)"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading}
+            className="min-h-[60px] max-h-[120px] resize-none"
+            rows={2}
+          />
+          <Button 
+            onClick={handleSend} 
+            disabled={isLoading || !input.trim()}
+            size="icon"
+            className="h-[60px] w-[60px] flex-shrink-0"
+          >
+            <Send className="w-5 h-5" />
+          </Button>
+        </div>
+
+        <div className="flex justify-between gap-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="flex-1">
+            Avbryt
+          </Button>
+          <Button variant="hero" onClick={handleComplete} className="flex-1">
+            <Check className="w-4 h-4 mr-2" />
+            Klar - Spara
+          </Button>
+        </div>
       </div>
-    </>
+    </div>
   );
 
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="px-4 pb-6">
-          <DrawerHeader className="text-left">
+        <DrawerContent className="h-[85vh] max-h-[85vh]">
+          <DrawerHeader className="text-left px-4 pb-2 flex-shrink-0">
             <DrawerTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-gym-orange" />
               Finjustera ditt program
             </DrawerTitle>
           </DrawerHeader>
-          {content}
+          <div className="flex-1 min-h-0 px-4 pb-4">
+            {content}
+          </div>
         </DrawerContent>
       </Drawer>
     );
@@ -165,14 +194,16 @@ export default function ProgramRefineDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg h-[70vh] max-h-[600px] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-gym-orange" />
             Finjustera ditt program
           </DialogTitle>
         </DialogHeader>
-        {content}
+        <div className="flex-1 min-h-0">
+          {content}
+        </div>
       </DialogContent>
     </Dialog>
   );
