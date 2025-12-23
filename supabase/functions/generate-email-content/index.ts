@@ -53,7 +53,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { template, currentSubject, currentContent, detectLinks, content } = body;
+    const { template, currentSubject, currentContent, detectLinks, content, availableAffiliates } = body;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -63,6 +63,12 @@ serve(async (req) => {
     // Handle link detection mode
     if (detectLinks && content) {
       console.log("Detecting links in content:", content.substring(0, 100));
+      
+      // Build affiliate context for the AI
+      let affiliateContext = "";
+      if (availableAffiliates && availableAffiliates.length > 0) {
+        affiliateContext = `\n\nTillgängliga affiliatelänkar att matcha mot:\n${availableAffiliates.map((a: { name: string; url: string }) => `- "${a.name}": ${a.url}`).join("\n")}`;
+      }
       
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -75,23 +81,26 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `Du är en assistent som identifierar texter i mejl som borde vara hyperlänkar.
+              content: `Du är en assistent som identifierar texter i mejl som borde vara hyperlänkar och matchar dem mot tillgängliga affiliatelänkar.
               
 Analysera texten och hitta fraser som:
-- Produktnamn eller varumärken (t.ex. "Nike", "Whey Protein")
+- Produktnamn eller varumärken (t.ex. "Nike", "Whey Protein", "träningskläder")
 - Webbadresser eller domännamn
 - Call-to-actions (t.ex. "klicka här", "läs mer", "köp nu")
-- Referenser till externa resurser
+- Referenser till externa resurser eller produkter
 - Kampanjer eller erbjudanden
+
+VIKTIGT: Om en fras matchar en tillgänglig affiliatelänk, sätt suggestedUrl till den matchande URL:en.
+${affiliateContext}
 
 Returnera ENDAST ett JSON-objekt med denna struktur:
 {
   "links": [
     {
-      "text": "den exakta texten som hittades",
+      "text": "den exakta texten som hittades i mejlet",
       "startIndex": 0,
       "endIndex": 10,
-      "suggestedUrl": ""
+      "suggestedUrl": "matchad affiliatelänk URL eller tom sträng"
     }
   ]
 }
@@ -101,7 +110,7 @@ Svara ENDAST med JSON, ingen annan text.`
             },
             {
               role: "user",
-              content: `Analysera denna mejltext och hitta potentiella länkar:\n\n${content}`
+              content: `Analysera denna mejltext och hitta potentiella länkar. Matcha dem mot tillgängliga affiliatelänkar om möjligt:\n\n${content}`
             }
           ],
         }),

@@ -82,16 +82,29 @@ export const EmailDesigner = () => {
 
     setIsDetectingLinks(true);
     try {
+      // Send saved affiliate links to AI for matching suggestions
       const { data, error } = await supabase.functions.invoke("generate-email-content", {
         body: { 
           detectLinks: true,
-          content: text 
+          content: text,
+          availableAffiliates: savedAffiliateLinks.map(l => ({
+            name: l.label,
+            url: l.url
+          }))
         },
       });
 
       if (error) throw error;
 
       if (data.links && Array.isArray(data.links)) {
+        // Auto-fill suggested URLs from matched affiliates
+        const linksWithUrls: Record<string, string> = {};
+        data.links.forEach((link: DetectedLink) => {
+          if (link.suggestedUrl) {
+            linksWithUrls[`${link.startIndex}-${link.endIndex}`] = link.suggestedUrl;
+          }
+        });
+        setLinkUrls(prev => ({ ...prev, ...linksWithUrls }));
         setDetectedLinks(data.links);
       } else {
         setDetectedLinks([]);
@@ -101,7 +114,7 @@ export const EmailDesigner = () => {
     } finally {
       setIsDetectingLinks(false);
     }
-  }, []);
+  }, [savedAffiliateLinks]);
 
   // Auto-detect links when content changes
   useEffect(() => {

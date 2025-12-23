@@ -18,12 +18,21 @@ export const EmailPreview = ({ subject, content, affiliateLinks = [] }: EmailPre
   const formatContent = (text: string) => {
     if (!text) return "";
     
-    return text
-      // Convert markdown links [text](url) to HTML links
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color: #3b82f6; text-decoration: underline;">$1</a>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n/g, '<br/>');
+    let formatted = text;
+    
+    // Convert markdown links [text](url) to HTML links - use a more robust regex
+    formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => {
+      return `<a href="${url}" style="color: #3b82f6; text-decoration: underline;">${linkText}</a>`;
+    });
+    
+    // Convert bold and italic
+    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    // Convert newlines
+    formatted = formatted.replace(/\n/g, '<br/>');
+    
+    return formatted;
   };
 
   return (
