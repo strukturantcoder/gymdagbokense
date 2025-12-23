@@ -30,7 +30,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const generateEmailHtml = (subject: string, content: string) => {
+interface AffiliateLink {
+  id: string;
+  label: string;
+  url: string;
+  imageUrl?: string;
+}
+
+const generateEmailHtml = (subject: string, content: string, affiliateLinks: AffiliateLink[] = []) => {
   // Convert markdown-like syntax to HTML
   const formattedContent = content
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -64,6 +71,20 @@ const generateEmailHtml = (subject: string, content: string) => {
                     ${formattedContent}
                   </div>
                   
+                  ${affiliateLinks.length > 0 ? `
+                  <!-- Affiliate Links -->
+                  <div style="border-top: 1px solid #e4e4e7; margin-top: 30px; padding-top: 20px;">
+                    <p style="color: #71717a; font-size: 14px; text-align: center; margin: 0 0 15px 0;">Rekommendationer</p>
+                    <div style="text-align: center;">
+                      ${affiliateLinks.map(link => `
+                        <a href="${link.url}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; margin: 5px;">
+                          ${link.label} →
+                        </a>
+                      `).join('')}
+                    </div>
+                  </div>
+                  ` : ''}
+                  
                   <!-- CTA Button -->
                   <div style="text-align: center; margin-top: 30px;">
                     <a href="https://gymdagboken.lovable.app/dashboard" style="display: inline-block; background-color: #f97316; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">
@@ -95,14 +116,14 @@ serve(async (req) => {
   }
 
   try {
-    const { to, subject, content, isTest, sendToAll } = await req.json();
+    const { to, subject, content, affiliateLinks, isTest, sendToAll } = await req.json();
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const html = generateEmailHtml(subject, content);
+    const html = generateEmailHtml(subject, content, affiliateLinks || []);
     let sentCount = 0;
 
     if (isTest && to) {

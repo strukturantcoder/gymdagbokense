@@ -1,11 +1,19 @@
 import { Card } from "@/components/ui/card";
 
+interface AffiliateLink {
+  id: string;
+  label: string;
+  url: string;
+  imageUrl?: string;
+}
+
 interface EmailPreviewProps {
   subject: string;
   content: string;
+  affiliateLinks?: AffiliateLink[];
 }
 
-export const EmailPreview = ({ subject, content }: EmailPreviewProps) => {
+export const EmailPreview = ({ subject, content, affiliateLinks = [] }: EmailPreviewProps) => {
   // Convert markdown-like syntax to HTML
   const formatContent = (text: string) => {
     if (!text) return "";
@@ -48,6 +56,23 @@ export const EmailPreview = ({ subject, content }: EmailPreviewProps) => {
             [Personlig statistik visas här för varje användare]
           </p>
         </div>
+
+        {/* Affiliate Links Section */}
+        {affiliateLinks.length > 0 && (
+          <div className="border-t pt-4 mt-4">
+            <p className="text-sm text-gray-500 mb-3 text-center">Rekommendationer</p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              {affiliateLinks.map((link) => (
+                <div 
+                  key={link.id}
+                  className="inline-block bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm cursor-pointer hover:from-blue-600 hover:to-blue-700 transition-all"
+                >
+                  {link.label} →
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* CTA Button */}
         <div className="text-center pt-4">
