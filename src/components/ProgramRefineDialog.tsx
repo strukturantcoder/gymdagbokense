@@ -106,6 +106,11 @@ export default function ProgramRefineDialog({
     }
   };
 
+  const handleExerciseClick = (dayName: string, exerciseName: string) => {
+    const suggestion = `Ändra övningen "${exerciseName}" på ${dayName}`;
+    setInput(suggestion);
+  };
+
   const ProgramPreview = () => (
     <Collapsible open={showPreview} onOpenChange={setShowPreview}>
       <CollapsibleTrigger asChild>
@@ -138,7 +143,12 @@ export default function ProgramRefineDialog({
                   <Badge 
                     key={exIndex} 
                     variant="outline" 
-                    className="text-[10px] px-1.5 py-0 h-5 bg-background"
+                    className="text-[10px] px-1.5 py-0 h-5 bg-background cursor-pointer hover:bg-primary/10 hover:border-primary/50 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleExerciseClick(day.name, exercise.name);
+                    }}
+                    title={`Klicka för att ändra ${exercise.name}`}
                   >
                     {exercise.name}
                   </Badge>
