@@ -80,6 +80,20 @@ export default function OnboardingChecklist({ userId }: OnboardingChecklistProps
     setIsDismissed(true);
   };
 
+  // Check if user has a scheduled workout
+  const [hasSchedule, setHasSchedule] = useState(false);
+
+  useEffect(() => {
+    const checkSchedule = async () => {
+      const { data } = await supabase
+        .from('scheduled_workouts')
+        .select('id')
+        .limit(1);
+      setHasSchedule((data?.length ?? 0) > 0);
+    };
+    checkSchedule();
+  }, []);
+
   const items: ChecklistItem[] = [
     {
       id: 'program',
@@ -96,13 +110,13 @@ export default function OnboardingChecklist({ userId }: OnboardingChecklistProps
       completed: hasProgram,
     },
     {
-      id: 'workout',
-      title: 'Logga ditt första pass',
-      description: 'Spara ett träningspass med övningar',
+      id: 'schedule',
+      title: 'Schemalägg ditt första pass',
+      description: 'Planera när du ska träna',
       icon: ClipboardList,
       action: () => navigate('/training'),
-      actionLabel: 'Gå till träning',
-      completed: hasWorkout,
+      actionLabel: 'Schemalägg',
+      completed: hasSchedule || hasWorkout,
     },
     {
       id: 'goal',

@@ -12,6 +12,9 @@ const Footer = () => {
       { labelKey: "footer.pricing", href: "#pricing" },
       { labelKey: "footer.contact", href: "/contact", isRoute: true },
     ],
+    resources: [
+      { label: "Träningsblogg", href: "/blogg", isRoute: true },
+    ],
     legal: [
       { labelKey: "footer.privacy", href: "/privacy" },
       { labelKey: "footer.terms", href: "/terms" },
@@ -22,7 +25,7 @@ const Footer = () => {
   return (
     <footer className="bg-gym-charcoal border-t border-border">
       <div className="container px-4 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
@@ -69,6 +72,23 @@ const Footer = () => {
                       {t(link.labelKey)}
                     </a>
                   )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Resources links */}
+          <div>
+            <h4 className="font-display font-semibold mb-4">Resurser</h4>
+            <ul className="space-y-2">
+              {links.resources.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    to={link.href}
+                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                  >
+                    {link.label}
+                  </Link>
                 </li>
               ))}
             </ul>

@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/hooks/useAuth";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PWAUpdateNotification } from "@/components/PWAUpdateNotification";
@@ -24,6 +25,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Cookies = lazy(() => import("./pages/Cookies"));
+const Blog = lazy(() => import("./pages/Blog"));
 const AdminChallenges = lazy(() => import("./pages/AdminChallenges"));
 const AdminInstagramImages = lazy(() => import("./pages/AdminInstagramImages"));
 const AdminAds = lazy(() => import("./pages/AdminAds"));
@@ -66,6 +68,8 @@ const AppContent = () => {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/cookies" element={<Cookies />} />
+            <Route path="/blogg" element={<Blog />} />
+            <Route path="/blogg/:slug" element={<Blog />} />
             <Route path="/admin/challenges" element={<AdminChallenges />} />
             <Route path="/admin/instagram" element={<AdminInstagramImages />} />
             <Route path="/admin/ads" element={<AdminAds />} />
@@ -84,19 +88,21 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <InstallPrompt />
-        <PWAUpdateNotification />
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <InstallPrompt />
+          <PWAUpdateNotification />
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
