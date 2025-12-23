@@ -98,21 +98,56 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const userId = url.searchParams.get("user_id");
-    const includeStrength = url.searchParams.get("strength") !== "false";
-    const includeCardio = url.searchParams.get("cardio") !== "false";
-    const format = url.searchParams.get("format") || "download";
-
-    if (!userId) {
-      return new Response(JSON.stringify({ error: "user_id is required" }), {
-        status: 400,
+    // SECURITY: Validate authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.log("[CALENDAR-EXPORT] Unauthorized: No authorization header");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`[CALENDAR-EXPORT] Generating calendar for user ${userId}, strength=${includeStrength}, cardio=${includeCardio}`);
+    // Create client with user's auth token to verify identity
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
 
+    // Verify the user's identity
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      console.log("[CALENDAR-EXPORT] Unauthorized: Invalid token", authError?.message);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const url = new URL(req.url);
+    const requestedUserId = url.searchParams.get("user_id");
+    const includeStrength = url.searchParams.get("strength") !== "false";
+    const includeCardio = url.searchParams.get("cardio") !== "false";
+    const format = url.searchParams.get("format") || "download";
+
+    // SECURITY: Validate ownership - user can only access their own data
+    // If user_id is provided, it must match authenticated user
+    const userId = requestedUserId || user.id;
+    if (requestedUserId && requestedUserId !== user.id) {
+      console.log("[CALENDAR-EXPORT] Forbidden: User tried to access another user's data", {
+        authenticatedUser: user.id,
+        requestedUser: requestedUserId
+      });
+      return new Response(JSON.stringify({ error: "Forbidden: You can only access your own calendar" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`[CALENDAR-EXPORT] Generating calendar for authenticated user ${userId}, strength=${includeStrength}, cardio=${includeCardio}`);
+
+    // Use service role only after verifying authentication and ownership
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
