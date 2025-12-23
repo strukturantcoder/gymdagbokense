@@ -1,15 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Eye, Send, Users, User, Loader2, Calendar, Clock } from "lucide-react";
+import { Sparkles, Eye, Send, Users, User, Loader2, Calendar, Clock, Link, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { EmailPreview } from "./EmailPreview";
 import { format } from "date-fns";
+
+interface AffiliateLink {
+  id: string;
+  label: string;
+  url: string;
+  imageUrl?: string;
+}
 
 const emailTemplates = [
   { id: "custom", name: "Egen mall" },
@@ -29,6 +36,49 @@ export const EmailDesigner = () => {
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("16:00");
+  const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([]);
+  const [savedAffiliateLinks, setSavedAffiliateLinks] = useState<AffiliateLink[]>([]);
+
+  // Load saved affiliate links from ads table
+  useEffect(() => {
+    const loadAffiliateLinks = async () => {
+      const { data } = await supabase
+        .from("ads")
+        .select("id, name, link, image_url")
+        .eq("is_active", true)
+        .order("name");
+      
+      if (data) {
+        setSavedAffiliateLinks(data.map(ad => ({
+          id: ad.id,
+          label: ad.name,
+          url: ad.link,
+          imageUrl: ad.image_url
+        })));
+      }
+    };
+    loadAffiliateLinks();
+  }, []);
+
+  const addAffiliateLink = () => {
+    setAffiliateLinks([...affiliateLinks, { id: crypto.randomUUID(), label: "", url: "" }]);
+  };
+
+  const updateAffiliateLink = (id: string, field: keyof AffiliateLink, value: string) => {
+    setAffiliateLinks(affiliateLinks.map(link => 
+      link.id === id ? { ...link, [field]: value } : link
+    ));
+  };
+
+  const removeAffiliateLink = (id: string) => {
+    setAffiliateLinks(affiliateLinks.filter(link => link.id !== id));
+  };
+
+  const addSavedAffiliateLink = (savedLink: AffiliateLink) => {
+    if (!affiliateLinks.find(l => l.id === savedLink.id)) {
+      setAffiliateLinks([...affiliateLinks, savedLink]);
+    }
+  };
 
   const generateWithAI = async () => {
     if (!template || template === "custom") {
@@ -72,6 +122,7 @@ export const EmailDesigner = () => {
           to: testEmail, 
           subject, 
           content,
+          affiliateLinks: affiliateLinks.filter(l => l.label && l.url),
           isTest: true 
         },
       });
@@ -104,6 +155,7 @@ export const EmailDesigner = () => {
         body: { 
           subject, 
           content,
+          affiliateLinks: affiliateLinks.filter(l => l.label && l.url),
           sendToAll: true 
         },
       });
@@ -203,6 +255,84 @@ export const EmailDesigner = () => {
               placeholder="Skriv ditt mejlinnehåll här... (stödjer markdown)"
               className="min-h-[200px]"
             />
+          </div>
+
+          {/* Affiliate Links Section */}
+          <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <Link className="h-4 w-4" />
+                Affiliatelänkar
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addAffiliateLink}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Lägg till
+              </Button>
+            </div>
+
+            {savedAffiliateLinks.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Välj från sparade annonser:</Label>
+                <Select onValueChange={(id) => {
+                  const link = savedAffiliateLinks.find(l => l.id === id);
+                  if (link) addSavedAffiliateLink(link);
+                }}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Välj annons..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {savedAffiliateLinks.map(link => (
+                      <SelectItem key={link.id} value={link.id}>
+                        {link.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {affiliateLinks.map((link) => (
+              <div key={link.id} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                <div className="space-y-1">
+                  <Label className="text-xs">Knapptext</Label>
+                  <Input
+                    value={link.label}
+                    onChange={(e) => updateAffiliateLink(link.id, "label", e.target.value)}
+                    placeholder="T.ex. Köp nu"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">URL</Label>
+                  <Input
+                    value={link.url}
+                    onChange={(e) => updateAffiliateLink(link.id, "url", e.target.value)}
+                    placeholder="https://..."
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeAffiliateLink(link.id)}
+                  className="h-8 w-8"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+
+            {affiliateLinks.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-2">
+                Inga affiliatelänkar tillagda
+              </p>
+            )}
           </div>
 
           <Button
@@ -306,7 +436,11 @@ export const EmailDesigner = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <EmailPreview subject={subject} content={content} />
+          <EmailPreview 
+            subject={subject} 
+            content={content} 
+            affiliateLinks={affiliateLinks.filter(l => l.label && l.url)}
+          />
         </CardContent>
       </Card>
     </div>
