@@ -22,6 +22,7 @@ interface CompetitionContent {
   tagCount: string;
   deadline: string;
   instagramHandle: string;
+  captionText: string;
 }
 
 type ImageTemplate = "main" | "howToEnter" | "extraChance" | "winner" | "countdown";
@@ -66,8 +67,32 @@ const AdminInstagramImages = () => {
       tagCount: "2",
       deadline: "31 januari kl. 12:00",
       instagramHandle: "@gymdagbokense",
+      captionText: "",
     };
   });
+
+  // Generate default caption text based on content
+  const getDefaultCaptionText = (c: CompetitionContent) => `🔥 TÄVLA & VINN 🔥
+Redo att ta din träning till nästa nivå? 💪
+
+Vi lottar ut ett ${c.prizeDescription.toLowerCase()} från ${c.sponsor} värt ${c.prizeValue.toLowerCase()} 🎁
+Perfekt för protein, kreatin, träningskläder eller annat du behöver för dina mål.
+
+👇 SÅ DELTAR DU 👇
+1️⃣ Följ ${c.instagramHandle}
+2️⃣ Gilla detta inlägg ❤️
+3️⃣ Kommentera: ${c.commentQuestion} + tagga ${c.tagCount} träningskompisar
+
+💥 EXTRA CHANS ATT VINNA 💥
+➡️ Registrera dig på gymdagboken.se
+➡️ Genomför ett styrkepass i appen
+➡️ Dela passet i din story och tagga ${c.instagramHandle}
+
+📅 Tävlingen avslutas ${c.deadline}
+🏆 Vinnaren lottas och kontaktas via DM
+
+Lycka till! 🚀
+#gymdagboken #tävling #giveaway #${c.sponsor.toLowerCase().replace(/\s+/g, '')} #träning #fitness`;
 
   // Team competition content
   interface TeamCompetitionContent {
@@ -762,57 +787,29 @@ const AdminInstagramImages = () => {
       {/* Competition text reference */}
       <Card className="mt-8">
         <CardHeader>
-          <CardTitle>Tävlingstext (för kopiering)</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Tävlingstext (för Instagram)</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setContent({ ...content, captionText: getDefaultCaptionText(content) })}
+            >
+              Återställ standardtext
+            </Button>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <pre className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-lg overflow-x-auto">
-{`🔥 TÄVLA & VINN 🔥
-Redo att ta din träning till nästa nivå? 💪
-
-Vi lottar ut ett ${content.prizeDescription.toLowerCase()} från ${content.sponsor} värt ${content.prizeValue.toLowerCase()} 🎁
-Perfekt för protein, kreatin, träningskläder eller annat du behöver för dina mål.
-
-👇 SÅ DELTAR DU 👇
-1️⃣ Följ ${content.instagramHandle}
-2️⃣ Gilla detta inlägg ❤️
-3️⃣ Kommentera: ${content.commentQuestion} + tagga ${content.tagCount} träningskompisar
-
-💥 EXTRA CHANS ATT VINNA 💥
-➡️ Registrera dig på gymdagboken.se
-➡️ Genomför ett styrkepass i appen
-➡️ Dela passet i din story och tagga ${content.instagramHandle}
-
-📅 Tävlingen avslutas ${content.deadline}
-🏆 Vinnaren lottas och kontaktas via DM
-
-Lycka till! 🚀
-#gymdagboken #tävling #giveaway #${content.sponsor.toLowerCase().replace(/\s+/g, '')} #träning #fitness`}
-          </pre>
+          <Textarea
+            value={content.captionText || getDefaultCaptionText(content)}
+            onChange={(e) => setContent({ ...content, captionText: e.target.value })}
+            className="min-h-[400px] font-mono text-sm"
+            placeholder="Skriv din tävlingstext här..."
+          />
           <Button 
             variant="outline" 
             className="mt-4"
             onClick={() => {
-              navigator.clipboard.writeText(`🔥 TÄVLA & VINN 🔥
-Redo att ta din träning till nästa nivå? 💪
-
-Vi lottar ut ett ${content.prizeDescription.toLowerCase()} från ${content.sponsor} värt ${content.prizeValue.toLowerCase()} 🎁
-Perfekt för protein, kreatin, träningskläder eller annat du behöver för dina mål.
-
-👇 SÅ DELTAR DU 👇
-1️⃣ Följ ${content.instagramHandle}
-2️⃣ Gilla detta inlägg ❤️
-3️⃣ Kommentera: ${content.commentQuestion} + tagga ${content.tagCount} träningskompisar
-
-💥 EXTRA CHANS ATT VINNA 💥
-➡️ Registrera dig på gymdagboken.se
-➡️ Genomför ett styrkepass i appen
-➡️ Dela passet i din story och tagga ${content.instagramHandle}
-
-📅 Tävlingen avslutas ${content.deadline}
-🏆 Vinnaren lottas och kontaktas via DM
-
-Lycka till! 🚀
-#gymdagboken #tävling #giveaway #${content.sponsor.toLowerCase().replace(/\s+/g, '')} #träning #fitness`);
+              navigator.clipboard.writeText(content.captionText || getDefaultCaptionText(content));
               toast.success("Text kopierad!");
             }}
           >
