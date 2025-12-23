@@ -241,19 +241,20 @@ export default function Social() {
           >
           <TabsList className="flex flex-wrap justify-center gap-1 sm:grid sm:grid-cols-6 w-full bg-secondary/50 backdrop-blur-sm p-1 h-auto">
               {[
-                { value: "friends", label: "Vänner", badge: pendingRequests.length },
-                { value: "teams", label: "Lag", badge: 0 },
-                { value: "challenges", label: "Utmaningar", badge: pendingChallenges.filter(c => c.challenged_id === user?.id).length },
-                { value: "pool", label: "Matchning", badge: 0 },
-                { value: "community", label: "Tävlingar", badge: 0 },
-                { value: "achievements", label: "Prestationer", badge: 0 }
+                { value: "friends", label: "Vänner", badge: pendingRequests.length, icon: Users },
+                { value: "teams", label: "Lag", badge: 0, icon: Trophy },
+                { value: "challenges", label: "Utmaningar", badge: pendingChallenges.filter(c => c.challenged_id === user?.id).length, icon: Swords },
+                { value: "pool", label: "Matchning", badge: 0, icon: Target },
+                { value: "community", label: "Tävlingar", badge: 0, icon: Globe },
+                { value: "achievements", label: "Prestationer", badge: 0, icon: Sparkles }
               ].map((tab) => (
                 <TabsTrigger 
                   key={tab.value}
                   value={tab.value} 
-                  className="relative text-xs sm:text-sm font-medium px-3 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="relative text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 flex items-center gap-1.5"
                 >
-                  {tab.label}
+                  <tab.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
                   <AnimatePresence>
                     {tab.badge > 0 && (
                       <motion.div
