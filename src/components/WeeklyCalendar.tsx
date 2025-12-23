@@ -19,6 +19,7 @@ interface ScheduledWorkout {
   workout_program_id: string | null;
   workout_day_name: string | null;
   scheduled_date: string;
+  scheduled_time: string | null;
   completed_at: string | null;
 }
 

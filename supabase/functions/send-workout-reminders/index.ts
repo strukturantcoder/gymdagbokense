@@ -280,7 +280,7 @@ serve(async (req) => {
     // Get all scheduled workouts for today with reminders enabled
     const { data: scheduledWorkouts, error: scheduledError } = await supabase
       .from("scheduled_workouts")
-      .select("id, user_id, title, scheduled_date, reminder_minutes_before, workout_type")
+      .select("id, user_id, title, scheduled_date, scheduled_time, reminder_minutes_before, workout_type")
       .eq("scheduled_date", today)
       .eq("reminder_enabled", true)
       .is("completed_at", null);
@@ -293,20 +293,34 @@ serve(async (req) => {
       for (const workout of scheduledWorkouts) {
         const minutesBefore = workout.reminder_minutes_before || 60;
         
-        // For scheduled workouts, we send reminder at a reasonable time before
-        // Since we don't have exact time, we'll send based on minutes_before from a default time (e.g., 18:00)
-        const defaultWorkoutHour = 18; // Assume workouts are at 18:00 by default
-        const defaultWorkoutMinute = 0;
+        // Determine workout time - use scheduled_time if set, otherwise default to 18:00
+        let workoutHour = 18;
+        let workoutMinute = 0;
+        
+        if (workout.scheduled_time) {
+          const [h, m] = workout.scheduled_time.split(":").map(Number);
+          workoutHour = h;
+          workoutMinute = m;
+          console.log(`[WORKOUT-REMINDERS] Workout ${workout.id} scheduled at ${workoutHour}:${workoutMinute}`);
+        }
         
         // Calculate reminder send time
-        let reminderSendHour = defaultWorkoutHour;
-        let reminderSendMinute = defaultWorkoutMinute - minutesBefore;
+        let reminderSendHour = workoutHour;
+        let reminderSendMinute = workoutMinute - minutesBefore;
         
         // Handle negative minutes
         while (reminderSendMinute < 0) {
           reminderSendMinute += 60;
           reminderSendHour -= 1;
         }
+        
+        // Handle hour underflow (previous day - skip)
+        if (reminderSendHour < 0) {
+          console.log(`[WORKOUT-REMINDERS] Reminder for ${workout.id} would be previous day, skipping`);
+          continue;
+        }
+
+        console.log(`[WORKOUT-REMINDERS] Checking workout ${workout.id}: send at ${reminderSendHour}:${reminderSendMinute}, current ${currentHour}:${currentMinute}`);
 
         // Check if it's time to send (within 15 min window)
         const isTimeToSend =
@@ -341,8 +355,9 @@ serve(async (req) => {
 
         if (subscriptions?.length) {
           const workoutTypeEmoji = workout.workout_type === "cardio" ? "🏃" : "🏋️";
+          const timeInfo = workout.scheduled_time ? ` kl ${workout.scheduled_time.slice(0, 5)}` : "";
           const payload = JSON.stringify({
-            title: `${workoutTypeEmoji} Schemalagt pass!`,
+            title: `${workoutTypeEmoji} Schemalagt pass${timeInfo}!`,
             message: `Glöm inte: ${workout.title}`,
             url: "/dashboard",
           });
