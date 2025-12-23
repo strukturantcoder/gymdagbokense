@@ -1,21 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Eye, Send, Users, User, Loader2, Calendar, Clock, Link, Plus, Trash2 } from "lucide-react";
+import { Sparkles, Eye, Send, Users, User, Loader2, Calendar, Clock, Link, Plus, Trash2, LinkIcon, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { EmailPreview } from "./EmailPreview";
 import { format } from "date-fns";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface AffiliateLink {
   id: string;
   label: string;
   url: string;
   imageUrl?: string;
+}
+
+interface DetectedLink {
+  text: string;
+  startIndex: number;
+  endIndex: number;
+  suggestedUrl?: string;
 }
 
 const emailTemplates = [
@@ -38,6 +46,11 @@ export const EmailDesigner = () => {
   const [scheduleTime, setScheduleTime] = useState("16:00");
   const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([]);
   const [savedAffiliateLinks, setSavedAffiliateLinks] = useState<AffiliateLink[]>([]);
+  const [detectedLinks, setDetectedLinks] = useState<DetectedLink[]>([]);
+  const [linkUrls, setLinkUrls] = useState<Record<string, string>>({});
+  const [isDetectingLinks, setIsDetectingLinks] = useState(false);
+  
+  const debouncedContent = useDebounce(content, 1000);
 
   // Load saved affiliate links from ads table
   useEffect(() => {
@@ -59,6 +72,70 @@ export const EmailDesigner = () => {
     };
     loadAffiliateLinks();
   }, []);
+
+  // Detect potential links in content using AI
+  const detectLinksInContent = useCallback(async (text: string) => {
+    if (!text || text.length < 20) {
+      setDetectedLinks([]);
+      return;
+    }
+
+    setIsDetectingLinks(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-email-content", {
+        body: { 
+          detectLinks: true,
+          content: text 
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.links && Array.isArray(data.links)) {
+        setDetectedLinks(data.links);
+      } else {
+        setDetectedLinks([]);
+      }
+    } catch (error) {
+      console.error("Error detecting links:", error);
+    } finally {
+      setIsDetectingLinks(false);
+    }
+  }, []);
+
+  // Auto-detect links when content changes
+  useEffect(() => {
+    if (debouncedContent) {
+      detectLinksInContent(debouncedContent);
+    }
+  }, [debouncedContent, detectLinksInContent]);
+
+  const applyLinkToContent = (link: DetectedLink, url: string) => {
+    if (!url) {
+      toast.error("Ange en URL först");
+      return;
+    }
+    
+    // Replace the text with markdown-style link
+    const before = content.substring(0, link.startIndex);
+    const after = content.substring(link.endIndex);
+    const newContent = `${before}[${link.text}](${url})${after}`;
+    setContent(newContent);
+    
+    // Remove from detected links
+    setDetectedLinks(detectedLinks.filter(l => l.startIndex !== link.startIndex));
+    setLinkUrls(prev => {
+      const updated = { ...prev };
+      delete updated[`${link.startIndex}-${link.endIndex}`];
+      return updated;
+    });
+    
+    toast.success(`Länk tillagd för "${link.text}"`);
+  };
+
+  const dismissLink = (link: DetectedLink) => {
+    setDetectedLinks(detectedLinks.filter(l => l.startIndex !== link.startIndex));
+  };
 
   const addAffiliateLink = () => {
     setAffiliateLinks([...affiliateLinks, { id: crypto.randomUUID(), label: "", url: "" }]);
@@ -256,6 +333,76 @@ export const EmailDesigner = () => {
               className="min-h-[200px]"
             />
           </div>
+
+          {/* Detected Links Section */}
+          {(detectedLinks.length > 0 || isDetectingLinks) && (
+            <div className="border rounded-lg p-4 space-y-3 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-2">
+                <LinkIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <Label className="text-blue-700 dark:text-blue-300">
+                  {isDetectingLinks ? "Letar efter potentiella länkar..." : "Potentiella länkar hittade"}
+                </Label>
+                {isDetectingLinks && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
+              </div>
+
+              {detectedLinks.map((link) => {
+                const key = `${link.startIndex}-${link.endIndex}`;
+                return (
+                  <div key={key} className="bg-white dark:bg-background rounded-lg p-3 space-y-2 border border-blue-100 dark:border-blue-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">"{link.text}"</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => dismissLink(link)}
+                        className="h-6 w-6"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={linkUrls[key] || ""}
+                        onChange={(e) => setLinkUrls(prev => ({ ...prev, [key]: e.target.value }))}
+                        placeholder="Ange länk-URL..."
+                        className="h-8 text-sm flex-1"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => applyLinkToContent(link, linkUrls[key] || "")}
+                        disabled={!linkUrls[key]}
+                        className="h-8"
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Lägg till
+                      </Button>
+                    </div>
+                    {savedAffiliateLinks.length > 0 && (
+                      <Select onValueChange={(id) => {
+                        const savedLink = savedAffiliateLinks.find(l => l.id === id);
+                        if (savedLink) {
+                          setLinkUrls(prev => ({ ...prev, [key]: savedLink.url }));
+                        }
+                      }}>
+                        <SelectTrigger className="h-7 text-xs">
+                          <SelectValue placeholder="Eller välj från sparade annonser..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {savedAffiliateLinks.map(savedLink => (
+                            <SelectItem key={savedLink.id} value={savedLink.id}>
+                              {savedLink.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Affiliate Links Section */}
           <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
