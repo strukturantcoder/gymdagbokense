@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Sparkles, Check } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Send, Sparkles, Check, ChevronDown, ChevronUp, Dumbbell } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,16 +40,16 @@ export default function ProgramRefineDialog({
 }: ProgramRefineDialogProps) {
   const isMobile = useIsMobile();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showPreview, setShowPreview] = useState(true);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: program.followUpQuestion || 'Ditt program är klart! Vill du göra några justeringar?\n\n💡 Tips: Du kan be mig:\n• Lägga till fler träningsdagar\n• Ändra övningar\n• Lägga till supersets\n• Justera sets/reps\n• Och mycket mer!'
+      content: program.followUpQuestion || 'Ditt program är klart! Vill du göra några justeringar?\n\n💡 Tips: Du kan be mig:\n• Lägga till fler träningsdagar\n• Ändra övningar\n• Lägga till supersets\n• Justera sets/reps'
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
@@ -104,9 +106,64 @@ export default function ProgramRefineDialog({
     }
   };
 
+  const ProgramPreview = () => (
+    <Collapsible open={showPreview} onOpenChange={setShowPreview}>
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" className="w-full flex items-center justify-between p-3 h-auto bg-muted/50 hover:bg-muted rounded-lg mb-3">
+          <div className="flex items-center gap-2">
+            <Dumbbell className="w-4 h-4 text-primary" />
+            <span className="font-medium text-sm">{program.name}</span>
+            <Badge variant="secondary" className="text-xs">
+              {program.days?.length || 0} dagar
+            </Badge>
+          </div>
+          {showPreview ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          )}
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="space-y-2 mb-4 max-h-[200px] overflow-y-auto pr-1">
+          {program.days?.map((day: any, dayIndex: number) => (
+            <div key={dayIndex} className="bg-card border border-border rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-semibold text-primary">Dag {dayIndex + 1}</span>
+                <span className="text-xs text-muted-foreground">•</span>
+                <span className="text-xs font-medium text-foreground">{day.name}</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {day.exercises?.slice(0, 6).map((exercise: any, exIndex: number) => (
+                  <Badge 
+                    key={exIndex} 
+                    variant="outline" 
+                    className="text-[10px] px-1.5 py-0 h-5 bg-background"
+                  >
+                    {exercise.name}
+                  </Badge>
+                ))}
+                {day.exercises?.length > 6 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-background text-muted-foreground">
+                    +{day.exercises.length - 6} till
+                  </Badge>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+
   const content = (
     <div className="flex flex-col h-full">
-      {/* Messages area - takes remaining space */}
+      {/* Program Preview - collapsible */}
+      <div className="flex-shrink-0">
+        <ProgramPreview />
+      </div>
+
+      {/* Messages area */}
       <div className="flex-1 overflow-y-auto min-h-0 mb-4">
         <div className="space-y-3 pr-2">
           {messages.map((message, index) => (
@@ -139,7 +196,7 @@ export default function ProgramRefineDialog({
         </div>
       </div>
 
-      {/* Input area - fixed at bottom */}
+      {/* Input area */}
       <div className="flex-shrink-0 border-t border-border pt-4 space-y-3">
         <div className="flex gap-2 items-end">
           <Textarea
@@ -177,7 +234,7 @@ export default function ProgramRefineDialog({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[85vh] max-h-[85vh]">
+        <DrawerContent className="h-[90vh] max-h-[90vh]">
           <DrawerHeader className="text-left px-4 pb-2 flex-shrink-0">
             <DrawerTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-gym-orange" />
@@ -194,7 +251,7 @@ export default function ProgramRefineDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg h-[70vh] max-h-[600px] flex flex-col">
+      <DialogContent className="sm:max-w-xl h-[80vh] max-h-[700px] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-gym-orange" />
