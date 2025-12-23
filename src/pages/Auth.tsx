@@ -44,7 +44,15 @@ export default function Auth() {
   useEffect(() => {
     if (user) {
       if (referralCode) saveReferral(user.id, referralCode);
-      navigate('/dashboard');
+      
+      // Check for pending team invite
+      const pendingTeamInvite = sessionStorage.getItem('pendingTeamInvite');
+      if (pendingTeamInvite) {
+        sessionStorage.removeItem('pendingTeamInvite');
+        navigate(`/join-team/${pendingTeamInvite}`);
+      } else {
+        navigate('/dashboard');
+      }
     }
   }, [user, navigate, referralCode]);
 

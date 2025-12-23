@@ -29,13 +29,10 @@ const itemVariants = {
 
 export const TeamsSection = () => {
   const {
-    myTeam,
-    teamMembers,
+    myTeams,
     pendingInvitations,
     leaderboard,
-    teamStats,
     loading,
-    myRole,
     createTeam,
     inviteToTeam,
     respondToInvitation,
@@ -45,6 +42,21 @@ export const TeamsSection = () => {
   } = useTeams();
 
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+
+  const handleInviteFriend = (teamId: string) => {
+    setSelectedTeamId(teamId);
+    setInviteDialogOpen(true);
+  };
+
+  const handleInvite = async (friendId: string) => {
+    if (!selectedTeamId) return false;
+    return inviteToTeam(selectedTeamId, friendId);
+  };
+
+  const selectedTeamMembers = selectedTeamId 
+    ? myTeams.find(t => t.team.id === selectedTeamId)?.members || []
+    : [];
 
   return (
     <motion.div
@@ -68,25 +80,29 @@ export const TeamsSection = () => {
         </motion.div>
       )}
 
-      {/* My Team or Create Team */}
-      <motion.div variants={itemVariants}>
-        {myTeam ? (
-          <TeamCard
-            team={myTeam}
-            members={teamMembers}
-            stats={teamStats}
-            myRole={myRole}
-            onLeave={leaveTeam}
-            onDelete={deleteTeam}
-            onUpdateRole={updateMemberRole}
-            onInviteFriend={() => setInviteDialogOpen(true)}
-          />
-        ) : (
+      {/* My Teams */}
+      {myTeams.length > 0 ? (
+        myTeams.map((teamData) => (
+          <motion.div key={teamData.team.id} variants={itemVariants}>
+            <TeamCard
+              team={teamData.team}
+              members={teamData.members}
+              stats={teamData.stats}
+              myRole={teamData.myRole}
+              onLeave={() => leaveTeam(teamData.team.id)}
+              onDelete={() => deleteTeam(teamData.team.id)}
+              onUpdateRole={(memberId, newRole) => updateMemberRole(teamData.team.id, memberId, newRole)}
+              onInviteFriend={() => handleInviteFriend(teamData.team.id)}
+            />
+          </motion.div>
+        ))
+      ) : (
+        <motion.div variants={itemVariants}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Ditt lag
+                Dina lag
               </CardTitle>
               <CardDescription>
                 Du är inte med i något lag än. Skapa ett eget eller vänta på en inbjudan!
@@ -96,8 +112,24 @@ export const TeamsSection = () => {
               <CreateTeamDialog onCreateTeam={createTeam} />
             </CardContent>
           </Card>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
+
+      {/* Create additional team button if user has teams */}
+      {myTeams.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <Card className="border-dashed">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Du kan vara med i flera lag samtidigt
+                </p>
+                <CreateTeamDialog onCreateTeam={createTeam} />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Leaderboard */}
       <motion.div variants={itemVariants}>
@@ -108,8 +140,8 @@ export const TeamsSection = () => {
       <InviteFriendToTeamDialog
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
-        onInvite={inviteToTeam}
-        existingMemberIds={teamMembers.map(m => m.user_id)}
+        onInvite={handleInvite}
+        existingMemberIds={selectedTeamMembers.map(m => m.user_id)}
       />
     </motion.div>
   );
