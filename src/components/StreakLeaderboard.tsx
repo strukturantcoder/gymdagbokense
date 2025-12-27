@@ -6,6 +6,7 @@ import { Flame, Trophy, Medal, Award } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface StreakUser {
   user_id: string;
@@ -104,52 +105,92 @@ const StreakLeaderboardComponent = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Flame className="h-5 w-5 text-orange-500" />
+          <motion.div
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
+          >
+            <Flame className="h-5 w-5 text-orange-500" />
+          </motion.div>
           Streak-topplista
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {leaders.map((leader, index) => {
-          const isCurrentUser = leader.user_id === user?.id;
-          
-          return (
-            <div 
-              key={leader.user_id}
-              className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/50'
-              }`}
-            >
-              <div className="flex items-center justify-center w-6">
-                {getRankIcon(index)}
-              </div>
-              
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={leader.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  {leader.display_name?.[0]?.toUpperCase() || '?'}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1 min-w-0">
-                <p className={`font-medium truncate ${isCurrentUser ? 'text-primary' : ''}`}>
-                  {leader.display_name || 'Anonym'}
-                  {isCurrentUser && <span className="text-xs ml-1">(du)</span>}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Längsta: {leader.longest_streak} dagar
-                </p>
-              </div>
-              
-              <Badge 
-                variant="secondary" 
-                className={`flex items-center gap-1 ${getStreakColor(leader.current_streak)}`}
+        <AnimatePresence mode="popLayout">
+          {leaders.map((leader, index) => {
+            const isCurrentUser = leader.user_id === user?.id;
+            
+            return (
+              <motion.div 
+                key={leader.user_id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ 
+                  duration: 0.3, 
+                  delay: index * 0.05,
+                  type: "spring",
+                  stiffness: 100
+                }}
+                layout
+                className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
+                  isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/50'
+                }`}
               >
-                <Flame className="h-3 w-3" />
-                {leader.current_streak}
-              </Badge>
-            </div>
-          );
-        })}
+                <motion.div 
+                  className="flex items-center justify-center w-6"
+                  whileHover={{ scale: 1.2 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  {getRankIcon(index)}
+                </motion.div>
+                
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={leader.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {leader.display_name?.[0]?.toUpperCase() || '?'}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 min-w-0">
+                  <p className={`font-medium truncate ${isCurrentUser ? 'text-primary' : ''}`}>
+                    {leader.display_name || 'Anonym'}
+                    {isCurrentUser && <span className="text-xs ml-1">(du)</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Längsta: {leader.longest_streak} dagar
+                  </p>
+                </div>
+                
+                <motion.div
+                  key={`streak-${leader.user_id}-${leader.current_streak}`}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Badge 
+                    variant="secondary" 
+                    className={`flex items-center gap-1 ${getStreakColor(leader.current_streak)}`}
+                  >
+                    <motion.div
+                      animate={leader.current_streak >= 7 ? { 
+                        scale: [1, 1.3, 1],
+                        rotate: [0, 5, -5, 0]
+                      } : {}}
+                      transition={{ 
+                        duration: 0.6, 
+                        repeat: Infinity, 
+                        repeatDelay: 1.5 
+                      }}
+                    >
+                      <Flame className="h-3 w-3" />
+                    </motion.div>
+                    {leader.current_streak}
+                  </Badge>
+                </motion.div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </CardContent>
     </Card>
   );
