@@ -2,8 +2,16 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Smartphone, BarChart3, Trophy, Users, Zap, Map, Target, Dumbbell, Share2 } from "lucide-react";
+import { Download, Smartphone, BarChart3, Trophy, Users, Zap, Map as MapIcon, Target, Dumbbell, Share2, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Textarea } from "@/components/ui/textarea";
+
+// Import AI-generated marketing images
+import heroFitnessApp from "@/assets/marketing/hero-fitness-app.jpg";
+import achievementCelebration from "@/assets/marketing/achievement-celebration.jpg";
+import aiWorkoutPlanning from "@/assets/marketing/ai-workout-planning.jpg";
+import socialCommunityStory from "@/assets/marketing/social-community-story.jpg";
 
 type MarketingTemplate = 
   | "appOverview" 
@@ -19,16 +27,17 @@ interface TemplateInfo {
   name: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
+  backgroundImage?: string;
 }
 
 const TEMPLATES: TemplateInfo[] = [
-  { id: "appOverview", name: "App-översikt", description: "Allmän presentation av appen", icon: Smartphone },
-  { id: "aiFeature", name: "AI-funktioner", description: "Visa AI-genererade träningsprogram", icon: Zap },
-  { id: "workoutLogging", name: "Träningsloggning", description: "Visa hur man loggar pass", icon: Dumbbell },
-  { id: "statsShowcase", name: "Statistik", description: "Visa statistik och framsteg", icon: BarChart3 },
-  { id: "gpsTracking", name: "GPS-spårning", description: "Visa kart- och GPS-funktioner", icon: Map },
-  { id: "socialFeatures", name: "Sociala funktioner", description: "Utmaningar och vänner", icon: Users },
-  { id: "xpSystem", name: "XP & Nivåer", description: "Gamification och achievements", icon: Trophy },
+  { id: "appOverview", name: "App-översikt", description: "Allmän presentation av appen", icon: Smartphone, backgroundImage: heroFitnessApp },
+  { id: "aiFeature", name: "AI-funktioner", description: "Visa AI-genererade träningsprogram", icon: Zap, backgroundImage: aiWorkoutPlanning },
+  { id: "workoutLogging", name: "Träningsloggning", description: "Visa hur man loggar pass", icon: Dumbbell, backgroundImage: heroFitnessApp },
+  { id: "statsShowcase", name: "Statistik", description: "Visa statistik och framsteg", icon: BarChart3, backgroundImage: heroFitnessApp },
+  { id: "gpsTracking", name: "GPS-spårning", description: "Visa kart- och GPS-funktioner", icon: MapIcon },
+  { id: "socialFeatures", name: "Sociala funktioner", description: "Utmaningar och vänner", icon: Users, backgroundImage: socialCommunityStory },
+  { id: "xpSystem", name: "XP & Nivåer", description: "Gamification och achievements", icon: Trophy, backgroundImage: achievementCelebration },
 ];
 
 const COLORS = {
@@ -45,16 +54,30 @@ const COLORS = {
   blue: "#3b82f6",
 };
 
+interface AIGeneratedContent {
+  headline: string;
+  subheadline: string;
+  caption: string;
+  hashtags: string;
+}
+
 export default function MarketingImageGenerator() {
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const downloadCanvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<MarketingTemplate>("appOverview");
   const [imageFormat, setImageFormat] = useState<"post" | "story">("post");
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
+  const [backgroundImages, setBackgroundImages] = useState(() => new Map<string, HTMLImageElement>());
+  const [useAIBackground, setUseAIBackground] = useState(true);
+  
+  // AI content generation
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiContent, setAiContent] = useState<AIGeneratedContent | null>(null);
+  const [customCaption, setCustomCaption] = useState("");
 
   // Load logo
   useEffect(() => {
-    const img = new window.Image();
+    const img = document.createElement('img') as HTMLImageElement;
     img.crossOrigin = "anonymous";
     img.onload = () => {
       const canvas = document.createElement("canvas");
@@ -80,12 +103,66 @@ export default function MarketingImageGenerator() {
       }
       
       ctx.putImageData(imageData, 0, 0);
-      const processedImg = new window.Image();
+      const processedImg = document.createElement('img') as HTMLImageElement;
       processedImg.onload = () => setLogoImage(processedImg);
       processedImg.src = canvas.toDataURL("image/png");
     };
     img.src = "/pwa-512x512.png";
   }, []);
+
+  // Load background images
+  useEffect(() => {
+    const loadBackgroundImages = async () => {
+      const imageMap: Map<string, HTMLImageElement> = new globalThis.Map();
+      
+      for (const template of TEMPLATES) {
+        if (template.backgroundImage) {
+          const img = document.createElement('img') as HTMLImageElement;
+          img.crossOrigin = "anonymous";
+          await new Promise<void>((resolve) => {
+            img.onload = () => {
+              imageMap.set(template.id, img);
+              resolve();
+            };
+            img.onerror = () => resolve();
+            img.src = template.backgroundImage;
+          });
+        }
+      }
+      
+      setBackgroundImages(imageMap);
+    };
+    
+    loadBackgroundImages();
+  }, []);
+
+  const generateAIContent = async () => {
+    setIsGeneratingAI(true);
+    
+    const templateInfo = TEMPLATES.find(t => t.id === selectedTemplate);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-marketing-content', {
+        body: {
+          template: selectedTemplate,
+          templateName: templateInfo?.name,
+          templateDescription: templateInfo?.description,
+          format: imageFormat
+        }
+      });
+
+      if (error) throw error;
+
+      setAiContent(data);
+      setCustomCaption(data.caption + "\n\n" + data.hashtags);
+      toast.success("AI-innehåll genererat!");
+    } catch (error) {
+      console.error("Error generating AI content:", error);
+      toast.error("Kunde inte generera AI-innehåll");
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   const drawLogo = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
     if (logoImage) {
@@ -93,118 +170,118 @@ export default function MarketingImageGenerator() {
     }
   };
 
-  const drawBackground = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, COLORS.backgroundGradient1);
-    gradient.addColorStop(0.5, COLORS.background);
-    gradient.addColorStop(1, COLORS.backgroundGradient2);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
+  const drawBackground = (ctx: CanvasRenderingContext2D, width: number, height: number, template: MarketingTemplate) => {
+    const bgImage = backgroundImages.get(template);
+    
+    if (useAIBackground && bgImage) {
+      // Draw the AI-generated background image
+      const imgAspect = bgImage.width / bgImage.height;
+      const canvasAspect = width / height;
+      
+      let drawWidth, drawHeight, drawX, drawY;
+      
+      if (imgAspect > canvasAspect) {
+        drawHeight = height;
+        drawWidth = height * imgAspect;
+        drawX = (width - drawWidth) / 2;
+        drawY = 0;
+      } else {
+        drawWidth = width;
+        drawHeight = width / imgAspect;
+        drawX = 0;
+        drawY = (height - drawHeight) / 2;
+      }
+      
+      ctx.drawImage(bgImage, drawX, drawY, drawWidth, drawHeight);
+      
+      // Add dark overlay for text readability
+      const overlay = ctx.createLinearGradient(0, 0, 0, height);
+      overlay.addColorStop(0, "rgba(0, 0, 0, 0.7)");
+      overlay.addColorStop(0.3, "rgba(0, 0, 0, 0.4)");
+      overlay.addColorStop(0.7, "rgba(0, 0, 0, 0.4)");
+      overlay.addColorStop(1, "rgba(0, 0, 0, 0.8)");
+      ctx.fillStyle = overlay;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      // Fallback to gradient background
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, COLORS.backgroundGradient1);
+      gradient.addColorStop(0.5, COLORS.background);
+      gradient.addColorStop(1, COLORS.backgroundGradient2);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
 
-    // Orange glow effects
-    ctx.shadowBlur = 150;
-    ctx.shadowColor = "rgba(249, 115, 22, 0.4)";
-    ctx.beginPath();
-    ctx.arc(width * 0.8, height * 0.2, 200, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(249, 115, 22, 0.08)";
-    ctx.fill();
+      // Orange glow effects
+      ctx.shadowBlur = 150;
+      ctx.shadowColor = "rgba(249, 115, 22, 0.4)";
+      ctx.beginPath();
+      ctx.arc(width * 0.8, height * 0.2, 200, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(249, 115, 22, 0.08)";
+      ctx.fill();
 
-    ctx.beginPath();
-    ctx.arc(width * 0.2, height * 0.8, 250, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(249, 115, 22, 0.05)";
-    ctx.fill();
+      ctx.beginPath();
+      ctx.arc(width * 0.2, height * 0.8, 250, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(249, 115, 22, 0.05)";
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  };
+
+  const drawTextWithShadow = (ctx: CanvasRenderingContext2D, text: string, x: number, y: number) => {
+    ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+    ctx.fillText(text, x, y);
+    ctx.shadowColor = "transparent";
     ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
   };
 
-  const drawPhoneMockup = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) => {
-    // Phone frame
-    ctx.fillStyle = "#1f1f1f";
-    ctx.beginPath();
-    ctx.roundRect(x, y, width, height, 30);
-    ctx.fill();
-    
-    // Screen
-    ctx.fillStyle = "#0a0a0a";
-    ctx.beginPath();
-    ctx.roundRect(x + 8, y + 8, width - 16, height - 16, 22);
-    ctx.fill();
-    
-    // Notch
-    ctx.fillStyle = "#1f1f1f";
-    ctx.beginPath();
-    ctx.roundRect(x + width/2 - 50, y + 8, 100, 25, 15);
-    ctx.fill();
-  };
-
-  const drawFeatureCard = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, emoji: string, title: string, subtitle: string) => {
-    // Card background
-    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-    ctx.beginPath();
-    ctx.roundRect(x, y, width, height, 16);
-    ctx.fill();
-    
-    // Border
-    ctx.strokeStyle = "rgba(249, 115, 22, 0.3)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    // Emoji
-    ctx.font = "40px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(emoji, x + width/2, y + 50);
-    
-    // Title
-    ctx.font = "bold 24px 'Oswald', sans-serif";
-    ctx.fillStyle = COLORS.white;
-    ctx.fillText(title, x + width/2, y + 90);
-    
-    // Subtitle
-    ctx.font = "16px 'Oswald', sans-serif";
-    ctx.fillStyle = COLORS.whiteDim;
-    ctx.fillText(subtitle, x + width/2, y + 115);
-  };
-
-  const drawAppOverview = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
+  const drawTemplateContent = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story", template: MarketingTemplate) => {
     const centerY = height / 2 + (format === "post" ? 0 : 50);
     
-    // Main title
+    // Use AI-generated content if available
+    const headline = aiContent?.headline || getDefaultHeadline(template);
+    const subheadline = aiContent?.subheadline || getDefaultSubheadline(template);
+    
+    // Main title with shadow for readability
     ctx.font = `bold ${format === "post" ? 72 : 80}px 'Oswald', sans-serif`;
     ctx.textAlign = "center";
     const titleGradient = ctx.createLinearGradient(0, centerY - 200, 0, centerY - 100);
     titleGradient.addColorStop(0, COLORS.orange);
     titleGradient.addColorStop(1, COLORS.orangeLight);
     ctx.fillStyle = titleGradient;
-    ctx.fillText("DIN DIGITALA", width / 2, centerY - 160);
-    ctx.fillText("TRÄNINGSDAGBOK", width / 2, centerY - 80);
+    
+    // Split headline into lines
+    const headlineLines = headline.split('\n');
+    headlineLines.forEach((line, i) => {
+      drawTextWithShadow(ctx, line.toUpperCase(), width / 2, centerY - 160 + i * 80);
+    });
     
     // Subtitle
     ctx.font = "32px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.whiteMuted;
-    ctx.fillText("Logga • Analysera • Förbättras", width / 2, centerY - 20);
+    drawTextWithShadow(ctx, subheadline, width / 2, centerY + 20);
     
-    // Feature highlights
-    const features = [
-      { emoji: "🤖", text: "AI-träningsprogram" },
-      { emoji: "📊", text: "Detaljerad statistik" },
-      { emoji: "🏆", text: "Utmaningar & XP" },
-      { emoji: "🗺️", text: "GPS-spårning" },
-    ];
-    
-    const startY = centerY + 60;
+    // Feature-specific icons/elements
+    const features = getFeatureIcons(template);
+    const startY = centerY + 100;
     const spacing = format === "post" ? 70 : 90;
     
     features.forEach((feature, i) => {
       ctx.font = "40px sans-serif";
-      ctx.fillText(feature.emoji, width / 2 - 150, startY + i * spacing);
+      drawTextWithShadow(ctx, feature.emoji, width / 2 - 150, startY + i * spacing);
       
       ctx.font = "28px 'Oswald', sans-serif";
       ctx.fillStyle = COLORS.white;
       ctx.textAlign = "left";
-      ctx.fillText(feature.text, width / 2 - 100, startY + i * spacing);
+      drawTextWithShadow(ctx, feature.text, width / 2 - 100, startY + i * spacing);
       ctx.textAlign = "center";
     });
     
-    // CTA
+    // CTA Button
     ctx.fillStyle = COLORS.orange;
     ctx.beginPath();
     ctx.roundRect(width/2 - 200, height - 180, 400, 60, 30);
@@ -215,314 +292,78 @@ export default function MarketingImageGenerator() {
     ctx.fillText("GYMDAGBOKEN.SE", width / 2, height - 140);
   };
 
-  const drawAIFeature = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
-    const centerY = height / 2 + (format === "post" ? 0 : 80);
-    
-    // AI icon
-    ctx.font = "100px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("🤖", width / 2, centerY - 250);
-    
-    // Title
-    ctx.font = `bold ${format === "post" ? 64 : 72}px 'Oswald', sans-serif`;
-    const gradient = ctx.createLinearGradient(0, centerY - 200, 0, centerY - 100);
-    gradient.addColorStop(0, COLORS.orange);
-    gradient.addColorStop(1, COLORS.orangeLight);
-    ctx.fillStyle = gradient;
-    ctx.fillText("AI-GENERERADE", width / 2, centerY - 150);
-    ctx.fillText("TRÄNINGSPROGRAM", width / 2, centerY - 80);
-    
-    // Description
-    ctx.font = "28px 'Oswald', sans-serif";
-    ctx.fillStyle = COLORS.whiteMuted;
-    ctx.fillText("Personligt anpassade program", width / 2, centerY - 20);
-    ctx.fillText("baserat på dina mål", width / 2, centerY + 20);
-    
-    // Example features
-    const items = [
-      "✅ Välj antal dagar per vecka",
-      "✅ Anpassa efter din nivå",
-      "✅ Finjustera med AI-chat",
-      "✅ Spara och modifiera",
-    ];
-    
-    const startY = centerY + 100;
-    ctx.font = "26px 'Oswald', sans-serif";
-    ctx.fillStyle = COLORS.white;
-    ctx.textAlign = "left";
-    items.forEach((item, i) => {
-      ctx.fillText(item, width / 2 - 180, startY + i * 55);
-    });
-    ctx.textAlign = "center";
+  const getDefaultHeadline = (template: MarketingTemplate): string => {
+    const headlines: Record<MarketingTemplate, string> = {
+      appOverview: "DIN DIGITALA\nTRÄNINGSDAGBOK",
+      aiFeature: "AI-GENERERADE\nTRÄNINGSPROGRAM",
+      workoutLogging: "LOGGA VARJE\nTRÄNINGSPASS",
+      statsShowcase: "SE DINA\nFRAMSTEG",
+      gpsTracking: "GPS-SPÅRNING\nFÖR KONDITION",
+      socialFeatures: "UTMANA\nDINA VÄNNER",
+      xpSystem: "SAMLA XP\n& NIVÅA UPP"
+    };
+    return headlines[template];
   };
 
-  const drawWorkoutLogging = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
-    const centerY = height / 2 + (format === "post" ? 0 : 80);
-    
-    // Icon
-    ctx.font = "100px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("💪", width / 2, centerY - 250);
-    
-    // Title
-    ctx.font = `bold ${format === "post" ? 64 : 72}px 'Oswald', sans-serif`;
-    const gradient = ctx.createLinearGradient(0, centerY - 200, 0, centerY - 100);
-    gradient.addColorStop(0, COLORS.orange);
-    gradient.addColorStop(1, COLORS.orangeLight);
-    ctx.fillStyle = gradient;
-    ctx.fillText("LOGGA VARJE", width / 2, centerY - 150);
-    ctx.fillText("TRÄNINGSPASS", width / 2, centerY - 80);
-    
-    // Stats example
-    ctx.font = "28px 'Oswald', sans-serif";
-    ctx.fillStyle = COLORS.whiteMuted;
-    ctx.fillText("Detaljerad loggning per set", width / 2, centerY - 20);
-    
-    // Mock workout stats
-    const stats = [
-      { label: "ÖVNINGAR", value: "8", emoji: "🏋️" },
-      { label: "SET", value: "24", emoji: "🔁" },
-      { label: "TOTAL VIKT", value: "4.5t", emoji: "⚖️" },
-      { label: "XP", value: "+50", emoji: "⭐" },
-    ];
-    
-    const cardWidth = 200;
-    const cardHeight = 100;
-    const gap = 20;
-    const startX = (width - (cardWidth * 2 + gap)) / 2;
-    const startY = centerY + 40;
-    
-    stats.forEach((stat, i) => {
-      const x = startX + (i % 2) * (cardWidth + gap);
-      const y = startY + Math.floor(i / 2) * (cardHeight + gap);
-      
-      ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-      ctx.beginPath();
-      ctx.roundRect(x, y, cardWidth, cardHeight, 12);
-      ctx.fill();
-      
-      ctx.font = "30px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(stat.emoji, x + 40, y + 55);
-      
-      ctx.font = "bold 36px 'Oswald', sans-serif";
-      ctx.fillStyle = COLORS.orange;
-      ctx.fillText(stat.value, x + 120, y + 45);
-      
-      ctx.font = "16px 'Oswald', sans-serif";
-      ctx.fillStyle = COLORS.whiteDim;
-      ctx.fillText(stat.label, x + 120, y + 70);
-    });
+  const getDefaultSubheadline = (template: MarketingTemplate): string => {
+    const subheadlines: Record<MarketingTemplate, string> = {
+      appOverview: "Logga • Analysera • Förbättras",
+      aiFeature: "Personligt anpassade program baserat på dina mål",
+      workoutLogging: "Detaljerad loggning per set",
+      statsShowcase: "Veckovis träningsöversikt",
+      gpsTracking: "Spåra dina löprundor och cykelturer",
+      socialFeatures: "Tävla om vem som tränar mest!",
+      xpSystem: "Gamification för gains!"
+    };
+    return subheadlines[template];
   };
 
-  const drawStatsShowcase = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
-    const centerY = height / 2 + (format === "post" ? 0 : 80);
-    
-    // Icon
-    ctx.font = "100px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("📊", width / 2, centerY - 280);
-    
-    // Title
-    ctx.font = `bold ${format === "post" ? 64 : 72}px 'Oswald', sans-serif`;
-    const gradient = ctx.createLinearGradient(0, centerY - 200, 0, centerY - 100);
-    gradient.addColorStop(0, COLORS.orange);
-    gradient.addColorStop(1, COLORS.orangeLight);
-    ctx.fillStyle = gradient;
-    ctx.fillText("SE DINA", width / 2, centerY - 180);
-    ctx.fillText("FRAMSTEG", width / 2, centerY - 110);
-    
-    // Mock chart bars
-    const barWidth = 60;
-    const maxBarHeight = 200;
-    const barData = [0.4, 0.6, 0.5, 0.8, 0.7, 0.9, 1.0];
-    const days = ["M", "T", "O", "T", "F", "L", "S"];
-    const startX = (width - (barWidth * 7 + 20 * 6)) / 2;
-    const barY = centerY + 150;
-    
-    barData.forEach((value, i) => {
-      const x = startX + i * (barWidth + 20);
-      const barHeight = value * maxBarHeight;
-      
-      // Bar
-      const barGradient = ctx.createLinearGradient(x, barY - barHeight, x, barY);
-      barGradient.addColorStop(0, COLORS.orange);
-      barGradient.addColorStop(1, COLORS.orangeDark);
-      ctx.fillStyle = barGradient;
-      ctx.beginPath();
-      ctx.roundRect(x, barY - barHeight, barWidth, barHeight, 8);
-      ctx.fill();
-      
-      // Day label
-      ctx.font = "20px 'Oswald', sans-serif";
-      ctx.fillStyle = COLORS.whiteDim;
-      ctx.textAlign = "center";
-      ctx.fillText(days[i], x + barWidth / 2, barY + 30);
-    });
-    
-    // Description
-    ctx.font = "26px 'Oswald', sans-serif";
-    ctx.fillStyle = COLORS.whiteMuted;
-    ctx.fillText("Veckovis träningsöversikt", width / 2, centerY - 40);
-  };
-
-  const drawGPSTracking = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
-    const centerY = height / 2 + (format === "post" ? 0 : 80);
-    
-    // Icon
-    ctx.font = "100px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("🗺️", width / 2, centerY - 280);
-    
-    // Title
-    ctx.font = `bold ${format === "post" ? 64 : 72}px 'Oswald', sans-serif`;
-    const gradient = ctx.createLinearGradient(0, centerY - 200, 0, centerY - 100);
-    gradient.addColorStop(0, COLORS.orange);
-    gradient.addColorStop(1, COLORS.orangeLight);
-    ctx.fillStyle = gradient;
-    ctx.fillText("GPS-SPÅRNING", width / 2, centerY - 180);
-    ctx.fillText("FÖR KONDITION", width / 2, centerY - 110);
-    
-    // Description
-    ctx.font = "28px 'Oswald', sans-serif";
-    ctx.fillStyle = COLORS.whiteMuted;
-    ctx.fillText("Spåra dina löprundor och cykelturer", width / 2, centerY - 40);
-    
-    // Stats cards
-    const stats = [
-      { label: "DISTANS", value: "5.2 km", color: COLORS.orange },
-      { label: "TEMPO", value: "5:24 /km", color: COLORS.green },
-      { label: "HASTIGHET", value: "11.1 km/h", color: COLORS.blue },
-    ];
-    
-    const cardWidth = 280;
-    const cardHeight = 80;
-    const startY = centerY + 20;
-    
-    stats.forEach((stat, i) => {
-      const y = startY + i * (cardHeight + 20);
-      
-      ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-      ctx.beginPath();
-      ctx.roundRect(width/2 - cardWidth/2, y, cardWidth, cardHeight, 12);
-      ctx.fill();
-      
-      ctx.font = "18px 'Oswald', sans-serif";
-      ctx.fillStyle = COLORS.whiteDim;
-      ctx.textAlign = "left";
-      ctx.fillText(stat.label, width/2 - cardWidth/2 + 20, y + 35);
-      
-      ctx.font = "bold 32px 'Oswald', sans-serif";
-      ctx.fillStyle = stat.color;
-      ctx.textAlign = "right";
-      ctx.fillText(stat.value, width/2 + cardWidth/2 - 20, y + 55);
-    });
-    ctx.textAlign = "center";
-  };
-
-  const drawSocialFeatures = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
-    const centerY = height / 2 + (format === "post" ? 0 : 80);
-    
-    // Icons
-    ctx.font = "80px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("👥", width / 2 - 60, centerY - 260);
-    ctx.fillText("🏆", width / 2 + 60, centerY - 260);
-    
-    // Title
-    ctx.font = `bold ${format === "post" ? 64 : 72}px 'Oswald', sans-serif`;
-    const gradient = ctx.createLinearGradient(0, centerY - 200, 0, centerY - 100);
-    gradient.addColorStop(0, COLORS.orange);
-    gradient.addColorStop(1, COLORS.orangeLight);
-    ctx.fillStyle = gradient;
-    ctx.fillText("UTMANA", width / 2, centerY - 160);
-    ctx.fillText("DINA VÄNNER", width / 2, centerY - 90);
-    
-    // Description
-    ctx.font = "28px 'Oswald', sans-serif";
-    ctx.fillStyle = COLORS.whiteMuted;
-    ctx.fillText("Tävla om vem som tränar mest!", width / 2, centerY - 20);
-    
-    // Challenge types
-    const challenges = [
-      "🏋️ Flest träningspass",
-      "⏱️ Längst träningstid",
-      "💪 Flest set",
-      "🏃 Mest kondition",
-    ];
-    
-    const startY = centerY + 60;
-    ctx.font = "28px 'Oswald', sans-serif";
-    ctx.fillStyle = COLORS.white;
-    challenges.forEach((challenge, i) => {
-      ctx.fillText(challenge, width / 2, startY + i * 60);
-    });
-  };
-
-  const drawXPSystem = (ctx: CanvasRenderingContext2D, width: number, height: number, format: "post" | "story") => {
-    const centerY = height / 2 + (format === "post" ? 0 : 80);
-    
-    // Icon
-    ctx.font = "100px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("⭐", width / 2, centerY - 280);
-    
-    // Title
-    ctx.font = `bold ${format === "post" ? 64 : 72}px 'Oswald', sans-serif`;
-    const gradient = ctx.createLinearGradient(0, centerY - 200, 0, centerY - 100);
-    gradient.addColorStop(0, COLORS.orange);
-    gradient.addColorStop(1, COLORS.orangeLight);
-    ctx.fillStyle = gradient;
-    ctx.fillText("SAMLA XP", width / 2, centerY - 180);
-    ctx.fillText("& NIVÅA UPP", width / 2, centerY - 110);
-    
-    // XP bar mockup
-    const barWidth = 500;
-    const barHeight = 40;
-    const barX = (width - barWidth) / 2;
-    const barY = centerY - 30;
-    
-    // Background
-    ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-    ctx.beginPath();
-    ctx.roundRect(barX, barY, barWidth, barHeight, 20);
-    ctx.fill();
-    
-    // Progress
-    const progress = 0.7;
-    const progressGradient = ctx.createLinearGradient(barX, barY, barX + barWidth * progress, barY);
-    progressGradient.addColorStop(0, COLORS.orangeDark);
-    progressGradient.addColorStop(1, COLORS.orange);
-    ctx.fillStyle = progressGradient;
-    ctx.beginPath();
-    ctx.roundRect(barX, barY, barWidth * progress, barHeight, 20);
-    ctx.fill();
-    
-    // Level text
-    ctx.font = "bold 28px 'Oswald', sans-serif";
-    ctx.fillStyle = COLORS.white;
-    ctx.fillText("NIVÅ 12", width / 2, barY + 28);
-    
-    // XP sources
-    const sources = [
-      { emoji: "🏋️", text: "Styrkepass: +50 XP" },
-      { emoji: "🏃", text: "Kondition: +2 XP/min" },
-      { emoji: "🏆", text: "Achievements: +100 XP" },
-      { emoji: "⚡", text: "Utmaningar: +150 XP" },
-    ];
-    
-    const startY = centerY + 60;
-    ctx.font = "26px 'Oswald', sans-serif";
-    sources.forEach((source, i) => {
-      ctx.font = "36px sans-serif";
-      ctx.fillText(source.emoji, width / 2 - 160, startY + i * 55);
-      
-      ctx.font = "24px 'Oswald', sans-serif";
-      ctx.fillStyle = COLORS.white;
-      ctx.textAlign = "left";
-      ctx.fillText(source.text, width / 2 - 110, startY + i * 55);
-      ctx.textAlign = "center";
-    });
+  const getFeatureIcons = (template: MarketingTemplate): { emoji: string; text: string }[] => {
+    const features: Record<MarketingTemplate, { emoji: string; text: string }[]> = {
+      appOverview: [
+        { emoji: "🤖", text: "AI-träningsprogram" },
+        { emoji: "📊", text: "Detaljerad statistik" },
+        { emoji: "🏆", text: "Utmaningar & XP" },
+        { emoji: "🗺️", text: "GPS-spårning" },
+      ],
+      aiFeature: [
+        { emoji: "✅", text: "Välj antal dagar per vecka" },
+        { emoji: "✅", text: "Anpassa efter din nivå" },
+        { emoji: "✅", text: "Finjustera med AI-chat" },
+        { emoji: "✅", text: "Spara och modifiera" },
+      ],
+      workoutLogging: [
+        { emoji: "🏋️", text: "8 övningar" },
+        { emoji: "🔁", text: "24 set" },
+        { emoji: "⚖️", text: "4.5t total vikt" },
+        { emoji: "⭐", text: "+50 XP" },
+      ],
+      statsShowcase: [
+        { emoji: "📈", text: "Progressionsgrafer" },
+        { emoji: "🎯", text: "Målspårning" },
+        { emoji: "📅", text: "Veckoöversikt" },
+        { emoji: "🏆", text: "Personliga rekord" },
+      ],
+      gpsTracking: [
+        { emoji: "🏃", text: "Löpning" },
+        { emoji: "🚴", text: "Cykling" },
+        { emoji: "🚶", text: "Promenader" },
+        { emoji: "📍", text: "Rutt på karta" },
+      ],
+      socialFeatures: [
+        { emoji: "🏋️", text: "Flest träningspass" },
+        { emoji: "⏱️", text: "Längst träningstid" },
+        { emoji: "💪", text: "Flest set" },
+        { emoji: "🏃", text: "Mest kondition" },
+      ],
+      xpSystem: [
+        { emoji: "🏋️", text: "Styrkepass: +50 XP" },
+        { emoji: "🏃", text: "Kondition: +2 XP/min" },
+        { emoji: "🏆", text: "Achievements: +100 XP" },
+        { emoji: "⚡", text: "Utmaningar: +150 XP" },
+      ],
+    };
+    return features[template];
   };
 
   const generateImage = useCallback(async (
@@ -538,7 +379,7 @@ export default function MarketingImageGenerator() {
     canvas.width = width;
     canvas.height = height;
 
-    drawBackground(ctx, width, height);
+    drawBackground(ctx, width, height, template);
 
     // Logo at top
     const logoSize = format === "post" ? 120 : 150;
@@ -546,47 +387,25 @@ export default function MarketingImageGenerator() {
     drawLogo(ctx, width / 2, logoY, logoSize);
 
     // Draw template content
-    switch (template) {
-      case "appOverview":
-        drawAppOverview(ctx, width, height, format);
-        break;
-      case "aiFeature":
-        drawAIFeature(ctx, width, height, format);
-        break;
-      case "workoutLogging":
-        drawWorkoutLogging(ctx, width, height, format);
-        break;
-      case "statsShowcase":
-        drawStatsShowcase(ctx, width, height, format);
-        break;
-      case "gpsTracking":
-        drawGPSTracking(ctx, width, height, format);
-        break;
-      case "socialFeatures":
-        drawSocialFeatures(ctx, width, height, format);
-        break;
-      case "xpSystem":
-        drawXPSystem(ctx, width, height, format);
-        break;
-    }
+    drawTemplateContent(ctx, width, height, format, template);
 
     // Branding at bottom
     ctx.font = "bold 32px 'Oswald', sans-serif";
     ctx.fillStyle = COLORS.whiteDim;
     ctx.textAlign = "center";
-    ctx.fillText("@gymdagbokense", width / 2, height - 40);
+    drawTextWithShadow(ctx, "@gymdagbokense", width / 2, height - 40);
 
     return new Promise((resolve) => {
       canvas.toBlob((blob) => resolve(blob), "image/png", 1.0);
     });
-  }, [logoImage]);
+  }, [logoImage, backgroundImages, useAIBackground, aiContent]);
 
   // Update preview
   useEffect(() => {
     if (previewCanvasRef.current && logoImage) {
       generateImage(previewCanvasRef.current, selectedTemplate, imageFormat);
     }
-  }, [selectedTemplate, imageFormat, logoImage, generateImage]);
+  }, [selectedTemplate, imageFormat, logoImage, generateImage, backgroundImages, useAIBackground, aiContent]);
 
   const handleDownload = async () => {
     if (!downloadCanvasRef.current) return;
@@ -645,7 +464,7 @@ export default function MarketingImageGenerator() {
         await navigator.share({
           files: [file],
           title: "Gymdagboken Instagram",
-          text: "Dela till Instagram",
+          text: customCaption || "Dela till Instagram",
         });
         toast.success("Delad!");
       } catch (err) {
@@ -658,6 +477,8 @@ export default function MarketingImageGenerator() {
       toast.info("Öppna Instagram och välj bilden från kamerarullen");
     }
   };
+
+  const currentTemplate = TEMPLATES.find(t => t.id === selectedTemplate);
 
   return (
     <div className="space-y-6">
@@ -682,15 +503,36 @@ export default function MarketingImageGenerator() {
                     key={template.id}
                     variant={selectedTemplate === template.id ? "default" : "outline"}
                     className="h-auto py-3 flex-col items-start text-left"
-                    onClick={() => setSelectedTemplate(template.id)}
+                    onClick={() => {
+                      setSelectedTemplate(template.id);
+                      setAiContent(null);
+                    }}
                   >
                     <div className="flex items-center gap-2 w-full">
                       <template.icon className="h-4 w-4" />
                       <span className="text-sm font-medium">{template.name}</span>
+                      {template.backgroundImage && (
+                        <span className="ml-auto text-xs bg-primary/20 px-1.5 py-0.5 rounded">AI</span>
+                      )}
                     </div>
                     <span className="text-xs text-muted-foreground mt-1">{template.description}</span>
                   </Button>
                 ))}
+              </div>
+
+              {/* AI Background Toggle */}
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Använd AI-bakgrund</span>
+                </div>
+                <Button
+                  variant={useAIBackground ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setUseAIBackground(!useAIBackground)}
+                >
+                  {useAIBackground ? "På" : "Av"}
+                </Button>
               </div>
 
               {/* Format selection */}
@@ -721,74 +563,70 @@ export default function MarketingImageGenerator() {
             </CardContent>
           </Card>
 
-          {/* Caption suggestions */}
-          <Card>
+          {/* AI Content Generator */}
+          <Card className="border-primary/50">
             <CardHeader>
-              <CardTitle>Föreslagna texter</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                AI-genererat innehåll
+              </CardTitle>
+              <CardDescription>
+                Låt AI skapa marknadsföringstext för {currentTemplate?.name}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {selectedTemplate === "appOverview" && (
-                <div className="bg-muted p-3 rounded-lg text-sm">
-                  <p className="mb-2">🔥 Din träning förtjänar en egen dagbok!</p>
-                  <p>Logga pass, följ framsteg och nå dina mål med Gymdagboken. Helt gratis! 💪</p>
-                  <p className="mt-2 text-muted-foreground">#gymdagboken #träning #fitness #workout</p>
-                </div>
-              )}
-              {selectedTemplate === "aiFeature" && (
-                <div className="bg-muted p-3 rounded-lg text-sm">
-                  <p className="mb-2">🤖 Låt AI skapa ditt perfekta träningsprogram!</p>
-                  <p>Anpassa efter dina mål, erfarenhet och hur ofta du vill träna. Smart och enkelt! ⚡</p>
-                  <p className="mt-2 text-muted-foreground">#ai #träningsprogram #personligtränare</p>
-                </div>
-              )}
-              {selectedTemplate === "workoutLogging" && (
-                <div className="bg-muted p-3 rounded-lg text-sm">
-                  <p className="mb-2">💪 Varje rep räknas!</p>
-                  <p>Logga set, vikt och reps för varje övning. Se dina framsteg över tid! 📈</p>
-                  <p className="mt-2 text-muted-foreground">#träningslogg #styrketräning #gains</p>
-                </div>
-              )}
-              {selectedTemplate === "statsShowcase" && (
-                <div className="bg-muted p-3 rounded-lg text-sm">
-                  <p className="mb-2">📊 Data driver framsteg!</p>
-                  <p>Följ din träning med detaljerad statistik och se hur du utvecklas vecka för vecka! 🚀</p>
-                  <p className="mt-2 text-muted-foreground">#statistik #framsteg #träningsdata</p>
-                </div>
-              )}
-              {selectedTemplate === "gpsTracking" && (
-                <div className="bg-muted p-3 rounded-lg text-sm">
-                  <p className="mb-2">🗺️ Spåra dina löprundor!</p>
-                  <p>GPS-tracking för löpning, cykling och promenader. Se rutten på kartan! 🏃‍♂️</p>
-                  <p className="mt-2 text-muted-foreground">#löpning #gps #kondition #outdoor</p>
-                </div>
-              )}
-              {selectedTemplate === "socialFeatures" && (
-                <div className="bg-muted p-3 rounded-lg text-sm">
-                  <p className="mb-2">🏆 Utmana dina träningskompisar!</p>
-                  <p>Vem tränar mest denna vecka? Skapa utmaningar och tävla mot varandra! 💪</p>
-                  <p className="mt-2 text-muted-foreground">#utmaning #träningskompisar #motivation</p>
-                </div>
-              )}
-              {selectedTemplate === "xpSystem" && (
-                <div className="bg-muted p-3 rounded-lg text-sm">
-                  <p className="mb-2">⭐ Nivåa upp din träning!</p>
-                  <p>Samla XP för varje pass och lås upp achievements. Gamification för gains! 🎮</p>
-                  <p className="mt-2 text-muted-foreground">#xp #gamification #achievements #motivation</p>
-                </div>
-              )}
-              <Button
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={generateAIContent} 
+                disabled={isGeneratingAI}
+                className="w-full"
                 variant="outline"
-                size="sm"
-                onClick={() => {
-                  const textEl = document.querySelector('.bg-muted.p-3.rounded-lg.text-sm');
-                  if (textEl) {
-                    navigator.clipboard.writeText(textEl.textContent || "");
-                    toast.success("Text kopierad!");
-                  }
-                }}
               >
-                Kopiera text
+                {isGeneratingAI ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Genererar...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Generera AI-förslag
+                  </>
+                )}
               </Button>
+              
+              {aiContent && (
+                <div className="space-y-3 p-3 bg-muted rounded-lg">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Rubrik</label>
+                    <p className="font-bold text-primary">{aiContent.headline}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Underrubrik</label>
+                    <p className="text-sm">{aiContent.subheadline}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Instagram-caption</label>
+                <Textarea
+                  value={customCaption}
+                  onChange={(e) => setCustomCaption(e.target.value)}
+                  placeholder="Skriv din caption här eller generera med AI..."
+                  rows={4}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(customCaption);
+                    toast.success("Caption kopierad!");
+                  }}
+                  disabled={!customCaption}
+                >
+                  Kopiera caption
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
