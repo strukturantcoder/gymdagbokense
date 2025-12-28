@@ -188,7 +188,7 @@
     "invitedBy": "{{name}} invited you!",
     "invitedGeneric": "You've been invited!",
     "inviteSubtext": "Create an account to become friends automatically",
-    "accountCreated": "Account created! Welcome to Gymdagboken!",
+    "accountCreated": "Account created! Check your inbox (and spam folder) for the confirmation email. Add noreply@gymdagboken.se as a trusted sender.",
     "loggedIn": "Logged in!",
     "loggedOut": "Logged out!",
     "friendAdded": "You're now friends with the person who invited you!",
