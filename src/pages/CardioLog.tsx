@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import EmailConfirmationRequired from '@/components/EmailConfirmationRequired';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,7 +71,7 @@ const CARDIO_XP_PER_MINUTE = 2;
 const CARDIO_XP_PER_KM = 10;
 
 export default function CardioLog() {
-  const { user, loading } = useAuth();
+  const { user, loading, isEmailConfirmed } = useAuth();
   const navigate = useNavigate();
   const [logs, setLogs] = useState<CardioLog[]>([]);
   const [goals, setGoals] = useState<CardioGoal[]>([]);
@@ -499,6 +500,10 @@ export default function CardioLog() {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  if (user && !isEmailConfirmed) {
+    return <EmailConfirmationRequired />;
   }
 
   return (
