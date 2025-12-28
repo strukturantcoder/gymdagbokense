@@ -188,7 +188,8 @@
     "invitedBy": "{{name}} bjöd in dig!",
     "invitedGeneric": "Du har blivit inbjuden!",
     "inviteSubtext": "Skapa konto för att bli vänner automatiskt",
-    "accountCreated": "Konto skapat! Kolla din inkorg (och skräpposten) för bekräftelsemail. Lägg till noreply@gymdagboken.se som betrodd avsändare.",
+    "accountCreated": "Konto skapat! Kolla din inkorg (och skräpposten) för bekräftelsemail.",
+    "accountCreatedHelpLink": "Behöver du hjälp att lägga till oss som betrodd avsändare?",
     "loggedIn": "Inloggad!",
     "loggedOut": "Utloggad!",
     "friendAdded": "Du är nu vän med personen som bjöd in dig!",
@@ -376,5 +377,46 @@
     "update": "Uppdatera",
     "updating": "Uppdaterar appen...",
     "updated": "Appen är uppdaterad!"
+  },
+  "emailHelp": {
+    "title": "Lägg till betrodd avsändare",
+    "description": "Om våra e-postmeddelanden hamnar i skräpposten kan du lägga till vår avsändaradress som betrodd. Välj din e-postklient nedan för instruktioner.",
+    "selectClient": "Välj din e-postklient",
+    "tip": "Tips",
+    "senderAddress": "Avsändaradress att lägga till",
+    "gmail": {
+      "step1": "Öppna ett mail från oss i Gmail",
+      "step2": "Klicka på de tre prickarna (⋮) uppe till höger i mailet",
+      "step3": "Välj \"Filtrera meddelanden som det här\"",
+      "step4": "Klicka \"Skapa filter\" och markera \"Klassificera aldrig som skräppost\"",
+      "tip": "Du kan också dra mailet från Skräppost till Inkorgen och klicka \"Rapportera inte som skräppost\""
+    },
+    "outlook": {
+      "step1": "Öppna Outlook och gå till Inställningar (kugghjulet)",
+      "step2": "Klicka på \"Visa alla Outlook-inställningar\"",
+      "step3": "Gå till E-post → Skräppost",
+      "step4": "Under \"Betrodda avsändare\" klicka \"Lägg till\"",
+      "step5": "Skriv in noreply@gymdagboken.se och spara"
+    },
+    "apple": {
+      "step1": "Öppna ett mail från oss",
+      "step2": "Tryck på avsändarens namn/adress",
+      "step3": "Välj \"Lägg till i kontakter\" eller \"Skapa ny kontakt\"",
+      "step4": "Spara kontakten - mail från kontakter hamnar inte i skräppost"
+    },
+    "yahoo": {
+      "step1": "Öppna Yahoo Mail och gå till Inställningar (kugghjulet)",
+      "step2": "Klicka på \"Fler inställningar\"",
+      "step3": "Välj \"Filter\" i menyn till vänster",
+      "step4": "Skapa ett nytt filter med avsändare noreply@gymdagboken.se",
+      "step5": "Välj att flytta till Inkorgen och spara"
+    },
+    "other": {
+      "title": "Annan e-postklient",
+      "description": "De flesta e-postklienter har liknande funktioner. Sök efter:",
+      "tip1": "\"Betrodda avsändare\" eller \"Safe senders\"",
+      "tip2": "\"Vitlista\" eller \"Whitelist\"",
+      "tip3": "Alternativt lägg till avsändaren som kontakt"
+    }
   }
 }
