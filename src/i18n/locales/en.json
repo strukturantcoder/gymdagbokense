@@ -17,7 +17,8 @@
     "error": "An error occurred",
     "success": "Success",
     "premium": "Premium",
-    "free": "Free"
+    "free": "Free",
+    "showMe": "Show me"
   },
   "nav": {
     "features": "Features",
@@ -188,7 +189,8 @@
     "invitedBy": "{{name}} invited you!",
     "invitedGeneric": "You've been invited!",
     "inviteSubtext": "Create an account to become friends automatically",
-    "accountCreated": "Account created! Check your inbox (and spam folder) for the confirmation email. Add noreply@gymdagboken.se as a trusted sender.",
+"accountCreated": "Account created! Check your inbox (and spam folder) for the confirmation email.",
+    "accountCreatedHelp": "Add us as a trusted sender",
     "loggedIn": "Logged in!",
     "loggedOut": "Logged out!",
     "friendAdded": "You're now friends with the person who invited you!",

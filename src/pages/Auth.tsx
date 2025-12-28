@@ -101,7 +101,14 @@ export default function Auth() {
         const { error } = await signUp(email, password, displayName);
         if (error) { toast.error(error.message.includes('already registered') ? t('auth.emailAlreadyRegistered') : error.message); }
         else { 
-          toast.success(t('auth.accountCreated')); 
+          toast.success(t('auth.accountCreated'), {
+            description: t('auth.accountCreatedHelp'),
+            action: {
+              label: t('common.showMe'),
+              onClick: () => window.open('/email-help', '_blank'),
+            },
+            duration: 10000,
+          }); 
           // Send welcome email
           supabase.functions.invoke('send-welcome-email', {
             body: { email, displayName }
