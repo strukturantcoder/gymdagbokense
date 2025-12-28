@@ -17,7 +17,8 @@
     "error": "Ett fel uppstod",
     "success": "Lyckades",
     "premium": "Premium",
-    "free": "Gratis"
+    "free": "Gratis",
+    "showMe": "Visa mig"
   },
   "nav": {
     "features": "Funktioner",
@@ -188,7 +189,8 @@
     "invitedBy": "{{name}} bjöd in dig!",
     "invitedGeneric": "Du har blivit inbjuden!",
     "inviteSubtext": "Skapa konto för att bli vänner automatiskt",
-    "accountCreated": "Konto skapat! Kolla din inkorg (och skräpposten) för bekräftelsemail. Lägg till noreply@gymdagboken.se som betrodd avsändare.",
+"accountCreated": "Konto skapat! Kolla din inkorg (och skräpposten) för bekräftelsemail.",
+    "accountCreatedHelp": "Lägg till oss som betrodd avsändare",
     "loggedIn": "Inloggad!",
     "loggedOut": "Utloggad!",
     "friendAdded": "Du är nu vän med personen som bjöd in dig!",
