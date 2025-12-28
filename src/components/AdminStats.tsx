@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Dumbbell, Heart, Trophy, UserPlus, Activity, Clock, Zap, Search, User, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, Calendar } from "lucide-react";
+import { Users, Dumbbell, Heart, Trophy, UserPlus, Activity, Clock, Zap, Search, User, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, Calendar, TrendingUp, TrendingDown, UserX, UserCheck, Flame, Share2, PieChart } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format, parseISO, subDays, subMonths } from "date-fns";
 import { sv } from "date-fns/locale";
@@ -20,6 +20,7 @@ interface AdminStatsData {
     total: number;
     newMonth: number;
     newWeek: number;
+    newWeekPrevious: number;
     activeWeek: number;
     activeMonth: number;
   };
@@ -34,6 +35,8 @@ interface AdminStatsData {
   };
   programs: {
     total: number;
+    usersWithPrograms: number;
+    usersWithoutPrograms: number;
   };
   challenges: {
     communityParticipants: number;
@@ -41,12 +44,31 @@ interface AdminStatsData {
   };
   social: {
     friendships: number;
+    totalReferrals: number;
+    uniqueReferrers: number;
   };
   aggregate: {
     totalSets: number;
     totalMinutes: number;
     totalCardioMinutes: number;
     totalXP: number;
+  };
+  engagement: {
+    usersWhoTrained: number;
+    usersNeverTrained: number;
+    activeInLast30Days: number;
+    dormantUsers: number;
+    retentionRate: number;
+    avgWorkoutsPerActiveUser: number;
+  };
+  distributions: {
+    streaks: {
+      noStreak: number;
+      streak1_7: number;
+      streak8_30: number;
+      streak30plus: number;
+    };
+    gender: Record<string, number>;
   };
   charts: {
     signupsByDay: { date: string; count: number }[];
@@ -436,6 +458,11 @@ export function AdminStats() {
     );
   }
 
+  const signupTrend = stats.users.newWeek - stats.users.newWeekPrevious;
+  const signupTrendPercent = stats.users.newWeekPrevious > 0 
+    ? Math.round((signupTrend / stats.users.newWeekPrevious) * 100) 
+    : 0;
+
   const statCards = [
     {
       title: "Totalt användare",
@@ -445,6 +472,8 @@ export function AdminStats() {
       color: "text-blue-500",
       clickable: true,
       onClick: () => openModal("users"),
+      trend: signupTrend > 0 ? "up" : signupTrend < 0 ? "down" : undefined,
+      trendValue: signupTrend !== 0 ? `${signupTrend > 0 ? "+" : ""}${signupTrendPercent}%` : undefined,
     },
     {
       title: "Aktiva användare (7d)",
@@ -476,7 +505,7 @@ export function AdminStats() {
     {
       title: "Träningsprogram",
       value: formatNumber(stats.programs.total),
-      description: "Skapade program",
+      description: `${stats.programs.usersWithPrograms} användare har program`,
       icon: Trophy,
       color: "text-purple-500",
     },
@@ -492,7 +521,7 @@ export function AdminStats() {
     {
       title: "Vänskapsrelationer",
       value: formatNumber(stats.social.friendships),
-      description: "Accepterade vänförfrågningar",
+      description: `${stats.social.totalReferrals} referrals av ${stats.social.uniqueReferrers} användare`,
       icon: UserPlus,
       color: "text-pink-500",
     },
@@ -504,6 +533,82 @@ export function AdminStats() {
       color: "text-amber-500",
     },
   ];
+
+  // New engagement cards
+  const engagementCards = [
+    {
+      title: "Har tränat",
+      value: formatNumber(stats.engagement.usersWhoTrained),
+      description: `${Math.round((stats.engagement.usersWhoTrained / stats.users.total) * 100)}% av alla användare`,
+      icon: UserCheck,
+      color: "text-emerald-500",
+    },
+    {
+      title: "Aldrig tränat",
+      value: formatNumber(stats.engagement.usersNeverTrained),
+      description: `${Math.round((stats.engagement.usersNeverTrained / stats.users.total) * 100)}% av alla användare`,
+      icon: UserX,
+      color: "text-red-400",
+    },
+    {
+      title: "Aktiva (30d)",
+      value: formatNumber(stats.engagement.activeInLast30Days),
+      description: `${Math.round((stats.engagement.activeInLast30Days / stats.users.total) * 100)}% av alla användare`,
+      icon: Activity,
+      color: "text-green-500",
+    },
+    {
+      title: "Sovande",
+      value: formatNumber(stats.engagement.dormantUsers),
+      description: "Tränat förut, ej senaste 90d",
+      icon: Clock,
+      color: "text-amber-500",
+    },
+    {
+      title: "Retention",
+      value: `${stats.engagement.retentionRate}%`,
+      description: "Veteraner aktiva senaste veckan",
+      icon: TrendingUp,
+      color: "text-blue-500",
+    },
+    {
+      title: "Snitt pass/användare",
+      value: stats.engagement.avgWorkoutsPerActiveUser.toString(),
+      description: "Bland de som tränat",
+      icon: Dumbbell,
+      color: "text-orange-500",
+    },
+    {
+      title: "Utan program",
+      value: formatNumber(stats.programs.usersWithoutPrograms),
+      description: `${Math.round((stats.programs.usersWithoutPrograms / stats.users.total) * 100)}% av användarna`,
+      icon: X,
+      color: "text-gray-400",
+    },
+    {
+      title: "Referrals",
+      value: formatNumber(stats.social.totalReferrals),
+      description: `${stats.social.uniqueReferrers} användare har bjudit in`,
+      icon: Share2,
+      color: "text-pink-500",
+    },
+  ];
+
+  // Streak distribution for mini chart
+  const streakData = [
+    { name: "Ingen", value: stats.distributions.streaks.noStreak, color: "#94a3b8" },
+    { name: "1-7d", value: stats.distributions.streaks.streak1_7, color: "#22c55e" },
+    { name: "8-30d", value: stats.distributions.streaks.streak8_30, color: "#f59e0b" },
+    { name: "30+d", value: stats.distributions.streaks.streak30plus, color: "#ef4444" },
+  ];
+
+  const genderLabels: Record<string, string> = {
+    male: "Man",
+    female: "Kvinna",
+    other: "Annat",
+    unknown: "Ej angivet",
+    prefer_not_to_say: "Vill ej ange",
+  };
 
   return (
     <div className="space-y-6">
@@ -1090,6 +1195,36 @@ export function AdminStats() {
               onClick={stat.onClick}
             >
               <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                    <span className="text-xs text-muted-foreground">{stat.title}</span>
+                  </div>
+                  {stat.trend && (
+                    <div className={`flex items-center gap-1 text-xs ${stat.trend === "up" ? "text-emerald-500" : "text-red-500"}`}>
+                      {stat.trend === "up" ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                      {stat.trendValue}
+                    </div>
+                  )}
+                </div>
+                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Engagement Stats */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Activity className="h-5 w-5 text-green-500" />
+          Användarengagemang
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {engagementCards.map((stat, index) => (
+            <Card key={index}>
+              <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <stat.icon className={`h-4 w-4 ${stat.color}`} />
                   <span className="text-xs text-muted-foreground">{stat.title}</span>
@@ -1100,6 +1235,68 @@ export function AdminStats() {
             </Card>
           ))}
         </div>
+      </div>
+
+      {/* Distributions */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Flame className="h-4 w-4 text-orange-500" />
+              Streak-fördelning
+            </CardTitle>
+            <CardDescription>Hur användarna fördelar sig på streaks</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {streakData.map((item) => (
+                <div key={item.name} className="flex items-center gap-3">
+                  <div className="w-16 text-sm font-medium">{item.name}</div>
+                  <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all"
+                      style={{ 
+                        width: `${(item.value / stats.users.total) * 100}%`,
+                        backgroundColor: item.color 
+                      }}
+                    />
+                  </div>
+                  <div className="w-16 text-sm text-right">
+                    {item.value} ({Math.round((item.value / stats.users.total) * 100)}%)
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <PieChart className="h-4 w-4 text-pink-500" />
+              Könsfördelning
+            </CardTitle>
+            <CardDescription>Fördelning av användare per kön</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {Object.entries(stats.distributions.gender).map(([gender, count]) => (
+                <div key={gender} className="flex items-center gap-3">
+                  <div className="w-24 text-sm font-medium">{genderLabels[gender] || gender}</div>
+                  <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${(count / stats.users.total) * 100}%` }}
+                    />
+                  </div>
+                  <div className="w-16 text-sm text-right">
+                    {count} ({Math.round((count / stats.users.total) * 100)}%)
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Aggregate stats */}
