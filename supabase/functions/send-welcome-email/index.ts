@@ -27,6 +27,25 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, displayName }: WelcomeEmailRequest = await req.json();
 
+    console.log(`[WELCOME-EMAIL] Checking if welcome email already sent to ${email}`);
+
+    // Check if welcome email already sent to this email
+    const { data: existingEmail } = await supabase
+      .from("email_logs")
+      .select("id")
+      .eq("email", email)
+      .eq("email_type", "welcome")
+      .eq("status", "sent")
+      .maybeSingle();
+
+    if (existingEmail) {
+      console.log(`[WELCOME-EMAIL] Already sent to ${email}, skipping`);
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: "already_sent" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     console.log(`[WELCOME-EMAIL] Sending to ${email} (${displayName})`);
 
     const emailResponse = await resend.emails.send({
