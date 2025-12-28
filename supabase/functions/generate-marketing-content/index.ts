@@ -11,13 +11,58 @@ serve(async (req) => {
   }
 
   try {
-    const { template, templateName, templateDescription, format } = await req.json();
+    const { template, templateName, templateDescription, format, regenerateBackground, prompt } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // Handle background image regeneration
+    if (regenerateBackground && prompt) {
+      console.log("Generating new background image for template:", template);
+      console.log("Using prompt:", prompt);
+      
+      const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-image-preview",
+          messages: [
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          modalities: ["image", "text"]
+        }),
+      });
+
+      if (!imageResponse.ok) {
+        const errorText = await imageResponse.text();
+        console.error("Image generation error:", imageResponse.status, errorText);
+        throw new Error(`Image generation error: ${imageResponse.status}`);
+      }
+
+      const imageData = await imageResponse.json();
+      console.log("Image generation response received");
+      
+      const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      
+      if (!imageUrl) {
+        console.error("No image URL in response:", JSON.stringify(imageData));
+        throw new Error("No image in AI response");
+      }
+
+      return new Response(JSON.stringify({ imageUrl }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle marketing content generation
     const systemPrompt = `Du är en kreativ marknadsföringsexpert för Gymdagboken, en svensk träningsapp. 
 Din uppgift är att skapa engagerande och professionellt marknadsföringsmaterial för Instagram.
 
