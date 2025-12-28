@@ -34,7 +34,6 @@ const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCanceled = lazy(() => import("./pages/PaymentCanceled"));
 const Account = lazy(() => import("./pages/Account"));
 const JoinTeam = lazy(() => import("./pages/JoinTeam"));
-const EmailHelp = lazy(() => import("./pages/EmailHelp"));
 const queryClient = new QueryClient();
 
 // Minimal loading fallback
@@ -80,7 +79,6 @@ const AppContent = () => {
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-canceled" element={<PaymentCanceled />} />
             <Route path="/join-team/:code" element={<JoinTeam />} />
-            <Route path="/email-help" element={<EmailHelp />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
