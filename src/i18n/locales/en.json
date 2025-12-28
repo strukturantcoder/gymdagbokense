@@ -188,7 +188,8 @@
     "invitedBy": "{{name}} invited you!",
     "invitedGeneric": "You've been invited!",
     "inviteSubtext": "Create an account to become friends automatically",
-    "accountCreated": "Account created! Check your inbox (and spam folder) for the confirmation email. Add noreply@gymdagboken.se as a trusted sender.",
+    "accountCreated": "Account created! Check your inbox (and spam folder) for the confirmation email.",
+    "accountCreatedHelpLink": "Need help adding us as a trusted sender?",
     "loggedIn": "Logged in!",
     "loggedOut": "Logged out!",
     "friendAdded": "You're now friends with the person who invited you!",
@@ -376,5 +377,46 @@
     "update": "Update",
     "updating": "Updating app...",
     "updated": "App updated!"
+  },
+  "emailHelp": {
+    "title": "Add trusted sender",
+    "description": "If our emails end up in spam, you can add our sender address as trusted. Select your email client below for instructions.",
+    "selectClient": "Select your email client",
+    "tip": "Tip",
+    "senderAddress": "Sender address to add",
+    "gmail": {
+      "step1": "Open an email from us in Gmail",
+      "step2": "Click the three dots (⋮) at the top right of the email",
+      "step3": "Select \"Filter messages like this\"",
+      "step4": "Click \"Create filter\" and check \"Never send it to Spam\"",
+      "tip": "You can also drag the email from Spam to Inbox and click \"Report not spam\""
+    },
+    "outlook": {
+      "step1": "Open Outlook and go to Settings (gear icon)",
+      "step2": "Click \"View all Outlook settings\"",
+      "step3": "Go to Mail → Junk email",
+      "step4": "Under \"Safe senders\" click \"Add\"",
+      "step5": "Enter noreply@gymdagboken.se and save"
+    },
+    "apple": {
+      "step1": "Open an email from us",
+      "step2": "Tap on the sender's name/address",
+      "step3": "Select \"Add to Contacts\" or \"Create New Contact\"",
+      "step4": "Save the contact - emails from contacts won't go to spam"
+    },
+    "yahoo": {
+      "step1": "Open Yahoo Mail and go to Settings (gear icon)",
+      "step2": "Click \"More Settings\"",
+      "step3": "Select \"Filters\" in the left menu",
+      "step4": "Create a new filter with sender noreply@gymdagboken.se",
+      "step5": "Choose to move to Inbox and save"
+    },
+    "other": {
+      "title": "Other email client",
+      "description": "Most email clients have similar features. Look for:",
+      "tip1": "\"Trusted senders\" or \"Safe senders\"",
+      "tip2": "\"Whitelist\"",
+      "tip3": "Alternatively, add the sender as a contact"
+    }
   }
 }

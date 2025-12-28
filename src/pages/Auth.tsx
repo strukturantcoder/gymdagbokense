@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
@@ -101,7 +101,14 @@ export default function Auth() {
         const { error } = await signUp(email, password, displayName);
         if (error) { toast.error(error.message.includes('already registered') ? t('auth.emailAlreadyRegistered') : error.message); }
         else { 
-          toast.success(t('auth.accountCreated')); 
+          toast.success(t('auth.accountCreated'), {
+            description: t('auth.accountCreatedHelpLink'),
+            action: {
+              label: '→',
+              onClick: () => navigate('/email-help')
+            },
+            duration: 10000
+          }); 
           // Send welcome email
           supabase.functions.invoke('send-welcome-email', {
             body: { email, displayName }
