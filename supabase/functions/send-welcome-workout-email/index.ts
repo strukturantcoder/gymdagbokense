@@ -9,6 +9,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting delay (600ms between each email to stay under 2 req/s limit)
+const RATE_LIMIT_DELAY_MS = 600;
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -19,38 +24,47 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify admin access
-    const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user } } = await supabase.auth.getUser(token);
+    // Check if we should resend failed emails
+    const body = await req.json().catch(() => ({}));
+    const resendFailed = body.resendFailed === true;
+
+    console.log(`[WELCOME-EMAIL] Starting... resendFailed: ${resendFailed}`);
+
+    let emailsToSend: { userId: string; email: string; displayName: string }[] = [];
+
+    if (resendFailed) {
+      // Get failed emails from email_logs
+      console.log("[WELCOME-EMAIL] Fetching failed emails to resend...");
       
-      if (user) {
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .eq("role", "admin")
-          .single();
-        
-        if (!roles) {
-          return new Response(
-            JSON.stringify({ error: "Admin access required" }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+      const { data: failedLogs, error: logsError } = await supabase
+        .from("email_logs")
+        .select("user_id, email")
+        .eq("email_type", "welcome_workout")
+        .eq("status", "failed");
+
+      if (logsError) {
+        throw logsError;
       }
-    }
 
-    console.log("Fetching users without any workout logs...");
+      console.log(`[WELCOME-EMAIL] Found ${failedLogs?.length || 0} failed emails to resend`);
 
-    // Get all users who have NOT logged any workouts
-    const { data: usersWithoutWorkouts, error: queryError } = await supabase
-      .rpc('get_users_without_workouts');
+      for (const log of failedLogs || []) {
+        // Get display name from profiles
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("user_id", log.user_id)
+          .single();
 
-    if (queryError) {
-      // Fallback: use raw query approach
-      console.log("RPC not available, using direct query...");
+        emailsToSend.push({
+          userId: log.user_id,
+          email: log.email,
+          displayName: profile?.display_name || "du"
+        });
+      }
+    } else {
+      // Original logic: get users without workouts
+      console.log("[WELCOME-EMAIL] Fetching users without any workout logs...");
       
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
@@ -79,25 +93,39 @@ serve(async (req: Request): Promise<Response> => {
       ]);
 
       const eligibleProfiles = profiles?.filter(p => !usersWithWorkouts.has(p.user_id)) || [];
-
-      console.log(`Found ${eligibleProfiles.length} users without workouts`);
-
-      let sentCount = 0;
-      let errorCount = 0;
+      console.log(`[WELCOME-EMAIL] Found ${eligibleProfiles.length} users without workouts`);
 
       for (const profile of eligibleProfiles) {
-        // Get user email from auth
         const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id);
         
         if (!authUser?.user?.email) {
-          console.log(`No email found for user ${profile.user_id}`);
+          console.log(`[WELCOME-EMAIL] No email found for user ${profile.user_id}`);
           continue;
         }
 
-        const email = authUser.user.email;
-        const displayName = profile.display_name || "du";
+        emailsToSend.push({
+          userId: profile.user_id,
+          email: authUser.user.email,
+          displayName: profile.display_name || "du"
+        });
+      }
+    }
 
-        const emailHtml = `
+    console.log(`[WELCOME-EMAIL] Will send ${emailsToSend.length} emails with ${RATE_LIMIT_DELAY_MS}ms delay between each`);
+
+    let sentCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < emailsToSend.length; i++) {
+      const { userId, email, displayName } = emailsToSend[i];
+      
+      // Apply rate limiting delay (except for first email)
+      if (i > 0) {
+        console.log(`[WELCOME-EMAIL] Waiting ${RATE_LIMIT_DELAY_MS}ms before next email...`);
+        await sleep(RATE_LIMIT_DELAY_MS);
+      }
+
+      const emailHtml = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -141,66 +169,87 @@ serve(async (req: Request): Promise<Response> => {
 </body>
 </html>`;
 
-        try {
-          const { error: sendError } = await resend.emails.send({
-            from: "Gymdagboken <noreply@gymdagboken.se>",
-            to: [email],
-            subject: "Dags att ta första steget! 💪",
-            html: emailHtml,
-          });
+      try {
+        console.log(`[WELCOME-EMAIL] Sending to ${email} (${i + 1}/${emailsToSend.length})...`);
+        
+        const { error: sendError } = await resend.emails.send({
+          from: "Gymdagboken <noreply@gymdagboken.se>",
+          to: [email],
+          subject: "Dags att ta första steget! 💪",
+          html: emailHtml,
+        });
 
-          if (sendError) {
-            console.error(`Failed to send to ${email}:`, sendError);
-            errorCount++;
-            
+        if (sendError) {
+          console.error(`[WELCOME-EMAIL] Failed to send to ${email}:`, sendError);
+          errorCount++;
+          
+          // Update existing failed log or insert new one
+          if (resendFailed) {
+            await supabase.from("email_logs")
+              .update({ 
+                error_message: sendError.message,
+                created_at: new Date().toISOString()
+              })
+              .eq("user_id", userId)
+              .eq("email_type", "welcome_workout")
+              .eq("status", "failed");
+          } else {
             await supabase.from("email_logs").insert({
-              user_id: profile.user_id,
+              user_id: userId,
               email: email,
               email_type: "welcome_workout",
               subject: "Dags att ta första steget! 💪",
               status: "failed",
               error_message: sendError.message,
             });
+          }
+        } else {
+          console.log(`[WELCOME-EMAIL] Email sent successfully to ${email}`);
+          sentCount++;
+          
+          // If resending, update the existing log to success
+          if (resendFailed) {
+            await supabase.from("email_logs")
+              .update({ 
+                status: "sent",
+                error_message: null,
+                created_at: new Date().toISOString()
+              })
+              .eq("user_id", userId)
+              .eq("email_type", "welcome_workout")
+              .eq("status", "failed");
           } else {
-            console.log(`Email sent successfully to ${email}`);
-            sentCount++;
-            
             await supabase.from("email_logs").insert({
-              user_id: profile.user_id,
+              user_id: userId,
               email: email,
               email_type: "welcome_workout",
               subject: "Dags att ta första steget! 💪",
               status: "sent",
             });
           }
-        } catch (emailError) {
-          console.error(`Error sending to ${email}:`, emailError);
-          errorCount++;
         }
+      } catch (emailError) {
+        console.error(`[WELCOME-EMAIL] Error sending to ${email}:`, emailError);
+        errorCount++;
       }
-
-      console.log(`Finished: ${sentCount} sent, ${errorCount} errors`);
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `Skickade ${sentCount} mail till användare utan träningspass`,
-          sent: sentCount,
-          errors: errorCount,
-          total: eligibleProfiles.length
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
+    console.log(`[WELCOME-EMAIL] Finished: ${sentCount} sent, ${errorCount} errors`);
+
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true, 
+        message: `Skickade ${sentCount} mail${resendFailed ? ' (omsändning)' : ''}`,
+        sent: sentCount,
+        errors: errorCount,
+        total: emailsToSend.length
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error in send-welcome-workout-email:", error);
+    console.error("[WELCOME-EMAIL] Error:", error);
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
