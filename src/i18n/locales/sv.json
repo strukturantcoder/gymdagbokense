@@ -188,7 +188,7 @@
     "invitedBy": "{{name}} bjöd in dig!",
     "invitedGeneric": "Du har blivit inbjuden!",
     "inviteSubtext": "Skapa konto för att bli vänner automatiskt",
-    "accountCreated": "Konto skapat! Välkommen till Gymdagboken!",
+    "accountCreated": "Konto skapat! Kolla din inkorg (och skräpposten) för bekräftelsemail. Lägg till noreply@gymdagboken.se som betrodd avsändare.",
     "loggedIn": "Inloggad!",
     "loggedOut": "Utloggad!",
     "friendAdded": "Du är nu vän med personen som bjöd in dig!",
