@@ -83,3 +83,6 @@ verify_jwt = true
 
 [functions.admin-user-lookup]
 verify_jwt = true
+
+[functions.send-welcome-workout-email]
+verify_jwt = false
