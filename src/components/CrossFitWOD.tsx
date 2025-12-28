@@ -9,6 +9,7 @@ import { Loader2, Zap, RefreshCw, Timer, Dumbbell, Heart, Trash2, ChevronDown, C
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import EmailConfirmationRequired from '@/components/EmailConfirmationRequired';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
@@ -68,7 +69,7 @@ interface WODLog {
 }
 
 export default function CrossFitWOD() {
-  const { user } = useAuth();
+  const { user, isEmailConfirmed } = useAuth();
   const [wod, setWod] = useState<WOD | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -420,6 +421,10 @@ export default function CrossFitWOD() {
       minute: '2-digit'
     });
   };
+
+  if (user && !isEmailConfirmed) {
+    return <EmailConfirmationRequired />;
+  }
 
   return (
     <div className="space-y-4">
