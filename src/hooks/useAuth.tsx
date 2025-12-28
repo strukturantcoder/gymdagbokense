@@ -9,10 +9,12 @@ interface AuthContextType {
   isPremium: boolean;
   subscriptionEnd: string | null;
   checkingSubscription: boolean;
+  isEmailConfirmed: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   checkSubscription: (accessToken?: string) => Promise<void>;
+  resendConfirmationEmail: () => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -179,6 +181,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
+  const resendConfirmationEmail = async () => {
+    if (!user?.email) {
+      return { error: new Error('Ingen e-postadress hittades') };
+    }
+    
+    const redirectUrl = `${window.location.origin}/`;
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: user.email,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+    return { error };
+  };
+
+  const isEmailConfirmed = Boolean(user?.email_confirmed_at);
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -202,10 +222,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isPremium, 
       subscriptionEnd,
       checkingSubscription,
+      isEmailConfirmed,
       signUp, 
       signIn, 
       signOut,
-      checkSubscription 
+      checkSubscription,
+      resendConfirmationEmail
     }}>
       {children}
     </AuthContext.Provider>

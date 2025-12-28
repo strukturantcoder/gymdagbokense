@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import EmailConfirmationRequired from '@/components/EmailConfirmationRequired';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -142,8 +143,13 @@ function ComparisonItem({ label, current, previous, unit = '' }: {
 }
 
 export default function WorkoutSession() {
-  const { user } = useAuth();
+  const { user, isEmailConfirmed, loading } = useAuth();
   const navigate = useNavigate();
+  
+  // Check email confirmation - show message if not confirmed
+  if (!loading && user && !isEmailConfirmed) {
+    return <EmailConfirmationRequired />;
+  }
   
   const [sessionData, setSessionData] = useState<WorkoutSessionData | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
