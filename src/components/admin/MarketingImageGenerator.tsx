@@ -12,6 +12,8 @@ import heroFitnessApp from "@/assets/marketing/hero-fitness-app.jpg";
 import achievementCelebration from "@/assets/marketing/achievement-celebration.jpg";
 import aiWorkoutPlanning from "@/assets/marketing/ai-workout-planning.jpg";
 import socialCommunityStory from "@/assets/marketing/social-community-story.jpg";
+import gpsTrackingRoute from "@/assets/marketing/gps-tracking-route.jpg";
+import statisticsDashboard from "@/assets/marketing/statistics-dashboard.jpg";
 
 type MarketingTemplate = 
   | "appOverview" 
@@ -34,8 +36,8 @@ const TEMPLATES: TemplateInfo[] = [
   { id: "appOverview", name: "App-översikt", description: "Allmän presentation av appen", icon: Smartphone, backgroundImage: heroFitnessApp },
   { id: "aiFeature", name: "AI-funktioner", description: "Visa AI-genererade träningsprogram", icon: Zap, backgroundImage: aiWorkoutPlanning },
   { id: "workoutLogging", name: "Träningsloggning", description: "Visa hur man loggar pass", icon: Dumbbell, backgroundImage: heroFitnessApp },
-  { id: "statsShowcase", name: "Statistik", description: "Visa statistik och framsteg", icon: BarChart3, backgroundImage: heroFitnessApp },
-  { id: "gpsTracking", name: "GPS-spårning", description: "Visa kart- och GPS-funktioner", icon: MapIcon },
+  { id: "statsShowcase", name: "Statistik", description: "Visa statistik och framsteg", icon: BarChart3, backgroundImage: statisticsDashboard },
+  { id: "gpsTracking", name: "GPS-spårning", description: "Visa kart- och GPS-funktioner", icon: MapIcon, backgroundImage: gpsTrackingRoute },
   { id: "socialFeatures", name: "Sociala funktioner", description: "Utmaningar och vänner", icon: Users, backgroundImage: socialCommunityStory },
   { id: "xpSystem", name: "XP & Nivåer", description: "Gamification och achievements", icon: Trophy, backgroundImage: achievementCelebration },
 ];
@@ -74,6 +76,7 @@ export default function MarketingImageGenerator() {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiContent, setAiContent] = useState<AIGeneratedContent | null>(null);
   const [customCaption, setCustomCaption] = useState("");
+  const [isRegeneratingBackground, setIsRegeneratingBackground] = useState(false);
 
   // Load logo
   useEffect(() => {
@@ -161,6 +164,59 @@ export default function MarketingImageGenerator() {
       toast.error("Kunde inte generera AI-innehåll");
     } finally {
       setIsGeneratingAI(false);
+    }
+  };
+
+  const regenerateBackground = async () => {
+    setIsRegeneratingBackground(true);
+    const templateInfo = TEMPLATES.find(t => t.id === selectedTemplate);
+    
+    const prompts: Record<MarketingTemplate, string> = {
+      appOverview: "Modern fitness app hero image with athletic person using smartphone, dynamic gym environment, vibrant orange and dark tones, professional photography style, 16:9 aspect ratio, ultra high resolution",
+      aiFeature: "Futuristic AI workout planning visualization, holographic fitness data floating in space, neural network patterns with exercise icons, dark tech aesthetic with orange accents, square composition, ultra high resolution",
+      workoutLogging: "Athletic person logging workout on phone in modern gym, dramatic lighting, fitness technology concept, dark moody atmosphere with orange highlights, 16:9 aspect ratio, ultra high resolution",
+      statsShowcase: "Stunning fitness statistics dashboard visualization with colorful 3D charts, progress graphs floating in dark space, data visualization art, glowing metrics and numbers, modern tech aesthetic, square composition, ultra high resolution",
+      gpsTracking: "Dynamic GPS running route map visualization with glowing neon path tracking on dark urban cityscape, runner's perspective with speed metrics overlay, modern fitness tech aesthetic, dramatic lighting, 16:9 aspect ratio, ultra high resolution",
+      socialFeatures: "Group of friends celebrating fitness achievement together, high-five moment, community spirit, energetic atmosphere, social fitness concept, vertical portrait composition, ultra high resolution",
+      xpSystem: "Epic achievement celebration with golden trophy and confetti explosion, gamification visual with XP numbers floating, victory moment, dramatic lighting on dark background, square composition, ultra high resolution"
+    };
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-marketing-content', {
+        body: {
+          regenerateBackground: true,
+          template: selectedTemplate,
+          templateName: templateInfo?.name,
+          prompt: prompts[selectedTemplate]
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.imageUrl) {
+        // Load the new image
+        const img = document.createElement('img') as HTMLImageElement;
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          setBackgroundImages(prev => {
+            const newMap = new globalThis.Map(prev);
+            newMap.set(selectedTemplate, img);
+            return newMap;
+          });
+          toast.success("Ny bakgrundsbild genererad!");
+        };
+        img.onerror = () => {
+          toast.error("Kunde inte ladda den genererade bilden");
+        };
+        img.src = data.imageUrl;
+      } else {
+        toast.error("Ingen bild returnerades från AI");
+      }
+    } catch (error) {
+      console.error("Error regenerating background:", error);
+      toast.error("Kunde inte generera ny bakgrund");
+    } finally {
+      setIsRegeneratingBackground(false);
     }
   };
 
@@ -534,6 +590,28 @@ export default function MarketingImageGenerator() {
                   {useAIBackground ? "På" : "Av"}
                 </Button>
               </div>
+
+              {/* Regenerate Background Button */}
+              {useAIBackground && (
+                <Button
+                  onClick={regenerateBackground}
+                  disabled={isRegeneratingBackground}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {isRegeneratingBackground ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Genererar ny bakgrund...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Generera ny AI-bakgrund för {currentTemplate?.name}
+                    </>
+                  )}
+                </Button>
+              )}
 
               {/* Format selection */}
               <div className="space-y-3">
