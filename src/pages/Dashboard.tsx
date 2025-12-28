@@ -29,6 +29,7 @@ import GamificationHero from '@/components/GamificationHero';
 import NextMilestoneWidget from '@/components/NextMilestoneWidget';
 import DailyStreakBonus from '@/components/DailyStreakBonus';
 import InviteFriendNudge from '@/components/InviteFriendNudge';
+import { PendingInvitationsPopup } from '@/components/PendingInvitationsPopup';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
 import {
   DndContext,
@@ -394,6 +395,9 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Welcome Guide for new users */}
       {user && <WelcomeGuide userId={user.id} />}
+      
+      {/* Pending Invitations Popup */}
+      {user && <PendingInvitationsPopup userId={user.id} />}
       
       {/* Invite Friend Nudge */}
       {user && <InviteFriendNudge userId={user.id} />}
