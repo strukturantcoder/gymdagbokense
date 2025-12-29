@@ -996,6 +996,74 @@ export type Database = {
         }
         Relationships: []
       }
+      program_copies: {
+        Row: {
+          copied_program_id: string
+          created_at: string
+          id: string
+          original_program_id: string
+          user_id: string
+        }
+        Insert: {
+          copied_program_id: string
+          created_at?: string
+          id?: string
+          original_program_id: string
+          user_id: string
+        }
+        Update: {
+          copied_program_id?: string
+          created_at?: string
+          id?: string
+          original_program_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_copies_copied_program_id_fkey"
+            columns: ["copied_program_id"]
+            isOneToOne: false
+            referencedRelation: "workout_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_copies_original_program_id_fkey"
+            columns: ["original_program_id"]
+            isOneToOne: false
+            referencedRelation: "workout_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      program_likes: {
+        Row: {
+          created_at: string
+          id: string
+          program_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          program_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          program_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_likes_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "workout_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -1553,33 +1621,42 @@ export type Database = {
           created_at: string
           days_per_week: number
           deleted_at: string | null
+          description: string | null
           experience_level: string
           goal: string
           id: string
+          is_public: boolean
           name: string
           program_data: Json
+          share_code: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           days_per_week: number
           deleted_at?: string | null
+          description?: string | null
           experience_level: string
           goal: string
           id?: string
+          is_public?: boolean
           name: string
           program_data: Json
+          share_code?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           days_per_week?: number
           deleted_at?: string | null
+          description?: string | null
           experience_level?: string
           goal?: string
           id?: string
+          is_public?: boolean
           name?: string
           program_data?: Json
+          share_code?: string | null
           user_id?: string
         }
         Relationships: []
@@ -1673,6 +1750,23 @@ export type Database = {
           display_name: string
           participant_id: string
           user_id: string
+        }[]
+      }
+      get_popular_programs: {
+        Args: { limit_count?: number }
+        Returns: {
+          author_avatar: string
+          author_id: string
+          author_name: string
+          copies_count: number
+          created_at: string
+          days_per_week: number
+          experience_level: string
+          goal: string
+          likes_count: number
+          program_description: string
+          program_id: string
+          program_name: string
         }[]
       }
       get_public_community_challenges: {

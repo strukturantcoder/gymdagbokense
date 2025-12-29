@@ -23,12 +23,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, WifiOff, Trash2, Share2 } from 'lucide-react';
+import { Dumbbell, Plus, Save, Loader2, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, WifiOff, Trash2, Share2, Globe } from 'lucide-react';
 import SwipeableSetRow from './SwipeableSetRow';
 import RestTimer from '@/components/RestTimer';
 import ExerciseInfo from '@/components/ExerciseInfo';
 import AdBanner from '@/components/AdBanner';
 import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
+import { ShareProgramDialog } from './ShareProgramDialog';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import confetti from 'canvas-confetti';
@@ -55,6 +56,9 @@ interface WorkoutProgram {
   id: string;
   name: string;
   program_data: ProgramData;
+  is_public?: boolean;
+  share_code?: string | null;
+  description?: string | null;
 }
 
 interface SetDetail {
@@ -153,6 +157,8 @@ export default function WorkoutLogContent() {
   
   // Share to Instagram
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showShareProgramDialog, setShowShareProgramDialog] = useState(false);
+  const [programToShare, setProgramToShare] = useState<WorkoutProgram | null>(null);
   const [shareData, setShareData] = useState<{
     dayName: string;
     duration?: number;
@@ -259,7 +265,7 @@ export default function WorkoutLogContent() {
   const fetchPrograms = async () => {
     const { data, error } = await supabase
       .from('workout_programs')
-      .select('id, name, program_data')
+      .select('id, name, program_data, is_public, share_code, description')
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
     
@@ -934,6 +940,16 @@ export default function WorkoutLogContent() {
         />
       )}
 
+      {/* Share Program Dialog */}
+      {programToShare && (
+        <ShareProgramDialog
+          open={showShareProgramDialog}
+          onOpenChange={setShowShareProgramDialog}
+          program={programToShare}
+          onUpdate={fetchPrograms}
+        />
+      )}
+
       <AdBanner format="horizontal" placement="training_top" className="mb-6" />
 
       {/* Draft restore dialog */}
@@ -1112,18 +1128,36 @@ export default function WorkoutLogContent() {
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Träningsprogram</Label>
-                  <Select value={selectedProgram} onValueChange={handleProgramChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Välj program" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {programs.map(program => (
-                        <SelectItem key={program.id} value={program.id}>
-                          {program.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select value={selectedProgram} onValueChange={handleProgramChange}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Välj program" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {programs.map(program => (
+                          <SelectItem key={program.id} value={program.id}>
+                            <div className="flex items-center gap-2">
+                              {program.name}
+                              {program.is_public && <Globe className="w-3 h-3 text-green-500" />}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {currentProgram && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          setProgramToShare(currentProgram);
+                          setShowShareProgramDialog(true);
+                        }}
+                        title="Dela program"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 
                 {currentProgram && (
