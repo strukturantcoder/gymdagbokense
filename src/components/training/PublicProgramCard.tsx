@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Heart, Copy, Dumbbell, Calendar, Target, Users, Loader2, Eye } from 'lucide-react';
+import { Heart, Copy, Dumbbell, Calendar, Target, Users, Loader2, Eye, UserCheck, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -35,8 +35,19 @@ export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy, onVi
   const [isLiking, setIsLiking] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
   const [liked, setLiked] = useState(isLiked);
+  const [creatorStats, setCreatorStats] = useState<{ followers_count: number; programs_count: number } | null>(null);
 
   const isOwnProgram = user?.id === program.author_id;
+
+  useEffect(() => {
+    const fetchCreatorStats = async () => {
+      const { data } = await supabase.rpc('get_creator_stats', { creator_id: program.author_id });
+      if (data && data[0]) {
+        setCreatorStats({ followers_count: data[0].followers_count, programs_count: data[0].programs_count });
+      }
+    };
+    fetchCreatorStats();
+  }, [program.author_id]);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -172,6 +183,18 @@ export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy, onVi
               <div>
                 <CardTitle className="text-lg">{program.program_name}</CardTitle>
                 <p className="text-sm text-muted-foreground">av {program.author_name}</p>
+                {creatorStats && (
+                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <UserCheck className="w-3 h-3" />
+                      {creatorStats.followers_count} följare
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      {creatorStats.programs_count} program
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
             {isOwnProgram && (
