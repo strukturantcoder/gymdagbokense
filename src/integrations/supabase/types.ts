@@ -1452,6 +1452,27 @@ export type Database = {
           },
         ]
       }
+      user_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1725,6 +1746,31 @@ export type Database = {
       }
       complete_friend_challenges: { Args: never; Returns: undefined }
       complete_pool_challenges: { Args: never; Returns: undefined }
+      get_creator_stats: {
+        Args: { creator_id: string }
+        Returns: {
+          followers_count: number
+          following_count: number
+          programs_count: number
+        }[]
+      }
+      get_followed_creators_programs: {
+        Args: { limit_count?: number; p_user_id: string }
+        Returns: {
+          author_avatar: string
+          author_id: string
+          author_name: string
+          copies_count: number
+          created_at: string
+          days_per_week: number
+          experience_level: string
+          goal: string
+          likes_count: number
+          program_description: string
+          program_id: string
+          program_name: string
+        }[]
+      }
       get_friend_profile: {
         Args: { friend_user_id: string }
         Returns: {

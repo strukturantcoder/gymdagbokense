@@ -8,9 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Trophy, TrendingUp, Search, Dumbbell, Loader2, Crown, Medal } from 'lucide-react';
+import { ArrowLeft, Trophy, TrendingUp, Search, Dumbbell, Loader2, Crown, Medal, Users } from 'lucide-react';
 import { PublicProgramCard } from '@/components/training/PublicProgramCard';
 import { ProgramDetailDialog } from '@/components/training/ProgramDetailDialog';
+import { FollowedCreatorsPrograms } from '@/components/training/FollowedCreatorsPrograms';
 
 interface PopularProgram {
   program_id: string;
@@ -32,6 +33,7 @@ export default function PublicPrograms() {
   const navigate = useNavigate();
   const [programs, setPrograms] = useState<PopularProgram[]>([]);
   const [likedPrograms, setLikedPrograms] = useState<Set<string>>(new Set());
+  const [followedCreators, setFollowedCreators] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
@@ -42,6 +44,7 @@ export default function PublicPrograms() {
     fetchPrograms();
     if (user) {
       fetchUserLikes();
+      fetchUserFollows();
     }
   }, [user]);
 
@@ -67,6 +70,18 @@ export default function PublicPrograms() {
     
     if (data) {
       setLikedPrograms(new Set(data.map(l => l.program_id)));
+    }
+  };
+
+  const fetchUserFollows = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('user_follows')
+      .select('following_id')
+      .eq('follower_id', user.id);
+    
+    if (data) {
+      setFollowedCreators(new Set(data.map(f => f.following_id)));
     }
   };
 
@@ -155,23 +170,34 @@ export default function PublicPrograms() {
             </CardContent>
           </Card>
         ) : (
-          <Tabs defaultValue="top" className="space-y-6">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
-              <TabsTrigger value="top" className="gap-2">
-                <Trophy className="w-4 h-4" />
-                Topplista
-              </TabsTrigger>
-              <TabsTrigger value="newest" className="gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Nyaste
-              </TabsTrigger>
-              <TabsTrigger value="popular" className="gap-2">
-                <Crown className="w-4 h-4" />
-                Mest kopierade
-              </TabsTrigger>
-            </TabsList>
+          <div className="space-y-8">
+            {/* Followed Creators Programs */}
+            {user && (
+              <FollowedCreatorsPrograms
+                likedPrograms={likedPrograms}
+                onLikeChange={fetchUserLikes}
+                onCopy={handleCopy}
+                onViewDetails={handleViewDetails}
+              />
+            )}
 
-            <TabsContent value="top" className="space-y-6">
+            <Tabs defaultValue="top" className="space-y-6">
+              <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
+                <TabsTrigger value="top" className="gap-2">
+                  <Trophy className="w-4 h-4" />
+                  Topplista
+                </TabsTrigger>
+                <TabsTrigger value="newest" className="gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Nyaste
+                </TabsTrigger>
+                <TabsTrigger value="popular" className="gap-2">
+                  <Crown className="w-4 h-4" />
+                  Mest kopierade
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="top" className="space-y-6">
               {/* Top 3 Podium */}
               {topPrograms.length >= 3 && (
                 <div className="flex justify-center items-end gap-4 mb-8">
@@ -271,6 +297,7 @@ export default function PublicPrograms() {
               </div>
             </TabsContent>
           </Tabs>
+          </div>
         )}
 
         {/* Program Detail Dialog */}
@@ -278,9 +305,11 @@ export default function PublicPrograms() {
           programId={selectedProgramId}
           programMeta={selectedProgram}
           isLiked={selectedProgramId ? likedPrograms.has(selectedProgramId) : false}
+          isFollowing={selectedProgram ? followedCreators.has(selectedProgram.author_id) : false}
           isOpen={!!selectedProgramId}
           onClose={() => setSelectedProgramId(null)}
           onLikeChange={fetchUserLikes}
+          onFollowChange={fetchUserFollows}
           onCopy={handleCopy}
         />
       </main>
