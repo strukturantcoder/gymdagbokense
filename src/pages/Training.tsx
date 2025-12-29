@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dumbbell, Footprints, ArrowLeft, Zap, Loader2, Calendar, Bell } from 'lucide-react';
+import { Dumbbell, Footprints, ArrowLeft, Zap, Loader2, Calendar, Bell, Trophy } from 'lucide-react';
 import WorkoutLogContent from '@/components/training/WorkoutLogContent';
 import CardioLogContent from '@/components/training/CardioLogContent';
 import CrossFitWOD from '@/components/CrossFitWOD';
@@ -57,6 +57,15 @@ export default function Training() {
             <h1 className="text-2xl font-display font-bold">Träning</h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => navigate('/programs')}
+            >
+              <Trophy className="h-4 w-4" />
+              <span className="hidden sm:inline">Topplista</span>
+            </Button>
             <WorkoutReminderSettings
               trigger={
                 <Button variant="ghost" size="icon" className="h-9 w-9">
