@@ -8,7 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Trophy, TrendingUp, Search, Dumbbell, Loader2, Crown, Medal, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Trophy, TrendingUp, Search, Dumbbell, Loader2, Crown, Medal, Filter, X } from 'lucide-react';
 import { PublicProgramCard } from '@/components/training/PublicProgramCard';
 import { ProgramDetailDialog } from '@/components/training/ProgramDetailDialog';
 import { FollowedCreatorsPrograms } from '@/components/training/FollowedCreatorsPrograms';
@@ -37,6 +38,8 @@ export default function PublicPrograms() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
+  const [goalFilter, setGoalFilter] = useState<string>('all');
+  const [levelFilter, setLevelFilter] = useState<string>('all');
 
   const selectedProgram = programs.find(p => p.program_id === selectedProgramId) || null;
 
@@ -85,11 +88,24 @@ export default function PublicPrograms() {
     }
   };
 
-  const filteredPrograms = programs.filter(p => 
-    p.program_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.author_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.program_description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPrograms = programs.filter(p => {
+    const matchesSearch = 
+      p.program_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.author_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.program_description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesGoal = goalFilter === 'all' || p.goal === goalFilter;
+    const matchesLevel = levelFilter === 'all' || p.experience_level === levelFilter;
+    
+    return matchesSearch && matchesGoal && matchesLevel;
+  });
+
+  const hasActiveFilters = goalFilter !== 'all' || levelFilter !== 'all';
+
+  const clearFilters = () => {
+    setGoalFilter('all');
+    setLevelFilter('all');
+  };
 
   const topPrograms = [...filteredPrograms].sort((a, b) => b.likes_count - a.likes_count).slice(0, 10);
   const newestPrograms = [...filteredPrograms].sort((a, b) => 
@@ -139,8 +155,8 @@ export default function PublicPrograms() {
           </p>
         </motion.div>
 
-        {/* Search */}
-        <div className="max-w-md mx-auto mb-8">
+        {/* Search and Filters */}
+        <div className="max-w-2xl mx-auto mb-8 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -150,6 +166,57 @@ export default function PublicPrograms() {
               className="pl-10"
             />
           </div>
+          
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Filter className="w-4 h-4" />
+              <span>Filtrera:</span>
+            </div>
+            
+            <Select value={goalFilter} onValueChange={setGoalFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Mål" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alla mål</SelectItem>
+                <SelectItem value="muscle_gain">Muskeltillväxt</SelectItem>
+                <SelectItem value="strength">Styrka</SelectItem>
+                <SelectItem value="weight_loss">Viktnedgång</SelectItem>
+                <SelectItem value="endurance">Uthållighet</SelectItem>
+                <SelectItem value="general_fitness">Allmän träning</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={levelFilter} onValueChange={setLevelFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Erfarenhetsnivå" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alla nivåer</SelectItem>
+                <SelectItem value="beginner">Nybörjare</SelectItem>
+                <SelectItem value="intermediate">Medel</SelectItem>
+                <SelectItem value="advanced">Avancerad</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {hasActiveFilters && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearFilters}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Rensa filter
+              </Button>
+            )}
+          </div>
+          
+          {hasActiveFilters && (
+            <p className="text-sm text-muted-foreground">
+              Visar {filteredPrograms.length} av {programs.length} program
+            </p>
+          )}
         </div>
 
         {loading ? (
