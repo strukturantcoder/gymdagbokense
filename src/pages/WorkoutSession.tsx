@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,7 +40,8 @@ import {
   CalendarIcon,
   Plus,
   Copy,
-  History
+  History,
+  Link2
 } from 'lucide-react';
 import {
   Select,
@@ -63,6 +64,8 @@ import {
 import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
 import SharePRToInstagramDialog from '@/components/SharePRToInstagramDialog';
 import AdBanner from '@/components/AdBanner';
+import { SupersetGroup } from '@/components/training/SupersetGroup';
+import { CreateSupersetDialog } from '@/components/training/CreateSupersetDialog';
 
 interface SetDetail {
   reps: number;
@@ -79,6 +82,7 @@ interface ExerciseLogEntry {
   set_details: SetDetail[];
   programSets?: number;
   programReps?: string;
+  superset_group_id?: string;
 }
 
 interface PersonalBest {
@@ -197,6 +201,7 @@ export default function WorkoutSession() {
       prevDate: string;
     } | null;
   } | null>(null);
+  const [showSupersetDialog, setShowSupersetDialog] = useState(false);
 
   // Load session from storage
   useEffect(() => {
@@ -516,6 +521,172 @@ export default function WorkoutSession() {
       return { ...prev, exercises: newExercises };
     });
   }, [sessionData, currentExerciseIndex]);
+
+  // Superset functions
+  const createSuperset = useCallback((exerciseIndices: number[]) => {
+    if (!sessionData || exerciseIndices.length < 2) return;
+    
+    const groupId = `superset_${Date.now()}`;
+    
+    setSessionData(prev => {
+      if (!prev) return prev;
+      const newExercises = prev.exercises.map((ex, idx) => 
+        exerciseIndices.includes(idx) 
+          ? { ...ex, superset_group_id: groupId }
+          : ex
+      );
+      return { ...prev, exercises: newExercises };
+    });
+    
+    toast.success(`Superset skapat med ${exerciseIndices.length} övningar`);
+  }, [sessionData]);
+
+  const unlinkFromSuperset = useCallback((exerciseIndex: number) => {
+    if (!sessionData) return;
+    
+    setSessionData(prev => {
+      if (!prev) return prev;
+      const newExercises = [...prev.exercises];
+      const exercise = { ...newExercises[exerciseIndex] };
+      const oldGroupId = exercise.superset_group_id;
+      delete exercise.superset_group_id;
+      newExercises[exerciseIndex] = exercise;
+      
+      // Check if only one exercise remains in the superset
+      const remainingInGroup = newExercises.filter(ex => ex.superset_group_id === oldGroupId);
+      if (remainingInGroup.length === 1) {
+        // Remove the last one from the group too
+        const lastIndex = newExercises.findIndex(ex => ex.superset_group_id === oldGroupId);
+        if (lastIndex !== -1) {
+          const lastExercise = { ...newExercises[lastIndex] };
+          delete lastExercise.superset_group_id;
+          newExercises[lastIndex] = lastExercise;
+        }
+      }
+      
+      return { ...prev, exercises: newExercises };
+    });
+    
+    toast.success('Övning borttagen från superset');
+  }, [sessionData]);
+
+  // Update set for superset exercises (by exercise index)
+  const updateSetDetailByIndex = useCallback((exerciseIndex: number, setIndex: number, field: 'reps' | 'weight', value: number) => {
+    if (!sessionData) return;
+    
+    setSessionData(prev => {
+      if (!prev) return prev;
+      const newExercises = [...prev.exercises];
+      const exercise = { ...newExercises[exerciseIndex] };
+      const newSetDetails = [...exercise.set_details];
+      newSetDetails[setIndex] = { ...newSetDetails[setIndex], [field]: value };
+      
+      const maxWeight = Math.max(...newSetDetails.map(s => s.weight));
+      const totalReps = newSetDetails.map(s => s.reps).join(', ');
+      
+      exercise.set_details = newSetDetails;
+      exercise.weight_kg = maxWeight > 0 ? maxWeight.toString() : '';
+      exercise.reps_completed = totalReps;
+      newExercises[exerciseIndex] = exercise;
+      
+      return { ...prev, exercises: newExercises };
+    });
+  }, [sessionData]);
+
+  const toggleSetCompleteByIndex = useCallback((exerciseIndex: number, setIndex: number) => {
+    if (!sessionData) return;
+    
+    setSessionData(prev => {
+      if (!prev) return prev;
+      const newExercises = [...prev.exercises];
+      const exercise = { ...newExercises[exerciseIndex] };
+      const newSetDetails = [...exercise.set_details];
+      newSetDetails[setIndex] = { 
+        ...newSetDetails[setIndex], 
+        completed: !newSetDetails[setIndex].completed 
+      };
+      exercise.set_details = newSetDetails;
+      newExercises[exerciseIndex] = exercise;
+      return { ...prev, exercises: newExercises };
+    });
+  }, [sessionData]);
+
+  const addSetByIndex = useCallback((exerciseIndex: number) => {
+    if (!sessionData) return;
+    
+    setSessionData(prev => {
+      if (!prev) return prev;
+      const newExercises = [...prev.exercises];
+      const exercise = { ...newExercises[exerciseIndex] };
+      const lastSet = exercise.set_details[exercise.set_details.length - 1] || { reps: 10, weight: 0 };
+      exercise.set_details = [...exercise.set_details, { ...lastSet, completed: false }];
+      exercise.sets_completed = exercise.set_details.length;
+      newExercises[exerciseIndex] = exercise;
+      return { ...prev, exercises: newExercises };
+    });
+  }, [sessionData]);
+
+  const removeSetByIndex = useCallback((exerciseIndex: number, setIndex: number) => {
+    if (!sessionData) return;
+    
+    setSessionData(prev => {
+      if (!prev) return prev;
+      const newExercises = [...prev.exercises];
+      const exercise = { ...newExercises[exerciseIndex] };
+      if (exercise.set_details.length <= 1) return prev;
+      exercise.set_details = exercise.set_details.filter((_, i) => i !== setIndex);
+      exercise.sets_completed = exercise.set_details.length;
+      newExercises[exerciseIndex] = exercise;
+      return { ...prev, exercises: newExercises };
+    });
+  }, [sessionData]);
+
+  // Get grouped exercises for rendering
+  const groupedExercises = useMemo(() => {
+    if (!sessionData) return [];
+    
+    const result: Array<{
+      type: 'single' | 'superset';
+      groupId?: string;
+      exercises: { exercise: ExerciseLogEntry; originalIndex: number }[];
+    }> = [];
+    
+    const processedIndices = new Set<number>();
+    
+    sessionData.exercises.forEach((exercise, idx) => {
+      if (processedIndices.has(idx)) return;
+      
+      if (exercise.superset_group_id) {
+        // Find all exercises in this superset
+        const supersetExercises = sessionData.exercises
+          .map((ex, i) => ({ exercise: ex, originalIndex: i }))
+          .filter(({ exercise: ex }) => ex.superset_group_id === exercise.superset_group_id);
+        
+        supersetExercises.forEach(({ originalIndex }) => processedIndices.add(originalIndex));
+        
+        result.push({
+          type: 'superset',
+          groupId: exercise.superset_group_id,
+          exercises: supersetExercises
+        });
+      } else {
+        processedIndices.add(idx);
+        result.push({
+          type: 'single',
+          exercises: [{ exercise, originalIndex: idx }]
+        });
+      }
+    });
+    
+    return result;
+  }, [sessionData]);
+
+  // Find current group index based on current exercise
+  const currentGroupIndex = useMemo(() => {
+    return groupedExercises.findIndex(group => 
+      group.exercises.some(({ originalIndex }) => originalIndex === currentExerciseIndex)
+    );
+  }, [groupedExercises, currentExerciseIndex]);
 
   const handleSaveClick = () => {
     if (!sessionData || !user) return;
@@ -1253,6 +1424,24 @@ export default function WorkoutSession() {
               </Select>
               
               <div className="flex items-center justify-center gap-2 flex-wrap">
+                {/* Superset button */}
+                {!currentExercise.superset_group_id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => setShowSupersetDialog(true)}
+                  >
+                    <Link2 className="w-3 h-3" />
+                    Superset
+                  </Button>
+                )}
+                {currentExercise.superset_group_id && (
+                  <Badge variant="default" className="text-xs bg-primary/20 text-primary">
+                    <Link2 className="w-3 h-3 mr-1" />
+                    I superset
+                  </Badge>
+                )}
                 {currentExercise.programSets && currentExercise.programReps && (
                   <Badge variant="outline" className="text-xs">
                     Mål: {currentExercise.programSets} × {currentExercise.programReps}
@@ -1671,6 +1860,15 @@ export default function WorkoutSession() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create Superset Dialog */}
+      <CreateSupersetDialog
+        open={showSupersetDialog}
+        onOpenChange={setShowSupersetDialog}
+        exercises={sessionData.exercises}
+        currentExerciseIndex={currentExerciseIndex}
+        onCreateSuperset={createSuperset}
+      />
     </div>
   );
 }
