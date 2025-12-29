@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Heart, Copy, Dumbbell, Calendar, Target, Users, Loader2 } from 'lucide-react';
+import { Heart, Copy, Dumbbell, Calendar, Target, Users, Loader2, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -26,9 +26,10 @@ interface PublicProgramCardProps {
   isLiked: boolean;
   onLikeChange: () => void;
   onCopy: (programId: string) => void;
+  onViewDetails?: (programId: string) => void;
 }
 
-export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy }: PublicProgramCardProps) {
+export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy, onViewDetails }: PublicProgramCardProps) {
   const { user } = useAuth();
   const [likesCount, setLikesCount] = useState(program.likes_count);
   const [isLiking, setIsLiking] = useState(false);
@@ -37,7 +38,8 @@ export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy }: Pu
 
   const isOwnProgram = user?.id === program.author_id;
 
-  const handleLike = async () => {
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!user) {
       toast.error('Logga in för att gilla program');
       return;
@@ -69,7 +71,8 @@ export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy }: Pu
     }
   };
 
-  const handleCopy = async () => {
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!user) {
       toast.error('Logga in för att kopiera program');
       return;
@@ -127,6 +130,12 @@ export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy }: Pu
     }
   };
 
+  const handleCardClick = () => {
+    if (onViewDetails) {
+      onViewDetails(program.program_id);
+    }
+  };
+
   const goalLabels: Record<string, string> = {
     'strength': 'Styrka',
     'muscle': 'Muskelmassa',
@@ -147,7 +156,10 @@ export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy }: Pu
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
     >
-      <Card className="h-full hover:border-primary/50 transition-colors">
+      <Card 
+        className="h-full hover:border-primary/50 transition-colors cursor-pointer"
+        onClick={handleCardClick}
+      >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
@@ -202,6 +214,14 @@ export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy }: Pu
             </div>
 
             <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCardClick}
+                className="text-muted-foreground"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
               <Button
                 variant={liked ? 'default' : 'outline'}
                 size="sm"

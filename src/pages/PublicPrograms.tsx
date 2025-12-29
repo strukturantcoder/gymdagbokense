@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Trophy, TrendingUp, Search, Dumbbell, Loader2, Crown, Medal } from 'lucide-react';
 import { PublicProgramCard } from '@/components/training/PublicProgramCard';
+import { ProgramDetailDialog } from '@/components/training/ProgramDetailDialog';
 
 interface PopularProgram {
   program_id: string;
@@ -33,6 +34,9 @@ export default function PublicPrograms() {
   const [likedPrograms, setLikedPrograms] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
+
+  const selectedProgram = programs.find(p => p.program_id === selectedProgramId) || null;
 
   useEffect(() => {
     fetchPrograms();
@@ -80,6 +84,10 @@ export default function PublicPrograms() {
 
   const handleCopy = (newProgramId: string) => {
     navigate('/training');
+  };
+
+  const handleViewDetails = (programId: string) => {
+    setSelectedProgramId(programId);
   };
 
   return (
@@ -227,6 +235,7 @@ export default function PublicPrograms() {
                     isLiked={likedPrograms.has(program.program_id)}
                     onLikeChange={fetchUserLikes}
                     onCopy={handleCopy}
+                    onViewDetails={handleViewDetails}
                   />
                 ))}
               </div>
@@ -241,6 +250,7 @@ export default function PublicPrograms() {
                     isLiked={likedPrograms.has(program.program_id)}
                     onLikeChange={fetchUserLikes}
                     onCopy={handleCopy}
+                    onViewDetails={handleViewDetails}
                   />
                 ))}
               </div>
@@ -255,12 +265,24 @@ export default function PublicPrograms() {
                     isLiked={likedPrograms.has(program.program_id)}
                     onLikeChange={fetchUserLikes}
                     onCopy={handleCopy}
+                    onViewDetails={handleViewDetails}
                   />
                 ))}
               </div>
             </TabsContent>
           </Tabs>
         )}
+
+        {/* Program Detail Dialog */}
+        <ProgramDetailDialog
+          programId={selectedProgramId}
+          programMeta={selectedProgram}
+          isLiked={selectedProgramId ? likedPrograms.has(selectedProgramId) : false}
+          isOpen={!!selectedProgramId}
+          onClose={() => setSelectedProgramId(null)}
+          onLikeChange={fetchUserLikes}
+          onCopy={handleCopy}
+        />
       </main>
     </div>
   );
