@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Heart, Copy, Dumbbell, Calendar, Target, Users, Loader2, X } from 'lucide-react';
+import { Heart, Copy, Dumbbell, Calendar, Target, Users, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Json } from '@/integrations/supabase/types';
+import { FollowButton } from './FollowButton';
 
 interface Exercise {
   name: string;
@@ -38,9 +38,11 @@ interface ProgramDetailDialogProps {
     copies_count: number;
   } | null;
   isLiked: boolean;
+  isFollowing?: boolean;
   isOpen: boolean;
   onClose: () => void;
   onLikeChange: () => void;
+  onFollowChange?: () => void;
   onCopy: (programId: string) => void;
 }
 
@@ -48,9 +50,11 @@ export function ProgramDetailDialog({
   programId,
   programMeta,
   isLiked,
+  isFollowing = false,
   isOpen,
   onClose,
   onLikeChange,
+  onFollowChange,
   onCopy
 }: ProgramDetailDialogProps) {
   const { user } = useAuth();
@@ -60,6 +64,7 @@ export function ProgramDetailDialog({
   const [likesCount, setLikesCount] = useState(programMeta?.likes_count || 0);
   const [isLiking, setIsLiking] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
+  const [following, setFollowing] = useState(isFollowing);
 
   const isOwnProgram = user?.id === programMeta?.author_id;
 
@@ -72,7 +77,13 @@ export function ProgramDetailDialog({
   useEffect(() => {
     setLiked(isLiked);
     setLikesCount(programMeta?.likes_count || 0);
-  }, [isLiked, programMeta?.likes_count]);
+    setFollowing(isFollowing);
+  }, [isLiked, programMeta?.likes_count, isFollowing]);
+
+  const handleFollowChange = () => {
+    setFollowing(!following);
+    onFollowChange?.();
+  };
 
   const fetchProgramData = async () => {
     if (!programId) return;
@@ -211,7 +222,7 @@ export function ProgramDetailDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-4 border-b">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12">
                 <AvatarImage src={programMeta.author_avatar || undefined} />
@@ -224,9 +235,17 @@ export function ProgramDetailDialog({
                 <p className="text-sm text-muted-foreground">av {programMeta.author_name}</p>
               </div>
             </div>
-            {isOwnProgram && (
-              <Badge variant="secondary">Ditt program</Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {isOwnProgram ? (
+                <Badge variant="secondary">Ditt program</Badge>
+              ) : (
+                <FollowButton
+                  creatorId={programMeta.author_id}
+                  isFollowing={following}
+                  onFollowChange={handleFollowChange}
+                />
+              )}
+            </div>
           </div>
         </DialogHeader>
 
