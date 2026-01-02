@@ -971,8 +971,10 @@ export type Database = {
           instagram_username: string | null
           show_facebook: boolean
           show_instagram: boolean
+          show_youtube: boolean
           updated_at: string
           user_id: string
+          youtube_url: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -987,8 +989,10 @@ export type Database = {
           instagram_username?: string | null
           show_facebook?: boolean
           show_instagram?: boolean
+          show_youtube?: boolean
           updated_at?: string
           user_id: string
+          youtube_url?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1003,8 +1007,10 @@ export type Database = {
           instagram_username?: string | null
           show_facebook?: boolean
           show_instagram?: boolean
+          show_youtube?: boolean
           updated_at?: string
           user_id?: string
+          youtube_url?: string | null
         }
         Relationships: []
       }
