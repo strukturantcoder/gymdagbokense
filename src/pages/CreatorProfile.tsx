@@ -35,7 +35,7 @@ const CreatorProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [creator, setCreator] = useState<{ display_name: string; avatar_url: string | null } | null>(null);
+  const [creator, setCreator] = useState<{ display_name: string; avatar_url: string | null; bio: string | null } | null>(null);
   const [stats, setStats] = useState<CreatorStats | null>(null);
   const [programs, setPrograms] = useState<CreatorProgram[]>([]);
   const [userLikes, setUserLikes] = useState<string[]>([]);
@@ -62,7 +62,7 @@ const CreatorProfile = () => {
     const [profileRes, statsRes, programsRes] = await Promise.all([
       supabase
         .from('profiles')
-        .select('display_name, avatar_url')
+        .select('display_name, avatar_url, bio')
         .eq('user_id', creatorId)
         .single(),
       supabase.rpc('get_creator_stats', { creator_id: creatorId }),
@@ -174,6 +174,10 @@ const CreatorProfile = () => {
 
           <div className="flex-1 text-center sm:text-left">
             <h1 className="text-2xl font-bold mb-2">{creator.display_name || 'Anonym'}</h1>
+            
+            {creator.bio && (
+              <p className="text-muted-foreground mb-4 max-w-lg">{creator.bio}</p>
+            )}
             
             {stats && (
               <div className="flex flex-wrap justify-center sm:justify-start gap-4 mb-4">
