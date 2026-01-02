@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import { Youtube } from 'lucide-react';
+import { Youtube, Music } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { APP_VERSION, forceAppUpdate } from '@/components/PWAUpdateNotification';
@@ -29,11 +29,13 @@ interface Profile {
   instagram_username: string | null;
   facebook_url: string | null;
   youtube_url: string | null;
+  tiktok_username: string | null;
   bio: string | null;
   cover_image_url: string | null;
   show_instagram: boolean;
   show_facebook: boolean;
   show_youtube: boolean;
+  show_tiktok: boolean;
 }
 
 interface NotificationPreferences {
@@ -81,10 +83,12 @@ export default function Account() {
   const [instagramUsername, setInstagramUsername] = useState('');
   const [facebookUrl, setFacebookUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [tiktokUsername, setTiktokUsername] = useState('');
   const [bio, setBio] = useState('');
   const [showInstagram, setShowInstagram] = useState(true);
   const [showFacebook, setShowFacebook] = useState(true);
   const [showYoutube, setShowYoutube] = useState(true);
+  const [showTiktok, setShowTiktok] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -105,7 +109,7 @@ export default function Account() {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, youtube_url, bio, cover_image_url, show_instagram, show_facebook, show_youtube')
+      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, youtube_url, tiktok_username, bio, cover_image_url, show_instagram, show_facebook, show_youtube, show_tiktok')
       .eq('user_id', user.id)
       .single();
 
@@ -121,10 +125,12 @@ export default function Account() {
       setInstagramUsername(data.instagram_username || '');
       setFacebookUrl(data.facebook_url || '');
       setYoutubeUrl(data.youtube_url || '');
+      setTiktokUsername(data.tiktok_username || '');
       setBio(data.bio || '');
       setShowInstagram(data.show_instagram ?? true);
       setShowFacebook(data.show_facebook ?? true);
       setShowYoutube(data.show_youtube ?? true);
+      setShowTiktok(data.show_tiktok ?? true);
     }
     
     setIsLoading(false);
@@ -212,10 +218,12 @@ export default function Account() {
           instagram_username: instagramUsername || null,
           facebook_url: facebookUrl || null,
           youtube_url: youtubeUrl || null,
+          tiktok_username: tiktokUsername || null,
           bio: bio || null,
           show_instagram: showInstagram,
           show_facebook: showFacebook,
           show_youtube: showYoutube,
+          show_tiktok: showTiktok,
         }, { onConflict: 'user_id' });
 
       if (error) throw error;
@@ -668,6 +676,30 @@ export default function Account() {
                       id="showYoutube"
                       checked={showYoutube}
                       onCheckedChange={setShowYoutube}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="tiktok" className="flex items-center gap-2">
+                    <Music className="h-4 w-4" />
+                    TikTok
+                  </Label>
+                  <Input
+                    id="tiktok"
+                    value={tiktokUsername}
+                    onChange={(e) => setTiktokUsername(e.target.value)}
+                    placeholder="ditt_användarnamn"
+                    maxLength={50}
+                  />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="showTiktok" className="text-sm text-muted-foreground">
+                      Visa på min profil
+                    </Label>
+                    <Switch
+                      id="showTiktok"
+                      checked={showTiktok}
+                      onCheckedChange={setShowTiktok}
                     />
                   </div>
                 </div>
