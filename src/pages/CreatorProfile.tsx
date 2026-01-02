@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, UserCheck, FileText, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, UserCheck, FileText, Users, Loader2, Instagram, Facebook } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,7 +35,7 @@ const CreatorProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [creator, setCreator] = useState<{ display_name: string; avatar_url: string | null; bio: string | null } | null>(null);
+  const [creator, setCreator] = useState<{ display_name: string; avatar_url: string | null; bio: string | null; instagram_username: string | null; facebook_url: string | null } | null>(null);
   const [stats, setStats] = useState<CreatorStats | null>(null);
   const [programs, setPrograms] = useState<CreatorProgram[]>([]);
   const [userLikes, setUserLikes] = useState<string[]>([]);
@@ -62,7 +62,7 @@ const CreatorProfile = () => {
     const [profileRes, statsRes, programsRes] = await Promise.all([
       supabase
         .from('profiles')
-        .select('display_name, avatar_url, bio')
+        .select('display_name, avatar_url, bio, instagram_username, facebook_url')
         .eq('user_id', creatorId)
         .single(),
       supabase.rpc('get_creator_stats', { creator_id: creatorId }),
@@ -177,6 +177,33 @@ const CreatorProfile = () => {
             
             {creator.bio && (
               <p className="text-muted-foreground mb-4 max-w-lg">{creator.bio}</p>
+            )}
+
+            {(creator.instagram_username || creator.facebook_url) && (
+              <div className="flex gap-3 mb-4 justify-center sm:justify-start">
+                {creator.instagram_username && (
+                  <a
+                    href={`https://instagram.com/${creator.instagram_username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Instagram className="w-5 h-5" />
+                    <span className="text-sm">@{creator.instagram_username}</span>
+                  </a>
+                )}
+                {creator.facebook_url && (
+                  <a
+                    href={creator.facebook_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Facebook className="w-5 h-5" />
+                    <span className="text-sm">Facebook</span>
+                  </a>
+                )}
+              </div>
             )}
             
             {stats && (
