@@ -8,15 +8,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { 
   Play, Pause, Square, Timer, Footprints, Bike, Waves, Flag, 
-  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle, Zap, Info, Smartphone
+  MapPin, Flame, Sparkles, Loader2, Navigation, Gauge, TrendingUp, AlertCircle, Zap
 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { useGpsTracking } from '@/hooks/useGpsTracking';
 import RouteMapDialog from '@/components/RouteMapDialog';
 import AdBanner from '@/components/AdBanner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const activityTypes = [
   { value: 'running', label: 'Löpning', icon: Footprints, color: 'from-orange-500 to-red-500', gpsRecommended: true },
@@ -44,6 +52,8 @@ interface QuickStartCardioProps {
   onSessionComplete: () => void;
 }
 
+const GPS_INFO_SHOWN_KEY = 'gps_tracking_info_shown';
+
 export default function QuickStartCardio({ userId, onSessionComplete }: QuickStartCardioProps) {
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
@@ -57,6 +67,7 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
   const [isSaving, setIsSaving] = useState(false);
   const [gpsEnabled, setGpsEnabled] = useState(true);
   const [showRouteMap, setShowRouteMap] = useState(false);
+  const [showGpsInfoPopup, setShowGpsInfoPopup] = useState(false);
   const [savedRouteData, setSavedRouteData] = useState<{
     positions: Array<{ latitude: number; longitude: number; timestamp: number; speed: number | null }>;
     totalDistanceKm: number;
@@ -72,7 +83,17 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
     sessionId
   );
 
-  // Restore session on mount
+  // Show GPS info popup first time permission is granted
+  useEffect(() => {
+    if (hasPermission && gpsEnabled && activeSession) {
+      const hasSeenInfo = localStorage.getItem(GPS_INFO_SHOWN_KEY);
+      if (!hasSeenInfo) {
+        setShowGpsInfoPopup(true);
+        localStorage.setItem(GPS_INFO_SHOWN_KEY, 'true');
+      }
+    }
+  }, [hasPermission, gpsEnabled, activeSession]);
+
   useEffect(() => {
     const stored = localStorage.getItem(SESSION_STORAGE_KEY);
     if (stored) {
@@ -430,14 +451,6 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
                     }}
                   />
                 </div>
-                {gpsEnabled && (
-                  <Alert className="bg-blue-500/10 border-blue-500/30">
-                    <Smartphone className="h-4 w-4 text-blue-500" />
-                    <AlertDescription className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">Tips:</strong> GPS fungerar endast när appen är öppen. För bakgrundsspårning, släpp vi snart vår native app!
-                    </AlertDescription>
-                  </Alert>
-                )}
               </div>
             )}
 
@@ -604,6 +617,7 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
       </Card>
 
       {/* Route Map Dialog */}
+      {/* Route Map Dialog */}
       <RouteMapDialog
         open={showRouteMap}
         onOpenChange={setShowRouteMap}
@@ -611,6 +625,24 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
         activityLabel={savedActivityLabel}
         durationMinutes={savedDuration}
       />
+
+      {/* GPS Info Popup - shown first time GPS permission is granted */}
+      <AlertDialog open={showGpsInfoPopup} onOpenChange={setShowGpsInfoPopup}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Navigation className="w-5 h-5 text-primary" />
+              GPS-spårning aktiverad
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              Just nu fungerar bara spårning när appen är öppen. Vi är snart integrerade med Garmin och kommer även släppa en riktig app som löser problemet!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Förstått!</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
