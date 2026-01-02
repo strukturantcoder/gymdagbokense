@@ -962,6 +962,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           birth_year: number | null
+          cover_image_url: string | null
           created_at: string
           display_name: string | null
           facebook_url: string | null
@@ -975,6 +976,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           birth_year?: number | null
+          cover_image_url?: string | null
           created_at?: string
           display_name?: string | null
           facebook_url?: string | null
@@ -988,6 +990,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           birth_year?: number | null
+          cover_image_url?: string | null
           created_at?: string
           display_name?: string | null
           facebook_url?: string | null
