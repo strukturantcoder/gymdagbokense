@@ -28,6 +28,7 @@ interface Profile {
   instagram_username: string | null;
   facebook_url: string | null;
   bio: string | null;
+  cover_image_url: string | null;
 }
 
 interface NotificationPreferences {
@@ -54,11 +55,13 @@ export default function Account() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>(defaultPreferences);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
@@ -93,7 +96,7 @@ export default function Account() {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, bio')
+      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, bio, cover_image_url')
       .eq('user_id', user.id)
       .single();
 
@@ -264,6 +267,54 @@ export default function Account() {
     }
   };
 
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Välj en bildfil');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Bilden får max vara 5MB');
+      return;
+    }
+
+    setIsUploadingCover(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/cover_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          cover_image_url: urlData.publicUrl,
+        }, { onConflict: 'user_id' });
+
+      if (updateError) throw updateError;
+
+      toast.success('Omslagsbild uppdaterad!');
+      fetchProfile();
+    } catch (error) {
+      console.error('Error uploading cover:', error);
+      toast.error('Kunde inte ladda upp bilden');
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
@@ -395,6 +446,49 @@ export default function Account() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Cover Image Section */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Omslagsbild
+              </Label>
+              <div 
+                className="relative w-full h-32 rounded-lg overflow-hidden bg-muted cursor-pointer group"
+                onClick={() => coverInputRef.current?.click()}
+              >
+                {profile?.cover_image_url ? (
+                  <img 
+                    src={profile.cover_image_url} 
+                    alt="Omslagsbild" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                    <Camera className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  {isUploadingCover ? (
+                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-6 w-6 text-white" />
+                  )}
+                </div>
+              </div>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleCoverUpload}
+              />
+              <p className="text-xs text-muted-foreground">
+                Rekommenderad storlek: 1200x300 pixlar
+              </p>
+            </div>
+
+            <Separator />
+
             {/* Avatar Section */}
             <div className="flex flex-col items-center gap-4">
               <div className="relative">

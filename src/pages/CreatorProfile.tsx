@@ -35,7 +35,7 @@ const CreatorProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [creator, setCreator] = useState<{ display_name: string; avatar_url: string | null; bio: string | null; instagram_username: string | null; facebook_url: string | null } | null>(null);
+  const [creator, setCreator] = useState<{ display_name: string; avatar_url: string | null; bio: string | null; instagram_username: string | null; facebook_url: string | null; cover_image_url: string | null } | null>(null);
   const [stats, setStats] = useState<CreatorStats | null>(null);
   const [programs, setPrograms] = useState<CreatorProgram[]>([]);
   const [userLikes, setUserLikes] = useState<string[]>([]);
@@ -62,7 +62,7 @@ const CreatorProfile = () => {
     const [profileRes, statsRes, programsRes] = await Promise.all([
       supabase
         .from('profiles')
-        .select('display_name, avatar_url, bio, instagram_username, facebook_url')
+        .select('display_name, avatar_url, bio, instagram_username, facebook_url, cover_image_url')
         .eq('user_id', creatorId)
         .single(),
       supabase.rpc('get_creator_stats', { creator_id: creatorId }),
@@ -152,10 +152,18 @@ const CreatorProfile = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="bg-card border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
+      {/* Cover Image */}
+      <div className="relative h-32 sm:h-48 bg-gradient-to-br from-primary/20 to-primary/5">
+        {creator.cover_image_url && (
+          <img 
+            src={creator.cover_image_url} 
+            alt="Omslagsbild" 
+            className="w-full h-full object-cover"
+          />
+        )}
+        {/* Back button overlay */}
+        <div className="absolute top-4 left-4">
+          <Button variant="secondary" size="sm" onClick={() => navigate(-1)} className="shadow-md">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Tillbaka
           </Button>
@@ -164,8 +172,8 @@ const CreatorProfile = () => {
 
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Creator Info */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-8">
-          <Avatar className="w-24 h-24 border-4 border-primary/20">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-8 -mt-12 sm:-mt-16">
+          <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
             <AvatarImage src={creator.avatar_url || undefined} />
             <AvatarFallback className="text-2xl bg-primary/10 text-primary">
               {creator.display_name?.charAt(0)?.toUpperCase() || '?'}
