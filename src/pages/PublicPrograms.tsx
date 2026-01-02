@@ -376,7 +376,7 @@ export default function PublicPrograms() {
           isOpen={!!selectedProgramId}
           onClose={() => setSelectedProgramId(null)}
           onLikeChange={fetchUserLikes}
-          onFollowChange={fetchUserFollows}
+          onFollowChange={() => fetchUserFollows()}
           onCopy={handleCopy}
         />
       </main>
