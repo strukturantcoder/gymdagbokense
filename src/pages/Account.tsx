@@ -29,6 +29,8 @@ interface Profile {
   facebook_url: string | null;
   bio: string | null;
   cover_image_url: string | null;
+  show_instagram: boolean;
+  show_facebook: boolean;
 }
 
 interface NotificationPreferences {
@@ -76,6 +78,8 @@ export default function Account() {
   const [instagramUsername, setInstagramUsername] = useState('');
   const [facebookUrl, setFacebookUrl] = useState('');
   const [bio, setBio] = useState('');
+  const [showInstagram, setShowInstagram] = useState(true);
+  const [showFacebook, setShowFacebook] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -96,7 +100,7 @@ export default function Account() {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, bio, cover_image_url')
+      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, bio, cover_image_url, show_instagram, show_facebook')
       .eq('user_id', user.id)
       .single();
 
@@ -112,6 +116,8 @@ export default function Account() {
       setInstagramUsername(data.instagram_username || '');
       setFacebookUrl(data.facebook_url || '');
       setBio(data.bio || '');
+      setShowInstagram(data.show_instagram ?? true);
+      setShowFacebook(data.show_facebook ?? true);
     }
     
     setIsLoading(false);
@@ -199,6 +205,8 @@ export default function Account() {
           instagram_username: instagramUsername || null,
           facebook_url: facebookUrl || null,
           bio: bio || null,
+          show_instagram: showInstagram,
+          show_facebook: showFacebook,
         }, { onConflict: 'user_id' });
 
       if (error) throw error;
@@ -580,7 +588,7 @@ export default function Account() {
                   Sociala medier
                 </div>
                 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label htmlFor="instagram" className="flex items-center gap-2">
                     <Instagram className="h-4 w-4 text-pink-500" />
                     Instagram
@@ -595,9 +603,19 @@ export default function Account() {
                       maxLength={30}
                     />
                   </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="showInstagram" className="text-sm text-muted-foreground">
+                      Visa på min profil
+                    </Label>
+                    <Switch
+                      id="showInstagram"
+                      checked={showInstagram}
+                      onCheckedChange={setShowInstagram}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label htmlFor="facebook" className="flex items-center gap-2">
                     <Facebook className="h-4 w-4 text-blue-600" />
                     Facebook
@@ -609,6 +627,16 @@ export default function Account() {
                     placeholder="https://facebook.com/ditt.namn"
                     maxLength={100}
                   />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="showFacebook" className="text-sm text-muted-foreground">
+                      Visa på min profil
+                    </Label>
+                    <Switch
+                      id="showFacebook"
+                      checked={showFacebook}
+                      onCheckedChange={setShowFacebook}
+                    />
+                  </div>
                 </div>
               </div>
 
