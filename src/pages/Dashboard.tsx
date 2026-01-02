@@ -32,6 +32,8 @@ import InviteFriendNudge from '@/components/InviteFriendNudge';
 import { PendingInvitationsPopup } from '@/components/PendingInvitationsPopup';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
 import RecommendedPrograms from '@/components/RecommendedPrograms';
+import RecentActivity from '@/components/RecentActivity';
+import NextWorkoutSuggestion from '@/components/NextWorkoutSuggestion';
 import {
   DndContext,
   closestCenter,
@@ -514,6 +516,9 @@ export default function Dashboard() {
         {/* Quick Actions with Streak and Weekly Stats */}
         <QuickActions />
 
+        {/* Next Workout Suggestion */}
+        <NextWorkoutSuggestion />
+
         {/* Next Milestone Widget */}
         <div className="mb-6">
           <NextMilestoneWidget />
@@ -523,6 +528,9 @@ export default function Dashboard() {
         <div className="mb-6">
           <WeeklyCalendar />
         </div>
+
+        {/* Recent Activity */}
+        <RecentActivity />
 
         {/* Recommended Programs */}
         <RecommendedPrograms />
