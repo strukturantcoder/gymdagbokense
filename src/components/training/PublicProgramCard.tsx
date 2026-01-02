@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +31,7 @@ interface PublicProgramCardProps {
 }
 
 export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy, onViewDetails }: PublicProgramCardProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [likesCount, setLikesCount] = useState(program.likes_count);
   const [isLiking, setIsLiking] = useState(false);
@@ -173,8 +175,14 @@ export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy, onVi
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
+            <div 
+              className="flex items-center gap-3 cursor-pointer group"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/creator/${program.author_id}`);
+              }}
+            >
+              <Avatar className="h-10 w-10 group-hover:ring-2 ring-primary transition-all">
                 <AvatarImage src={program.author_avatar || undefined} />
                 <AvatarFallback>
                   {program.author_name?.charAt(0) || 'U'}
@@ -182,7 +190,7 @@ export function PublicProgramCard({ program, isLiked, onLikeChange, onCopy, onVi
               </Avatar>
               <div>
                 <CardTitle className="text-lg">{program.program_name}</CardTitle>
-                <p className="text-sm text-muted-foreground">av {program.author_name}</p>
+                <p className="text-sm text-muted-foreground group-hover:text-primary transition-colors">av {program.author_name}</p>
                 {creatorStats && (
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">

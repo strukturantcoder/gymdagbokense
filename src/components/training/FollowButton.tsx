@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 interface FollowButtonProps {
   creatorId: string;
   isFollowing: boolean;
-  onFollowChange: () => void;
+  onFollowChange: (following: boolean) => void;
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
 }
@@ -47,6 +47,7 @@ export function FollowButton({
         
         if (error) throw error;
         toast.success('Du följer inte längre denna skapare');
+        onFollowChange(false);
       } else {
         const { error } = await supabase
           .from('user_follows')
@@ -54,8 +55,8 @@ export function FollowButton({
         
         if (error) throw error;
         toast.success('Du följer nu denna skapare');
+        onFollowChange(true);
       }
-      onFollowChange();
     } catch (error) {
       console.error('Error toggling follow:', error);
       toast.error('Något gick fel');

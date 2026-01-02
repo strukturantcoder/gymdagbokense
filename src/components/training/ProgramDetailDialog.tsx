@@ -42,7 +42,7 @@ interface ProgramDetailDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onLikeChange: () => void;
-  onFollowChange?: () => void;
+  onFollowChange?: (following: boolean) => void;
   onCopy: (programId: string) => void;
 }
 
@@ -80,9 +80,9 @@ export function ProgramDetailDialog({
     setFollowing(isFollowing);
   }, [isLiked, programMeta?.likes_count, isFollowing]);
 
-  const handleFollowChange = () => {
-    setFollowing(!following);
-    onFollowChange?.();
+  const handleFollowChange = (following: boolean) => {
+    setFollowing(following);
+    onFollowChange?.(following);
   };
 
   const fetchProgramData = async () => {
