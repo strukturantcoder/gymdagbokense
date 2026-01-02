@@ -969,6 +969,8 @@ export type Database = {
           gender: string | null
           id: string
           instagram_username: string | null
+          show_facebook: boolean
+          show_instagram: boolean
           updated_at: string
           user_id: string
         }
@@ -983,6 +985,8 @@ export type Database = {
           gender?: string | null
           id?: string
           instagram_username?: string | null
+          show_facebook?: boolean
+          show_instagram?: boolean
           updated_at?: string
           user_id: string
         }
@@ -997,6 +1001,8 @@ export type Database = {
           gender?: string | null
           id?: string
           instagram_username?: string | null
+          show_facebook?: boolean
+          show_instagram?: boolean
           updated_at?: string
           user_id?: string
         }
