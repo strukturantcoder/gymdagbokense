@@ -31,6 +31,7 @@ import DailyStreakBonus from '@/components/DailyStreakBonus';
 import InviteFriendNudge from '@/components/InviteFriendNudge';
 import { PendingInvitationsPopup } from '@/components/PendingInvitationsPopup';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
+import RecommendedPrograms from '@/components/RecommendedPrograms';
 import {
   DndContext,
   closestCenter,
@@ -522,6 +523,9 @@ export default function Dashboard() {
         <div className="mb-6">
           <WeeklyCalendar />
         </div>
+
+        {/* Recommended Programs */}
+        <RecommendedPrograms />
         
         {/* Quick link to challenges */}
         <Card 
