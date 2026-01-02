@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { 
   User, Camera, Save, Loader2, ArrowLeft, Crown, Mail, 
   Calendar, UserCircle, LogOut, Settings, Shield, Sun, Moon, Monitor,
-  Bell, Users, Trophy, Target, Dumbbell, Instagram, Facebook, Link, RefreshCw, Info
+  Bell, Users, Trophy, Target, Dumbbell, Instagram, Facebook, Link, RefreshCw, Info, FileText
 } from 'lucide-react';
 
 interface Profile {
@@ -27,6 +27,7 @@ interface Profile {
   birth_year: number | null;
   instagram_username: string | null;
   facebook_url: string | null;
+  bio: string | null;
 }
 
 interface NotificationPreferences {
@@ -71,6 +72,7 @@ export default function Account() {
   const [birthYear, setBirthYear] = useState('');
   const [instagramUsername, setInstagramUsername] = useState('');
   const [facebookUrl, setFacebookUrl] = useState('');
+  const [bio, setBio] = useState('');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -91,7 +93,7 @@ export default function Account() {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url')
+      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, bio')
       .eq('user_id', user.id)
       .single();
 
@@ -106,6 +108,7 @@ export default function Account() {
       setBirthYear(data.birth_year?.toString() || '');
       setInstagramUsername(data.instagram_username || '');
       setFacebookUrl(data.facebook_url || '');
+      setBio(data.bio || '');
     }
     
     setIsLoading(false);
@@ -192,6 +195,7 @@ export default function Account() {
           birth_year: birthYear ? parseInt(birthYear) : null,
           instagram_username: instagramUsername || null,
           facebook_url: facebookUrl || null,
+          bio: bio || null,
         }, { onConflict: 'user_id' });
 
       if (error) throw error;
@@ -512,6 +516,26 @@ export default function Account() {
                     maxLength={100}
                   />
                 </div>
+              </div>
+
+              <Separator />
+
+              {/* Bio Section */}
+              <div className="space-y-2">
+                <Label htmlFor="bio" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Bio / Beskrivning
+                </Label>
+                <textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Skriv lite om dig själv..."
+                  maxLength={300}
+                  rows={3}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                />
+                <p className="text-xs text-muted-foreground text-right">{bio.length}/300</p>
               </div>
 
               <Button onClick={handleSaveProfile} disabled={isSaving} className="w-full">
