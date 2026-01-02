@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
+import { Youtube } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { APP_VERSION, forceAppUpdate } from '@/components/PWAUpdateNotification';
@@ -27,10 +28,12 @@ interface Profile {
   birth_year: number | null;
   instagram_username: string | null;
   facebook_url: string | null;
+  youtube_url: string | null;
   bio: string | null;
   cover_image_url: string | null;
   show_instagram: boolean;
   show_facebook: boolean;
+  show_youtube: boolean;
 }
 
 interface NotificationPreferences {
@@ -77,9 +80,11 @@ export default function Account() {
   const [birthYear, setBirthYear] = useState('');
   const [instagramUsername, setInstagramUsername] = useState('');
   const [facebookUrl, setFacebookUrl] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
   const [bio, setBio] = useState('');
   const [showInstagram, setShowInstagram] = useState(true);
   const [showFacebook, setShowFacebook] = useState(true);
+  const [showYoutube, setShowYoutube] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -100,7 +105,7 @@ export default function Account() {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, bio, cover_image_url, show_instagram, show_facebook')
+      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, youtube_url, bio, cover_image_url, show_instagram, show_facebook, show_youtube')
       .eq('user_id', user.id)
       .single();
 
@@ -115,9 +120,11 @@ export default function Account() {
       setBirthYear(data.birth_year?.toString() || '');
       setInstagramUsername(data.instagram_username || '');
       setFacebookUrl(data.facebook_url || '');
+      setYoutubeUrl(data.youtube_url || '');
       setBio(data.bio || '');
       setShowInstagram(data.show_instagram ?? true);
       setShowFacebook(data.show_facebook ?? true);
+      setShowYoutube(data.show_youtube ?? true);
     }
     
     setIsLoading(false);
@@ -204,9 +211,11 @@ export default function Account() {
           birth_year: birthYear ? parseInt(birthYear) : null,
           instagram_username: instagramUsername || null,
           facebook_url: facebookUrl || null,
+          youtube_url: youtubeUrl || null,
           bio: bio || null,
           show_instagram: showInstagram,
           show_facebook: showFacebook,
+          show_youtube: showYoutube,
         }, { onConflict: 'user_id' });
 
       if (error) throw error;
@@ -635,6 +644,30 @@ export default function Account() {
                       id="showFacebook"
                       checked={showFacebook}
                       onCheckedChange={setShowFacebook}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="youtube" className="flex items-center gap-2">
+                    <Youtube className="h-4 w-4 text-red-600" />
+                    YouTube
+                  </Label>
+                  <Input
+                    id="youtube"
+                    value={youtubeUrl}
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    placeholder="https://youtube.com/@ditt_kanal"
+                    maxLength={100}
+                  />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="showYoutube" className="text-sm text-muted-foreground">
+                      Visa på min profil
+                    </Label>
+                    <Switch
+                      id="showYoutube"
+                      checked={showYoutube}
+                      onCheckedChange={setShowYoutube}
                     />
                   </div>
                 </div>
