@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { 
   User, Camera, Save, Loader2, ArrowLeft, Crown, Mail, 
   Calendar, UserCircle, LogOut, Settings, Shield, Sun, Moon, Monitor,
-  Bell, Users, Trophy, Target, Dumbbell, Instagram, Facebook, Link, RefreshCw, Info, FileText
+  Bell, Users, Trophy, Target, Dumbbell, Instagram, Facebook, Link, RefreshCw, Info, FileText, Twitter
 } from 'lucide-react';
 
 interface Profile {
@@ -30,12 +30,14 @@ interface Profile {
   facebook_url: string | null;
   youtube_url: string | null;
   tiktok_username: string | null;
+  twitter_username: string | null;
   bio: string | null;
   cover_image_url: string | null;
   show_instagram: boolean;
   show_facebook: boolean;
   show_youtube: boolean;
   show_tiktok: boolean;
+  show_twitter: boolean;
 }
 
 interface NotificationPreferences {
@@ -84,11 +86,13 @@ export default function Account() {
   const [facebookUrl, setFacebookUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [tiktokUsername, setTiktokUsername] = useState('');
+  const [twitterUsername, setTwitterUsername] = useState('');
   const [bio, setBio] = useState('');
   const [showInstagram, setShowInstagram] = useState(true);
   const [showFacebook, setShowFacebook] = useState(true);
   const [showYoutube, setShowYoutube] = useState(true);
   const [showTiktok, setShowTiktok] = useState(true);
+  const [showTwitter, setShowTwitter] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -109,7 +113,7 @@ export default function Account() {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, youtube_url, tiktok_username, bio, cover_image_url, show_instagram, show_facebook, show_youtube, show_tiktok')
+      .select('display_name, avatar_url, gender, birth_year, instagram_username, facebook_url, youtube_url, tiktok_username, twitter_username, bio, cover_image_url, show_instagram, show_facebook, show_youtube, show_tiktok, show_twitter')
       .eq('user_id', user.id)
       .single();
 
@@ -126,11 +130,13 @@ export default function Account() {
       setFacebookUrl(data.facebook_url || '');
       setYoutubeUrl(data.youtube_url || '');
       setTiktokUsername(data.tiktok_username || '');
+      setTwitterUsername(data.twitter_username || '');
       setBio(data.bio || '');
       setShowInstagram(data.show_instagram ?? true);
       setShowFacebook(data.show_facebook ?? true);
       setShowYoutube(data.show_youtube ?? true);
       setShowTiktok(data.show_tiktok ?? true);
+      setShowTwitter(data.show_twitter ?? true);
     }
     
     setIsLoading(false);
@@ -219,11 +225,13 @@ export default function Account() {
           facebook_url: facebookUrl || null,
           youtube_url: youtubeUrl || null,
           tiktok_username: tiktokUsername || null,
+          twitter_username: twitterUsername || null,
           bio: bio || null,
           show_instagram: showInstagram,
           show_facebook: showFacebook,
           show_youtube: showYoutube,
           show_tiktok: showTiktok,
+          show_twitter: showTwitter,
         }, { onConflict: 'user_id' });
 
       if (error) throw error;
@@ -700,6 +708,33 @@ export default function Account() {
                       id="showTiktok"
                       checked={showTiktok}
                       onCheckedChange={setShowTiktok}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Twitter/X */}
+              <div className="space-y-2">
+                <Label htmlFor="twitter" className="flex items-center gap-2">
+                  <Twitter className="h-4 w-4" />
+                  Twitter/X
+                </Label>
+                <div className="space-y-2">
+                  <Input
+                    id="twitter"
+                    value={twitterUsername}
+                    onChange={(e) => setTwitterUsername(e.target.value)}
+                    placeholder="ditt_användarnamn"
+                    maxLength={50}
+                  />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="showTwitter" className="text-sm text-muted-foreground">
+                      Visa på min profil
+                    </Label>
+                    <Switch
+                      id="showTwitter"
+                      checked={showTwitter}
+                      onCheckedChange={setShowTwitter}
                     />
                   </div>
                 </div>
