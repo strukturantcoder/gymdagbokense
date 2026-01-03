@@ -36,6 +36,7 @@ import RecentActivity from '@/components/RecentActivity';
 import NextWorkoutSuggestion from '@/components/NextWorkoutSuggestion';
 import { WeeklySummary } from '@/components/WeeklySummary';
 import { WorkoutHistoryChart } from '@/components/WorkoutHistoryChart';
+import { StrengthProgressChart } from '@/components/StrengthProgressChart';
 import {
   DndContext,
   closestCenter,
@@ -524,7 +525,10 @@ export default function Dashboard() {
         </div>
 
         {/* Workout History Chart */}
-        <WorkoutHistoryChart />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <WorkoutHistoryChart />
+          <StrengthProgressChart />
+        </div>
 
         {/* Next Workout Suggestion */}
         <NextWorkoutSuggestion />
