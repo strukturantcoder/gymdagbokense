@@ -972,8 +972,10 @@ export type Database = {
           show_facebook: boolean
           show_instagram: boolean
           show_tiktok: boolean
+          show_twitter: boolean
           show_youtube: boolean
           tiktok_username: string | null
+          twitter_username: string | null
           updated_at: string
           user_id: string
           youtube_url: string | null
@@ -992,8 +994,10 @@ export type Database = {
           show_facebook?: boolean
           show_instagram?: boolean
           show_tiktok?: boolean
+          show_twitter?: boolean
           show_youtube?: boolean
           tiktok_username?: string | null
+          twitter_username?: string | null
           updated_at?: string
           user_id: string
           youtube_url?: string | null
@@ -1012,8 +1016,10 @@ export type Database = {
           show_facebook?: boolean
           show_instagram?: boolean
           show_tiktok?: boolean
+          show_twitter?: boolean
           show_youtube?: boolean
           tiktok_username?: string | null
+          twitter_username?: string | null
           updated_at?: string
           user_id?: string
           youtube_url?: string | null
