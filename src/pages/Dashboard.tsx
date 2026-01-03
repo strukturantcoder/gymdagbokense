@@ -35,6 +35,7 @@ import RecommendedPrograms from '@/components/RecommendedPrograms';
 import RecentActivity from '@/components/RecentActivity';
 import NextWorkoutSuggestion from '@/components/NextWorkoutSuggestion';
 import { WeeklySummary } from '@/components/WeeklySummary';
+import { WorkoutHistoryChart } from '@/components/WorkoutHistoryChart';
 import {
   DndContext,
   closestCenter,
@@ -521,6 +522,9 @@ export default function Dashboard() {
         <div className="mb-6">
           <WeeklySummary />
         </div>
+
+        {/* Workout History Chart */}
+        <WorkoutHistoryChart />
 
         {/* Next Workout Suggestion */}
         <NextWorkoutSuggestion />
