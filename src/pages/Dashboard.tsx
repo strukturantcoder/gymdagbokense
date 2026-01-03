@@ -34,6 +34,7 @@ import WeeklyCalendar from '@/components/WeeklyCalendar';
 import RecommendedPrograms from '@/components/RecommendedPrograms';
 import RecentActivity from '@/components/RecentActivity';
 import NextWorkoutSuggestion from '@/components/NextWorkoutSuggestion';
+import { WeeklySummary } from '@/components/WeeklySummary';
 import {
   DndContext,
   closestCenter,
@@ -515,6 +516,11 @@ export default function Dashboard() {
 
         {/* Quick Actions with Streak and Weekly Stats */}
         <QuickActions />
+
+        {/* Weekly Summary */}
+        <div className="mb-6">
+          <WeeklySummary />
+        </div>
 
         {/* Next Workout Suggestion */}
         <NextWorkoutSuggestion />
