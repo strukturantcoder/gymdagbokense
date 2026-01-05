@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceDot } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { TrendingUp, Dumbbell } from "lucide-react";
+import { TrendingUp, Dumbbell, Trophy } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -13,7 +13,26 @@ interface ExerciseDataPoint {
   date: string;
   weight: number;
   reps: number;
+  isPB?: boolean;
 }
+
+// Custom dot component for PB markers
+const CustomDot = (props: any) => {
+  const { cx, cy, payload } = props;
+  
+  if (payload?.isPB) {
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={8} fill="hsl(var(--chart-4))" stroke="hsl(var(--background))" strokeWidth={2} />
+        <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle" fontSize={10} fill="hsl(var(--background))">
+          ★
+        </text>
+      </g>
+    );
+  }
+  
+  return <circle cx={cx} cy={cy} r={4} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth={2} />;
+};
 
 export const StrengthProgressChart = () => {
   const [selectedExercise, setSelectedExercise] = useState<string>("");
@@ -75,7 +94,18 @@ export const StrengthProgressChart = () => {
         }
       });
 
-      return Array.from(sessionMap.values()).slice(-12); // Last 12 sessions
+      // Convert to array and mark PBs
+      const dataArray = Array.from(sessionMap.values());
+      let maxWeightSoFar = 0;
+      
+      dataArray.forEach((point) => {
+        if (point.weight > maxWeightSoFar) {
+          point.isPB = true;
+          maxWeightSoFar = point.weight;
+        }
+      });
+
+      return dataArray.slice(-12); // Last 12 sessions
     },
     enabled: !!selectedExercise,
   });
@@ -95,6 +125,10 @@ export const StrengthProgressChart = () => {
     return ((last - first) / first * 100).toFixed(1);
   }, [progressData]);
 
+  const pbCount = useMemo(() => {
+    return progressData?.filter(p => p.isPB).length || 0;
+  }, [progressData]);
+
   if (!exercises?.length) {
     return null;
   }
@@ -107,11 +141,19 @@ export const StrengthProgressChart = () => {
             <TrendingUp className="h-4 w-4 text-primary" />
             Styrkeprogression
           </CardTitle>
-          {improvement && Number(improvement) > 0 && (
-            <span className="text-xs text-green-600 font-medium">
-              +{improvement}%
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {pbCount > 0 && (
+              <span className="text-xs text-chart-4 font-medium flex items-center gap-1">
+                <Trophy className="h-3 w-3" />
+                {pbCount} PB
+              </span>
+            )}
+            {improvement && Number(improvement) > 0 && (
+              <span className="text-xs text-green-600 font-medium">
+                +{improvement}%
+              </span>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -156,7 +198,7 @@ export const StrengthProgressChart = () => {
                   dataKey="weight"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
+                  dot={<CustomDot />}
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
