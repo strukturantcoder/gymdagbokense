@@ -11,43 +11,68 @@ serve(async (req) => {
   }
 
   try {
-    const token = Deno.env.get('TRADEDOUBLER_API_TOKEN');
+    const clientId = Deno.env.get('TRADEDOUBLER_API_TOKEN');
+    const clientSecret = Deno.env.get('TRADEDOUBLER_CLIENT_SECRET');
     
-    if (!token) {
-      console.error('TRADEDOUBLER_API_TOKEN not configured');
+    if (!clientId || !clientSecret) {
+      console.error('Tradedoubler credentials not configured');
       return new Response(
-        JSON.stringify({ error: 'API token not configured' }),
+        JSON.stringify({ error: 'API credentials not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const { page = 1, pageSize = 10, category } = await req.json().catch(() => ({}));
 
-    // Feed ID 20966 - looks like fitness/supplement products
-    // NOTE: token may contain special characters, so we URL-encode it.
-    const encodedToken = encodeURIComponent(token);
+    // Step 1: Get OAuth2 access token
+    console.log('Getting OAuth2 access token from Tradedoubler...');
+    const tokenResponse = await fetch('https://connect.tradedoubler.com/uaa/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text().catch(() => '');
+      console.error('OAuth2 token error:', tokenResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to authenticate with Tradedoubler',
+          details: errorText.slice(0, 200)
+        }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    if (!accessToken) {
+      console.error('No access token in response:', tokenData);
+      return new Response(
+        JSON.stringify({ error: 'No access token received' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Step 2: Fetch products using the access token
+    // Feed ID 20966 - fitness/supplement products
     const baseUrl = `https://api.tradedoubler.com/1.0/products.json;page=${page};pageSize=${pageSize};fid=20966`;
-    const urlWithToken = `${baseUrl}?token=${encodedToken}`;
 
     console.log('Fetching products from Tradedoubler...');
-
-    const commonHeaders = {
-      'Accept': 'application/json',
-      'User-Agent': 'LovableCloud/affiliate-products',
-    };
-
-    // Tradedoubler auth differs between feeds/accounts. We try query-token first,
-    // and if we get 403 we retry with Bearer auth.
-    let response = await fetch(urlWithToken, { headers: commonHeaders });
-
-    if (!response.ok && response.status === 403) {
-      response = await fetch(baseUrl, {
-        headers: {
-          ...commonHeaders,
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    }
+    const response = await fetch(baseUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'User-Agent': 'LovableCloud/affiliate-products',
+      },
+    });
 
     if (!response.ok) {
       const bodyText = await response.text().catch(() => '');
