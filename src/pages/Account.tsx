@@ -60,7 +60,7 @@ const defaultPreferences: NotificationPreferences = {
   weekly_summary_emails: true,
 };
 export default function Account() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, session, checkSubscription: authCheckSubscription } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,6 +77,7 @@ export default function Account() {
   const [isClearing, setIsClearing] = useState(false);
   const [clearingProgress, setClearingProgress] = useState(0);
   const [clearingMessage, setClearingMessage] = useState('');
+  const [isRefreshingSubscription, setIsRefreshingSubscription] = useState(false);
   
   // Form state
   const [displayName, setDisplayName] = useState('');
@@ -149,9 +150,27 @@ export default function Account() {
       const { data, error } = await supabase.functions.invoke('check-subscription');
       if (!error && data?.subscribed) {
         setIsPremium(true);
+      } else {
+        setIsPremium(false);
       }
     } catch (err) {
       console.error('Error checking subscription:', err);
+    }
+  };
+
+  const handleRefreshSubscription = async () => {
+    if (!session?.access_token) return;
+    
+    setIsRefreshingSubscription(true);
+    try {
+      await authCheckSubscription(session.access_token, true);
+      await checkSubscription();
+      toast.success('Prenumerationsstatus uppdaterad');
+    } catch (error) {
+      console.error('Error refreshing subscription:', error);
+      toast.error('Kunde inte uppdatera prenumerationsstatus');
+    } finally {
+      setIsRefreshingSubscription(false);
     }
   };
 
@@ -813,11 +832,25 @@ export default function Account() {
                   {isPremium ? 'Premium-medlem' : 'Gratisversion'}
                 </p>
               </div>
-              {!isPremium && (
-                <Button size="sm" onClick={() => navigate('/dashboard')}>
-                  Uppgradera
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={handleRefreshSubscription}
+                  disabled={isRefreshingSubscription}
+                >
+                  {isRefreshingSubscription ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
                 </Button>
-              )}
+                {!isPremium && (
+                  <Button size="sm" onClick={() => navigate('/dashboard')}>
+                    Uppgradera
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
