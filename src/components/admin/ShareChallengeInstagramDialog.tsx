@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Instagram, Copy, Loader2, Sparkles, RefreshCw, ExternalLink, Image, Download } from "lucide-react";
+import { Instagram, Copy, Loader2, Sparkles, RefreshCw, ExternalLink, Image, Download, Pencil } from "lucide-react";
 
 interface ChallengeData {
   id: string;
@@ -38,11 +39,15 @@ export function ShareChallengeInstagramDialog({
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [imagePrompt, setImagePrompt] = useState("");
+  const [editPrompt, setEditPrompt] = useState("");
+  const [showEditInput, setShowEditInput] = useState(false);
 
   useEffect(() => {
     if (open && challenge) {
       setImageUrl(null);
       setImagePrompt("");
+      setEditPrompt("");
+      setShowEditInput(false);
       generateCaption();
     }
   }, [open, challenge]);
@@ -98,10 +103,47 @@ export function ShareChallengeInstagramDialog({
       }
 
       setImageUrl(data.imageUrl);
+      setShowEditInput(false);
+      setEditPrompt("");
       toast.success("Bild genererad!");
     } catch (error) {
       console.error("Error generating image:", error);
       toast.error("Kunde inte generera bild");
+    } finally {
+      setGeneratingImage(false);
+    }
+  };
+
+  const editImage = async () => {
+    if (!imageUrl || !editPrompt.trim()) {
+      toast.error("Skriv en instruktion för att redigera bilden");
+      return;
+    }
+
+    setGeneratingImage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-challenge-image", {
+        body: { 
+          prompt: editPrompt,
+          challengeTitle: challenge?.title,
+          editImage: imageUrl 
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      setImageUrl(data.imageUrl);
+      setShowEditInput(false);
+      setEditPrompt("");
+      toast.success("Bild redigerad!");
+    } catch (error) {
+      console.error("Error editing image:", error);
+      toast.error("Kunde inte redigera bild");
     } finally {
       setGeneratingImage(false);
     }
@@ -212,15 +254,57 @@ export function ShareChallengeInstagramDialog({
                     className="w-full aspect-square object-cover"
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadImage}
-                  className="w-full"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Ladda ner bild
-                </Button>
+                
+                {showEditInput ? (
+                  <div className="space-y-2">
+                    <Input
+                      value={editPrompt}
+                      onChange={(e) => setEditPrompt(e.target.value)}
+                      placeholder="Beskriv hur du vill ändra bilden..."
+                      onKeyDown={(e) => e.key === "Enter" && editImage()}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setShowEditInput(false); setEditPrompt(""); }}
+                        className="flex-1"
+                      >
+                        Avbryt
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={editImage}
+                        disabled={!editPrompt.trim()}
+                        className="flex-1"
+                      >
+                        <Sparkles className="h-4 w-4 mr-1" />
+                        Redigera
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowEditInput(true)}
+                      className="flex-1"
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Redigera med AI
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadImage}
+                      className="flex-1"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Ladda ner
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div 

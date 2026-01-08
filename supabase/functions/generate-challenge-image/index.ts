@@ -16,7 +16,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const { prompt, challengeTitle } = await req.json();
+    const { prompt, challengeTitle, editImage } = await req.json();
 
     if (!prompt) {
       return new Response(
@@ -25,9 +25,37 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced prompt for fitness challenge image
-    const enhancedPrompt = `Create a bold, eye-catching Instagram post image for a fitness challenge called "${challengeTitle || 'Fitness Challenge'}". 
-    
+    let requestBody: any;
+
+    if (editImage) {
+      // Edit existing image
+      console.log("Editing image with prompt:", prompt);
+      
+      requestBody = {
+        model: "google/gemini-2.5-flash-image-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Edit this fitness challenge image: ${prompt}. Keep the fitness/workout theme and maintain Instagram square format.`
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: editImage
+                }
+              }
+            ]
+          }
+        ],
+        modalities: ["image", "text"]
+      };
+    } else {
+      // Generate new image
+      const enhancedPrompt = `Create a bold, eye-catching Instagram post image for a fitness challenge called "${challengeTitle || 'Fitness Challenge'}". 
+      
 Style requirements:
 - Modern, energetic fitness aesthetic
 - Bold typography space for overlay text
@@ -39,15 +67,9 @@ Style requirements:
 
 Specific theme: ${prompt}`;
 
-    console.log("Generating image with prompt:", enhancedPrompt);
+      console.log("Generating image with prompt:", enhancedPrompt);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+      requestBody = {
         model: "google/gemini-2.5-flash-image-preview",
         messages: [
           {
@@ -56,7 +78,16 @@ Specific theme: ${prompt}`;
           },
         ],
         modalities: ["image", "text"],
-      }),
+      };
+    }
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
