@@ -71,7 +71,6 @@ serve(async (req) => {
       customer: customerId,
       status: "active",
       limit: 1,
-      expand: ['data.items.data.price'],
     });
 
     const hasActiveSub = subscriptions.data.length > 0;
@@ -79,13 +78,22 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      // current_period_end is on the subscription object, not the item
-      // Make sure it exists before converting to date
-      if (subscription.current_period_end) {
-        subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      
+      // Log raw subscription keys to debug
+      logStep("Subscription keys", { keys: Object.keys(subscription) });
+      
+      // Access current_period_end - cast to any to bypass TypeScript
+      const rawSub = subscription as any;
+      const periodEnd = rawSub.current_period_end;
+      
+      logStep("Period end value", { periodEnd, type: typeof periodEnd });
+      
+      if (periodEnd && typeof periodEnd === 'number') {
+        subscriptionEnd = new Date(periodEnd * 1000).toISOString();
         logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
       } else {
-        logStep("Active subscription found but no period end", { subscriptionId: subscription.id });
+        // Even without period end, user is still premium
+        logStep("Active subscription found (no period end)", { subscriptionId: subscription.id });
       }
     } else {
       logStep("No active subscription found");
