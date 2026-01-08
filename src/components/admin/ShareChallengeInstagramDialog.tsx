@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Instagram, Copy, Loader2, Sparkles, RefreshCw, ExternalLink } from "lucide-react";
+import { Instagram, Copy, Loader2, Sparkles, RefreshCw, ExternalLink, Image, Download } from "lucide-react";
 
 interface ChallengeData {
   id: string;
@@ -35,9 +35,14 @@ export function ShareChallengeInstagramDialog({
   const [caption, setCaption] = useState("");
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState("");
 
   useEffect(() => {
     if (open && challenge) {
+      setImageUrl(null);
+      setImagePrompt("");
       generateCaption();
     }
   }, [open, challenge]);
@@ -59,11 +64,67 @@ export function ShareChallengeInstagramDialog({
       }
 
       setCaption(data.caption || "");
+      // Store the suggested image prompt for later use
+      if (data.suggestedImagePrompt) {
+        setImagePrompt(data.suggestedImagePrompt);
+      }
     } catch (error) {
       console.error("Error generating caption:", error);
       toast.error("Kunde inte generera Instagram-inlägg");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const generateImage = async () => {
+    if (!challenge) return;
+
+    setGeneratingImage(true);
+    try {
+      const prompt = imagePrompt || `Fitness challenge promotional image for ${challenge.theme || challenge.title}`;
+      
+      const { data, error } = await supabase.functions.invoke("generate-challenge-image", {
+        body: { 
+          prompt,
+          challengeTitle: challenge.title 
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      setImageUrl(data.imageUrl);
+      toast.success("Bild genererad!");
+    } catch (error) {
+      console.error("Error generating image:", error);
+      toast.error("Kunde inte generera bild");
+    } finally {
+      setGeneratingImage(false);
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    if (!imageUrl) return;
+
+    try {
+      // Convert base64 to blob and download
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `instagram-${challenge?.title?.replace(/\s+/g, "-").toLowerCase() || "challenge"}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success("Bild nedladdad!");
+    } catch {
+      toast.error("Kunde inte ladda ner bild");
     }
   };
 
@@ -79,24 +140,22 @@ export function ShareChallengeInstagramDialog({
   };
 
   const handleOpenInstagram = () => {
-    // Copy text first
     navigator.clipboard.writeText(caption).then(() => {
       toast.success("Text kopierad! Öppnar Instagram...");
-      // Open Instagram (will open app on mobile, web on desktop)
       window.open("https://www.instagram.com/", "_blank");
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Instagram className="h-5 w-5 text-pink-500" />
             Dela till Instagram
           </DialogTitle>
           <DialogDescription>
-            AI-genererad text för att marknadsföra din tävling på Instagram.
+            AI-genererad text och bild för att marknadsföra din tävling på Instagram.
           </DialogDescription>
         </DialogHeader>
 
@@ -110,6 +169,71 @@ export function ShareChallengeInstagramDialog({
             </div>
           )}
 
+          {/* Image Section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                Bild
+              </Label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={generateImage}
+                disabled={generatingImage || generating}
+                className="h-8"
+              >
+                {generatingImage ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-1" />
+                )}
+                {imageUrl ? "Generera ny bild" : "Generera bild"}
+              </Button>
+            </div>
+
+            {generatingImage ? (
+              <div className="flex items-center justify-center py-12 border rounded-lg bg-muted/30 aspect-square">
+                <div className="text-center space-y-2">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    <Sparkles className="inline h-4 w-4 mr-1" />
+                    AI genererar bild...
+                  </p>
+                  <p className="text-xs text-muted-foreground">Detta kan ta några sekunder</p>
+                </div>
+              </div>
+            ) : imageUrl ? (
+              <div className="space-y-2">
+                <div className="relative rounded-lg overflow-hidden border">
+                  <img 
+                    src={imageUrl} 
+                    alt="Generated challenge image" 
+                    className="w-full aspect-square object-cover"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadImage}
+                  className="w-full"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Ladda ner bild
+                </Button>
+              </div>
+            ) : (
+              <div 
+                onClick={generateImage}
+                className="flex flex-col items-center justify-center py-8 border-2 border-dashed rounded-lg bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+              >
+                <Image className="h-10 w-10 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">Klicka för att generera en bild</p>
+              </div>
+            )}
+          </div>
+
+          {/* Caption Section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="caption">Inläggstext</Label>
@@ -145,7 +269,7 @@ export function ShareChallengeInstagramDialog({
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder="Instagram-text genereras..."
-                className="min-h-[200px] resize-none"
+                className="min-h-[180px] resize-none"
               />
             )}
           </div>
@@ -172,7 +296,7 @@ export function ShareChallengeInstagramDialog({
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Texten kopieras automatiskt när du öppnar Instagram. Klistra sedan in i ditt nya inlägg.
+            Ladda ner bilden och kopiera texten. Skapa sedan ett nytt inlägg i Instagram-appen.
           </p>
         </div>
       </DialogContent>
