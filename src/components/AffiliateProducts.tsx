@@ -79,8 +79,23 @@ export function AffiliateProducts() {
     );
   }
 
-  if (error || products.length === 0) {
-    return null; // Don't show anything if there's an error or no products
+  if (error) {
+    return (
+      <Card className="border-border/50 bg-gradient-to-br from-card to-card/80">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <ShoppingBag className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Rekommenderade produkter</h3>
+            <Badge variant="secondary" className="text-xs">Sponsrat</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">{error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (products.length === 0) {
+    return null; // don't show if no products
   }
 
   return (
