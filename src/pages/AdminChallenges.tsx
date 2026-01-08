@@ -71,6 +71,11 @@ export default function AdminChallenges() {
   const [drawingLottery, setDrawingLottery] = useState<string | null>(null);
   const [qualifiedParticipants, setQualifiedParticipants] = useState<LotteryQualified[]>([]);
   const [showQualifiedDialog, setShowQualifiedDialog] = useState<string | null>(null);
+  
+  // Email dialog state
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [newChallengeData, setNewChallengeData] = useState<CommunityChallenge | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -123,7 +128,7 @@ export default function AdminChallenges() {
 
     setCreating(true);
     try {
-      const { error } = await supabase.from("community_challenges").insert({
+      const { data, error } = await supabase.from("community_challenges").insert({
         title: title.trim(),
         description: description.trim() || null,
         theme: theme.trim() || null,
@@ -135,11 +140,18 @@ export default function AdminChallenges() {
         start_date: new Date(startDate).toISOString(),
         end_date: new Date(endDate).toISOString(),
         created_by: user?.id,
-      });
+      }).select().single();
 
       if (error) throw error;
 
       toast.success("Tävling skapad!");
+      
+      // Show email dialog
+      if (data) {
+        setNewChallengeData(data);
+        setShowEmailDialog(true);
+      }
+      
       resetForm();
       fetchChallenges();
     } catch (error) {
@@ -147,6 +159,38 @@ export default function AdminChallenges() {
       toast.error("Kunde inte skapa tävling");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleSendChallengeEmail = async () => {
+    if (!newChallengeData) return;
+    
+    setSendingEmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-community-challenge-email", {
+        body: {
+          challengeId: newChallengeData.id,
+          challengeTitle: newChallengeData.title,
+          challengeDescription: newChallengeData.description || "",
+          goalDescription: newChallengeData.goal_description,
+          goalUnit: newChallengeData.goal_unit,
+          targetValue: newChallengeData.target_value,
+          startDate: newChallengeData.start_date,
+          endDate: newChallengeData.end_date,
+          theme: newChallengeData.theme,
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(`E-post skickad till ${data.sentCount} användare!`);
+      setShowEmailDialog(false);
+      setNewChallengeData(null);
+    } catch (error) {
+      console.error("Error sending challenge email:", error);
+      toast.error("Kunde inte skicka e-post");
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -352,6 +396,56 @@ export default function AdminChallenges() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Email Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Skicka e-post om tävlingen?
+            </DialogTitle>
+            <DialogDescription>
+              Vill du skicka ett e-postmeddelande till alla användare som har aktiverat community-notiser?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {newChallengeData && (
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <p className="font-medium">{newChallengeData.title}</p>
+              <p className="text-sm text-muted-foreground">{newChallengeData.description}</p>
+              <p className="text-sm">
+                <span className="font-medium">Mål:</span> {newChallengeData.goal_description}
+                {newChallengeData.target_value && ` (${newChallengeData.target_value} ${newChallengeData.goal_unit})`}
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-2 justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowEmailDialog(false);
+                setNewChallengeData(null);
+              }}
+            >
+              Hoppa över
+            </Button>
+            <Button onClick={handleSendChallengeEmail} disabled={sendingEmail}>
+              {sendingEmail ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Skickar...
+                </>
+              ) : (
+                <>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Skicka e-post
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
