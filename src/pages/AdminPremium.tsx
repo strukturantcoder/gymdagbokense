@@ -9,9 +9,23 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { ArrowLeft, Crown, Loader2, RefreshCw, Search, Users, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Crown, Loader2, RefreshCw, Search, Users, ExternalLink, Ticket } from 'lucide-react';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface PremiumUser {
   id: string;
@@ -25,13 +39,26 @@ interface PremiumUser {
   created_at: string;
 }
 
+interface Coupon {
+  id: string;
+  name: string;
+  percent_off: number | null;
+  amount_off: number | null;
+  duration: string;
+}
+
 export default function AdminPremium() {
   const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const [users, setUsers] = useState<PremiumUser[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [couponDialogOpen, setCouponDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<PremiumUser | null>(null);
+  const [selectedCoupon, setSelectedCoupon] = useState<string>('');
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -42,8 +69,19 @@ export default function AdminPremium() {
   useEffect(() => {
     if (isAdmin) {
       fetchPremiumUsers();
+      fetchCoupons();
     }
   }, [isAdmin]);
+
+  const fetchCoupons = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('list-coupons');
+      if (error) throw error;
+      setCoupons(data?.coupons || []);
+    } catch (error) {
+      console.error('Error fetching coupons:', error);
+    }
+  };
 
   const fetchPremiumUsers = async () => {
     setIsLoading(true);
@@ -68,6 +106,37 @@ export default function AdminPremium() {
     toast.success('Lista uppdaterad');
   };
 
+  const handleOpenCouponDialog = (user: PremiumUser) => {
+    setSelectedUser(user);
+    setSelectedCoupon('');
+    setCouponDialogOpen(true);
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!selectedUser || !selectedCoupon) return;
+    
+    setIsApplyingCoupon(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('apply-coupon', {
+        body: {
+          subscription_id: selectedUser.subscription_id,
+          coupon_id: selectedCoupon,
+        },
+      });
+      
+      if (error) throw error;
+      
+      toast.success(`Kupong applicerad på ${selectedUser.display_name || selectedUser.email}`);
+      setCouponDialogOpen(false);
+      await fetchPremiumUsers();
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      toast.error('Kunde inte applicera kupongen');
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -86,6 +155,16 @@ export default function AdminPremium() {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  const getCouponLabel = (coupon: Coupon) => {
+    if (coupon.percent_off) {
+      return `${coupon.name} (${coupon.percent_off}% rabatt)`;
+    }
+    if (coupon.amount_off) {
+      return `${coupon.name} (${coupon.amount_off / 100} kr rabatt)`;
+    }
+    return coupon.name;
   };
 
   if (adminLoading) {
@@ -244,11 +323,22 @@ export default function AdminPremium() {
                         <TableCell className="text-muted-foreground">
                           {format(new Date(user.created_at), 'PPP', { locale: sv })}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right space-x-1">
+                          {user.subscription_status === 'active' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenCouponDialog(user)}
+                              title="Applicera kupong"
+                            >
+                              <Ticket className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => window.open(`https://dashboard.stripe.com/customers/${user.stripe_customer_id}`, '_blank')}
+                            title="Öppna i Stripe"
                           >
                             <ExternalLink className="h-4 w-4" />
                           </Button>
@@ -262,6 +352,44 @@ export default function AdminPremium() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Coupon Dialog */}
+      <Dialog open={couponDialogOpen} onOpenChange={setCouponDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Applicera kupong</DialogTitle>
+            <DialogDescription>
+              Välj en kupong att applicera på {selectedUser?.display_name || selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Select value={selectedCoupon} onValueChange={setSelectedCoupon}>
+              <SelectTrigger>
+                <SelectValue placeholder="Välj en kupong..." />
+              </SelectTrigger>
+              <SelectContent>
+                {coupons.map((coupon) => (
+                  <SelectItem key={coupon.id} value={coupon.id}>
+                    {getCouponLabel(coupon)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCouponDialogOpen(false)}>
+                Avbryt
+              </Button>
+              <Button 
+                onClick={handleApplyCoupon} 
+                disabled={!selectedCoupon || isApplyingCoupon}
+              >
+                {isApplyingCoupon && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Applicera
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
