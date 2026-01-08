@@ -486,6 +486,9 @@ export type Database = {
           goal_unit: string
           id: string
           is_active: boolean
+          is_lottery: boolean
+          lottery_drawn_at: string | null
+          lottery_winner_id: string | null
           start_date: string
           target_value: number | null
           theme: string | null
@@ -501,6 +504,9 @@ export type Database = {
           goal_unit: string
           id?: string
           is_active?: boolean
+          is_lottery?: boolean
+          lottery_drawn_at?: string | null
+          lottery_winner_id?: string | null
           start_date: string
           target_value?: number | null
           theme?: string | null
@@ -516,6 +522,9 @@ export type Database = {
           goal_unit?: string
           id?: string
           is_active?: boolean
+          is_lottery?: boolean
+          lottery_drawn_at?: string | null
+          lottery_winner_id?: string | null
           start_date?: string
           target_value?: number | null
           theme?: string | null
@@ -1776,6 +1785,13 @@ export type Database = {
       }
       complete_friend_challenges: { Args: never; Returns: undefined }
       complete_pool_challenges: { Args: never; Returns: undefined }
+      draw_community_challenge_lottery: {
+        Args: { challenge_uuid: string }
+        Returns: {
+          winner_name: string
+          winner_user_id: string
+        }[]
+      }
       get_creator_stats: {
         Args: { creator_id: string }
         Returns: {
@@ -1815,6 +1831,15 @@ export type Database = {
           level: number
           total_workouts: number
           total_xp: number
+          user_id: string
+        }[]
+      }
+      get_lottery_qualified_participants: {
+        Args: { challenge_uuid: string }
+        Returns: {
+          avatar_url: string
+          current_value: number
+          display_name: string
           user_id: string
         }[]
       }
