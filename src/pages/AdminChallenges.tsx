@@ -14,10 +14,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell, Image, Megaphone, Mail, UsersRound, Gift, Dice6 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell, Image, Megaphone, Mail, UsersRound, Gift, Dice6, TrendingUp } from "lucide-react";
 import { AdminStats } from "@/components/AdminStats";
 import { AdminPushNotification } from "@/components/AdminPushNotification";
 import { AdminTeamsSection } from "@/components/admin/AdminTeamsSection";
+import { ChallengeEngagementStats } from "@/components/admin/ChallengeEngagementStats";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -365,10 +366,14 @@ export default function AdminChallenges() {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <Tabs defaultValue="stats" className="w-full">
-          <TabsList className="grid w-full grid-cols-7 max-w-4xl">
+          <TabsList className="grid w-full grid-cols-8 max-w-5xl">
             <TabsTrigger value="stats" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Statistik</span>
+            </TabsTrigger>
+            <TabsTrigger value="engagement" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              <span className="hidden sm:inline">Engagemang</span>
             </TabsTrigger>
             <TabsTrigger value="teams" className="gap-2">
               <UsersRound className="h-4 w-4" />
@@ -398,6 +403,10 @@ export default function AdminChallenges() {
 
           <TabsContent value="stats" className="mt-6">
             <AdminStats />
+          </TabsContent>
+
+          <TabsContent value="engagement" className="mt-6">
+            <ChallengeEngagementStats />
           </TabsContent>
 
           <TabsContent value="teams" className="mt-6">
