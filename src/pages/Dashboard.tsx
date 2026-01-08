@@ -13,7 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield, Trophy, RotateCcw, Trash, UserCircle } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Loader2, LogOut, Sparkles, ClipboardList, BarChart3, X, Edit2, Save, Users, Footprints, Link2, Shield, Trophy, RotateCcw, Trash, UserCircle, Share2, Globe } from 'lucide-react';
+import { ShareProgramDialog } from '@/components/training/ShareProgramDialog';
 import { InstallAppButton } from '@/components/InstallPrompt';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import SubscriptionButton from '@/components/SubscriptionButton';
@@ -86,6 +87,9 @@ interface WorkoutProgram {
   days_per_week: number;
   program_data: ProgramData;
   created_at: string;
+  is_public?: boolean;
+  share_code?: string | null;
+  description?: string | null;
 }
 
 export default function Dashboard() {
@@ -118,6 +122,10 @@ export default function Dashboard() {
   const [showTrash, setShowTrash] = useState(false);
   const [trashPrograms, setTrashPrograms] = useState<WorkoutProgram[]>([]);
   const [programToDelete, setProgramToDelete] = useState<WorkoutProgram | null>(null);
+  
+  // Share dialog state
+  const [showShareProgramDialog, setShowShareProgramDialog] = useState(false);
+  const [programToShare, setProgramToShare] = useState<WorkoutProgram | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -798,21 +806,41 @@ export default function Dashboard() {
                   >
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{program.name}</CardTitle>
-                          <CardDescription>{program.goal}</CardDescription>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              {program.name}
+                              {program.is_public && <Globe className="w-3.5 h-3.5 text-green-500" />}
+                            </CardTitle>
+                            <CardDescription>{program.goal}</CardDescription>
+                          </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteProgram(program.id);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProgramToShare(program);
+                              setShowShareProgramDialog(true);
+                            }}
+                            title="Dela program"
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProgram(program.id);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -1010,6 +1038,16 @@ export default function Dashboard() {
 
       {/* New Challenge Popup */}
       <NewChallengePopup />
+
+      {/* Share Program Dialog */}
+      {programToShare && (
+        <ShareProgramDialog
+          open={showShareProgramDialog}
+          onOpenChange={setShowShareProgramDialog}
+          program={programToShare}
+          onUpdate={fetchPrograms}
+        />
+      )}
     </div>
   );
 }
