@@ -24,20 +24,39 @@ serve(async (req) => {
     const { page = 1, pageSize = 10, category } = await req.json().catch(() => ({}));
 
     // Feed ID 20966 - looks like fitness/supplement products
-    const url = `https://api.tradedoubler.com/1.0/products.json;page=${page};pageSize=${pageSize};fid=20966?token=${token}`;
-    
+    // NOTE: token may contain special characters, so we URL-encode it.
+    const encodedToken = encodeURIComponent(token);
+    const baseUrl = `https://api.tradedoubler.com/1.0/products.json;page=${page};pageSize=${pageSize};fid=20966`;
+    const urlWithToken = `${baseUrl}?token=${encodedToken}`;
+
     console.log('Fetching products from Tradedoubler...');
 
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
+    const commonHeaders = {
+      'Accept': 'application/json',
+      'User-Agent': 'LovableCloud/affiliate-products',
+    };
+
+    // Tradedoubler auth differs between feeds/accounts. We try query-token first,
+    // and if we get 403 we retry with Bearer auth.
+    let response = await fetch(urlWithToken, { headers: commonHeaders });
+
+    if (!response.ok && response.status === 403) {
+      response = await fetch(baseUrl, {
+        headers: {
+          ...commonHeaders,
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    }
 
     if (!response.ok) {
-      console.error('Tradedoubler API error:', response.status);
+      const bodyText = await response.text().catch(() => '');
+      console.error('Tradedoubler API error:', response.status, bodyText.slice(0, 500));
       return new Response(
-        JSON.stringify({ error: `API request failed with status ${response.status}` }),
+        JSON.stringify({
+          error: `API request failed with status ${response.status}`,
+          details: bodyText ? bodyText.slice(0, 500) : undefined,
+        }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

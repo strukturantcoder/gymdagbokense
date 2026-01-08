@@ -230,7 +230,21 @@ export default function RecommendedPrograms() {
   }
 
   if (programs.length === 0) {
-    return null;
+    return (
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Sparkles className="w-5 h-5 text-primary" />
+            Rekommenderade program
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Inga publika program att rekommendera ännu.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
