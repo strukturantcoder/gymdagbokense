@@ -14,11 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell, Image, Megaphone, Mail, UsersRound, Gift, Dice6, TrendingUp } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell, Image, Megaphone, Mail, UsersRound, Gift, Dice6, TrendingUp, Instagram } from "lucide-react";
 import { AdminStats } from "@/components/AdminStats";
 import { AdminPushNotification } from "@/components/AdminPushNotification";
 import { AdminTeamsSection } from "@/components/admin/AdminTeamsSection";
 import { ChallengeEngagementStats } from "@/components/admin/ChallengeEngagementStats";
+import { ShareChallengeInstagramDialog } from "@/components/admin/ShareChallengeInstagramDialog";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -77,6 +78,9 @@ export default function AdminChallenges() {
   const [newChallengeData, setNewChallengeData] = useState<CommunityChallenge | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [sendingPush, setSendingPush] = useState(false);
+  
+  // Instagram dialog state
+  const [showInstagramDialog, setShowInstagramDialog] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -484,6 +488,14 @@ export default function AdminChallenges() {
                 )}
               </Button>
             </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowInstagramDialog(true)}
+              className="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-orange-500/10 border-pink-500/30 hover:border-pink-500/50"
+            >
+              <Instagram className="h-4 w-4 mr-2 text-pink-500" />
+              Skapa Instagram-inlägg
+            </Button>
             <Button 
               variant="ghost" 
               onClick={() => {
@@ -497,6 +509,14 @@ export default function AdminChallenges() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Instagram Dialog */}
+      <ShareChallengeInstagramDialog
+        open={showInstagramDialog}
+        onOpenChange={setShowInstagramDialog}
+        challenge={newChallengeData}
+      />
+
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
