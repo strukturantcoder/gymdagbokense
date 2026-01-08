@@ -71,6 +71,7 @@ serve(async (req) => {
       customer: customerId,
       status: "active",
       limit: 1,
+      expand: ['data.items.data.price'],
     });
 
     const hasActiveSub = subscriptions.data.length > 0;
@@ -78,8 +79,14 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
+      // current_period_end is on the subscription object, not the item
+      // Make sure it exists before converting to date
+      if (subscription.current_period_end) {
+        subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+        logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
+      } else {
+        logStep("Active subscription found but no period end", { subscriptionId: subscription.id });
+      }
     } else {
       logStep("No active subscription found");
     }
