@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -96,12 +97,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [session?.access_token]);
 
+  // Check and notify user about new community challenge enrollments
+  const checkNewChallengeEnrollments = useCallback(async (userId: string) => {
+    const enrollmentKey = `challenge_enrollment_notified_${userId}`;
+    const lastNotified = localStorage.getItem(enrollmentKey);
+    const lastNotifiedTime = lastNotified ? parseInt(lastNotified, 10) : 0;
+    
+    try {
+      // Find challenges user was enrolled in after last notification
+      const { data: participations } = await supabase
+        .from('community_challenge_participants')
+        .select(`
+          challenge_id,
+          joined_at,
+          community_challenges (
+            title,
+            is_active
+          )
+        `)
+        .eq('user_id', userId)
+        .gt('joined_at', new Date(lastNotifiedTime).toISOString());
+      
+      if (participations && participations.length > 0) {
+        const activeChallenges = participations.filter(
+          (p: any) => p.community_challenges?.is_active
+        );
+        
+        if (activeChallenges.length > 0) {
+          const challengeNames = activeChallenges
+            .map((p: any) => p.community_challenges?.title)
+            .filter(Boolean);
+          
+          if (challengeNames.length === 1) {
+            toast.success(`Du är automatiskt anmäld till "${challengeNames[0]}"!`, {
+              description: 'Logga träningspass för att samla poäng.',
+              duration: 6000,
+            });
+          } else if (challengeNames.length > 1) {
+            toast.success(`Du är automatiskt anmäld till ${challengeNames.length} tävlingar!`, {
+              description: challengeNames.join(', '),
+              duration: 6000,
+            });
+          }
+        }
+      }
+      
+      // Update last notified time
+      localStorage.setItem(enrollmentKey, Date.now().toString());
+    } catch (error) {
+      console.error('Error checking challenge enrollments:', error);
+    }
+  }, []);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Check for new challenge enrollments on sign in
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Small delay to allow triggers to complete
+          setTimeout(() => {
+            checkNewChallengeEnrollments(session.user.id);
+          }, 2000);
+        }
 
         // Send welcome email for new OAuth signups (e.g., Google)
         if (event === 'SIGNED_IN' && session?.user) {
@@ -136,10 +197,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Also check on initial load if already signed in
+      if (session?.user) {
+        checkNewChallengeEnrollments(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [checkNewChallengeEnrollments]);
 
   // Check subscription when session changes (only after initial load)
   useEffect(() => {
