@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Trophy, Users, Calendar, Target, Check, UserPlus, LogOut, TrendingDown } from "lucide-react";
+import { Trophy, Users, Calendar, Target, Check, UserPlus, LogOut, TrendingDown, Gift, PartyPopper } from "lucide-react";
 import { format, isPast, isFuture } from "date-fns";
 import { sv } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +21,15 @@ interface CommunityChallenge {
   winner_type: string;
   start_date: string;
   end_date: string;
+  is_lottery: boolean;
+  lottery_winner_id: string | null;
+  lottery_drawn_at: string | null;
+}
+
+interface LotteryWinnerInfo {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
 }
 
 interface Participant {
@@ -34,6 +43,7 @@ export function CommunityChallenges() {
   const [challenges, setChallenges] = useState<CommunityChallenge[]>([]);
   const [participantData, setParticipantData] = useState<Record<string, Participant[]>>({});
   const [myParticipations, setMyParticipations] = useState<Set<string>>(new Set());
+  const [lotteryWinners, setLotteryWinners] = useState<Record<string, LotteryWinnerInfo>>({});
   const [loading, setLoading] = useState(true);
   const [expandedLeaderboards, setExpandedLeaderboards] = useState<Set<string>>(new Set());
   const [rankChangedChallenges, setRankChangedChallenges] = useState<Set<string>>(new Set());
@@ -84,12 +94,34 @@ export function CommunityChallenges() {
       // Select only necessary fields, excluding created_by for security
       const { data: challengesData, error: challengesError } = await supabase
         .from("community_challenges")
-        .select("id, title, description, theme, goal_description, goal_unit, target_value, winner_type, start_date, end_date, is_active")
+        .select("id, title, description, theme, goal_description, goal_unit, target_value, winner_type, start_date, end_date, is_active, is_lottery, lottery_winner_id, lottery_drawn_at")
         .eq("is_active", true)
         .order("start_date", { ascending: true });
 
       if (challengesError) throw challengesError;
       setChallenges(challengesData || []);
+
+      // Fetch lottery winner profiles
+      const lotteryWinnerIds = (challengesData || [])
+        .filter(c => c.lottery_winner_id)
+        .map(c => c.lottery_winner_id as string);
+
+      if (lotteryWinnerIds.length > 0) {
+        const { data: winnerProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url")
+          .in("user_id", lotteryWinnerIds);
+
+        const winnersMap: Record<string, LotteryWinnerInfo> = {};
+        (winnerProfiles || []).forEach(p => {
+          winnersMap[p.user_id] = {
+            user_id: p.user_id,
+            display_name: p.display_name,
+            avatar_url: p.avatar_url
+          };
+        });
+        setLotteryWinners(winnersMap);
+      }
 
       if (challengesData && challengesData.length > 0) {
         // Fetch participants for all challenges
@@ -336,7 +368,43 @@ export function CommunityChallenges() {
                   <Users className="h-4 w-4" />
                   {participants.length} deltagare
                 </span>
+                {challenge.is_lottery && (
+                  <span className="flex items-center gap-1 text-amber-500">
+                    <Gift className="h-4 w-4" />
+                    Utlottning
+                  </span>
+                )}
               </div>
+
+              {/* Lottery Winner Banner */}
+              {challenge.is_lottery && challenge.lottery_winner_id && challenge.lottery_drawn_at && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-500/30 rounded-lg p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-amber-500/20 rounded-full p-2">
+                      <PartyPopper className="h-6 w-6 text-amber-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                        🎉 Vinnare av utlottningen!
+                      </p>
+                      <p className="text-lg font-bold text-foreground">
+                        {lotteryWinners[challenge.lottery_winner_id]?.display_name || "Okänd"}
+                        {challenge.lottery_winner_id === user?.id && (
+                          <span className="ml-2 text-amber-500">(Det är du! 🎊)</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Draget {format(new Date(challenge.lottery_drawn_at), "d MMMM yyyy 'kl.' HH:mm", { locale: sv })}
+                      </p>
+                    </div>
+                    <Trophy className="h-8 w-8 text-amber-500" />
+                  </div>
+                </motion.div>
+              )}
 
               {/* Progress for joined users */}
               {isJoined && myProgress && challenge.target_value && (
