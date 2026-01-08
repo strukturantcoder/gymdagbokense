@@ -11,65 +11,26 @@ serve(async (req) => {
   }
 
   try {
-    const clientId = Deno.env.get('TRADEDOUBLER_API_TOKEN');
-    const clientSecret = Deno.env.get('TRADEDOUBLER_CLIENT_SECRET');
+    const token = Deno.env.get('TRADEDOUBLER_API_TOKEN');
     
-    if (!clientId || !clientSecret) {
-      console.error('Tradedoubler credentials not configured');
+    if (!token) {
+      console.error('TRADEDOUBLER_API_TOKEN not configured');
       return new Response(
-        JSON.stringify({ error: 'API credentials not configured' }),
+        JSON.stringify({ error: 'API token not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const { page = 1, pageSize = 10, category } = await req.json().catch(() => ({}));
 
-    // Step 1: Get OAuth2 access token
-    console.log('Getting OAuth2 access token from Tradedoubler...');
-    const tokenResponse = await fetch('https://connect.tradedoubler.com/uaa/oauth/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'client_credentials',
-        client_id: clientId,
-        client_secret: clientSecret,
-      }),
-    });
-
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text().catch(() => '');
-      console.error('OAuth2 token error:', tokenResponse.status, errorText);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to authenticate with Tradedoubler',
-          details: errorText.slice(0, 200)
-        }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const tokenData = await tokenResponse.json();
-    const accessToken = tokenData.access_token;
-
-    if (!accessToken) {
-      console.error('No access token in response:', tokenData);
-      return new Response(
-        JSON.stringify({ error: 'No access token received' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Step 2: Fetch products using the access token
+    // Tradedoubler uses token directly in URL as query parameter
     // Feed ID 20966 - fitness/supplement products
-    const baseUrl = `https://api.tradedoubler.com/1.0/products.json;page=${page};pageSize=${pageSize};fid=20966`;
+    const url = `https://api.tradedoubler.com/1.0/products.json;page=${page};pageSize=${pageSize};fid=20966?token=${token}`;
 
     console.log('Fetching products from Tradedoubler...');
-    const response = await fetch(baseUrl, {
+    const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
         'User-Agent': 'LovableCloud/affiliate-products',
       },
     });
