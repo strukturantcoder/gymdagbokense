@@ -81,6 +81,7 @@ export default function AdminChallenges() {
   
   // Instagram dialog state
   const [showInstagramDialog, setShowInstagramDialog] = useState(false);
+  const [instagramChallengeData, setInstagramChallengeData] = useState<CommunityChallenge | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -513,8 +514,11 @@ export default function AdminChallenges() {
       {/* Instagram Dialog */}
       <ShareChallengeInstagramDialog
         open={showInstagramDialog}
-        onOpenChange={setShowInstagramDialog}
-        challenge={newChallengeData}
+        onOpenChange={(open) => {
+          setShowInstagramDialog(open);
+          if (!open) setInstagramChallengeData(null);
+        }}
+        challenge={instagramChallengeData || newChallengeData}
       />
 
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -828,6 +832,18 @@ export default function AdminChallenges() {
                             onCheckedChange={() => toggleActive(challenge.id, challenge.is_active)}
                           />
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setInstagramChallengeData(challenge);
+                            setShowInstagramDialog(true);
+                          }}
+                          className="text-pink-500 hover:text-pink-600"
+                          title="Skapa Instagram-inlägg"
+                        >
+                          <Instagram className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
