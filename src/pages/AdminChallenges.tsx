@@ -11,8 +11,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell, Image, Megaphone, Mail, UsersRound } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Trophy, Calendar, Sparkles, Loader2, Edit2, X, Save, BarChart3, Bell, Image, Megaphone, Mail, UsersRound, Gift, Dice6 } from "lucide-react";
 import { AdminStats } from "@/components/AdminStats";
 import { AdminPushNotification } from "@/components/AdminPushNotification";
 import { AdminTeamsSection } from "@/components/admin/AdminTeamsSection";
@@ -32,6 +34,16 @@ interface CommunityChallenge {
   end_date: string;
   is_active: boolean;
   created_at: string;
+  is_lottery: boolean;
+  lottery_winner_id: string | null;
+  lottery_drawn_at: string | null;
+}
+
+interface LotteryQualified {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  current_value: number;
 }
 
 export default function AdminChallenges() {
@@ -52,9 +64,12 @@ export default function AdminChallenges() {
   const [goalDescription, setGoalDescription] = useState("");
   const [goalUnit, setGoalUnit] = useState("");
   const [targetValue, setTargetValue] = useState("");
-  const [winnerType, setWinnerType] = useState<"highest" | "first_to_goal">("highest");
+  const [winnerType, setWinnerType] = useState<"highest" | "first_to_goal" | "lottery">("highest");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [drawingLottery, setDrawingLottery] = useState<string | null>(null);
+  const [qualifiedParticipants, setQualifiedParticipants] = useState<LotteryQualified[]>([]);
+  const [showQualifiedDialog, setShowQualifiedDialog] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -100,8 +115,8 @@ export default function AdminChallenges() {
       return;
     }
 
-    if (winnerType === "first_to_goal" && !targetValue) {
-      toast.error("Målvärde krävs för 'Först till mål'-tävlingar");
+    if ((winnerType === "first_to_goal" || winnerType === "lottery") && !targetValue) {
+      toast.error("Målvärde krävs för denna vinnarlogik");
       return;
     }
 
@@ -114,7 +129,8 @@ export default function AdminChallenges() {
         goal_description: goalDescription.trim(),
         goal_unit: goalUnit.trim(),
         target_value: targetValue ? parseInt(targetValue) : null,
-        winner_type: winnerType,
+        winner_type: winnerType === "lottery" ? "first_to_goal" : winnerType,
+        is_lottery: winnerType === "lottery",
         start_date: new Date(startDate).toISOString(),
         end_date: new Date(endDate).toISOString(),
         created_by: user?.id,
@@ -153,7 +169,7 @@ export default function AdminChallenges() {
     setGoalDescription(challenge.goal_description);
     setGoalUnit(challenge.goal_unit);
     setTargetValue(challenge.target_value?.toString() || "");
-    setWinnerType(challenge.winner_type as "highest" | "first_to_goal");
+    setWinnerType(challenge.is_lottery ? "lottery" : (challenge.winner_type as "highest" | "first_to_goal"));
     setStartDate(new Date(challenge.start_date).toISOString().slice(0, 16));
     setEndDate(new Date(challenge.end_date).toISOString().slice(0, 16));
     setEditingId(challenge.id);
@@ -171,8 +187,8 @@ export default function AdminChallenges() {
       return;
     }
 
-    if (winnerType === "first_to_goal" && !targetValue) {
-      toast.error("Målvärde krävs för 'Först till mål'-tävlingar");
+    if ((winnerType === "first_to_goal" || winnerType === "lottery") && !targetValue) {
+      toast.error("Målvärde krävs för denna vinnarlogik");
       return;
     }
 
@@ -187,7 +203,8 @@ export default function AdminChallenges() {
           goal_description: goalDescription.trim(),
           goal_unit: goalUnit.trim(),
           target_value: targetValue ? parseInt(targetValue) : null,
-          winner_type: winnerType,
+          winner_type: winnerType === "lottery" ? "first_to_goal" : winnerType,
+          is_lottery: winnerType === "lottery",
           start_date: new Date(startDate).toISOString(),
           end_date: new Date(endDate).toISOString(),
         })
@@ -281,6 +298,44 @@ export default function AdminChallenges() {
     } catch (error) {
       console.error("Error deleting challenge:", error);
       toast.error("Kunde inte ta bort tävling");
+    }
+  };
+
+  const fetchQualifiedParticipants = async (challengeId: string) => {
+    try {
+      const { data, error } = await supabase.rpc('get_lottery_qualified_participants', {
+        challenge_uuid: challengeId
+      });
+      if (error) throw error;
+      setQualifiedParticipants(data || []);
+      setShowQualifiedDialog(challengeId);
+    } catch (error) {
+      console.error('Error fetching qualified participants:', error);
+      toast.error('Kunde inte hämta kvalificerade deltagare');
+    }
+  };
+
+  const drawLotteryWinner = async (challengeId: string) => {
+    if (!confirm('Är du säker på att du vill dra en vinnare? Detta kan inte ångras.')) return;
+    
+    setDrawingLottery(challengeId);
+    try {
+      const { data, error } = await supabase.rpc('draw_community_challenge_lottery', {
+        challenge_uuid: challengeId
+      });
+      if (error) throw error;
+      
+      const winner = data?.[0];
+      if (winner) {
+        toast.success(`🎉 ${winner.winner_name} vann utlottningen!`);
+      }
+      fetchChallenges();
+      setShowQualifiedDialog(null);
+    } catch (error: any) {
+      console.error('Error drawing lottery:', error);
+      toast.error(error.message || 'Kunde inte dra vinnare');
+    } finally {
+      setDrawingLottery(null);
     }
   };
 
@@ -468,12 +523,13 @@ export default function AdminChallenges() {
                     <SelectContent>
                       <SelectItem value="highest">Högsta värdet vinner</SelectItem>
                       <SelectItem value="first_to_goal">Först till mål vinner</SelectItem>
+                      <SelectItem value="lottery">🎲 Utlottning (alla som når målet)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="targetValue">
-                    Målvärde {winnerType === "first_to_goal" ? "*" : "(valfritt)"}
+                    Målvärde {(winnerType === "first_to_goal" || winnerType === "lottery") ? "*" : "(valfritt)"}
                   </Label>
                   <Input
                     id="targetValue"
@@ -534,11 +590,25 @@ export default function AdminChallenges() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <Trophy className="h-4 w-4 text-primary" />
+                          {challenge.is_lottery ? (
+                            <Gift className="h-4 w-4 text-purple-500" />
+                          ) : (
+                            <Trophy className="h-4 w-4 text-primary" />
+                          )}
                           <h3 className="font-semibold text-foreground">{challenge.title}</h3>
                           {challenge.theme && (
                             <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
                               {challenge.theme}
+                            </span>
+                          )}
+                          {challenge.is_lottery && (
+                            <span className="text-xs bg-purple-500/10 text-purple-500 px-2 py-0.5 rounded">
+                              Utlottning
+                            </span>
+                          )}
+                          {challenge.lottery_winner_id && (
+                            <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded">
+                              Vinnare dragen
                             </span>
                           )}
                         </div>
@@ -554,11 +624,26 @@ export default function AdminChallenges() {
                             Mål: {challenge.goal_description} ({challenge.goal_unit})
                           </span>
                           <span>
-                            {challenge.winner_type === "highest" ? "Högsta vinner" : `Först till ${challenge.target_value}`}
+                            {challenge.is_lottery 
+                              ? `Alla som når ${challenge.target_value} är med i lottning` 
+                              : challenge.winner_type === "highest" 
+                                ? "Högsta vinner" 
+                                : `Först till ${challenge.target_value}`}
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 md:gap-4">
+                        {challenge.is_lottery && !challenge.lottery_winner_id && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchQualifiedParticipants(challenge.id)}
+                            className="gap-1"
+                          >
+                            <Dice6 className="h-4 w-4" />
+                            <span className="hidden sm:inline">Dra vinnare</span>
+                          </Button>
+                        )}
                         <div className="flex items-center gap-2">
                           <Label htmlFor={`active-${challenge.id}`} className="text-sm">
                             Aktiv
@@ -596,6 +681,62 @@ export default function AdminChallenges() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Lottery Dialog */}
+      <Dialog open={!!showQualifiedDialog} onOpenChange={() => setShowQualifiedDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-purple-500" />
+              Kvalificerade deltagare
+            </DialogTitle>
+            <DialogDescription>
+              Dessa deltagare har nått målet och är med i utlottningen
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {qualifiedParticipants.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                Inga deltagare har nått målet ännu
+              </p>
+            ) : (
+              <>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {qualifiedParticipants.map((p) => (
+                    <div key={p.user_id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={p.avatar_url || undefined} />
+                        <AvatarFallback>{p.display_name?.charAt(0) || '?'}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{p.display_name}</p>
+                      </div>
+                      <span className="text-sm text-muted-foreground">{p.current_value}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-sm text-muted-foreground">
+                    {qualifiedParticipants.length} kvalificerade
+                  </span>
+                  <Button 
+                    onClick={() => showQualifiedDialog && drawLotteryWinner(showQualifiedDialog)}
+                    disabled={!!drawingLottery}
+                    className="gap-2"
+                  >
+                    {drawingLottery ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Dice6 className="h-4 w-4" />
+                    )}
+                    Dra vinnare
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
