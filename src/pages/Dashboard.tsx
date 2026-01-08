@@ -38,6 +38,7 @@ import { WeeklySummary } from '@/components/WeeklySummary';
 import { WorkoutHistoryChart } from '@/components/WorkoutHistoryChart';
 import { StrengthProgressChart } from '@/components/StrengthProgressChart';
 import { NewChallengePopup } from '@/components/NewChallengePopup';
+import { AffiliateProducts } from '@/components/AffiliateProducts';
 import {
   DndContext,
   closestCenter,
@@ -549,6 +550,11 @@ export default function Dashboard() {
 
         {/* Recommended Programs */}
         <RecommendedPrograms />
+
+        {/* Affiliate Products */}
+        <div className="mb-6">
+          <AffiliateProducts />
+        </div>
         
         {/* Quick link to challenges */}
         <Card 
