@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { ArrowLeft, Crown, Loader2, RefreshCw, Search, Users, ExternalLink, Ticket } from 'lucide-react';
+import { ArrowLeft, Crown, Loader2, RefreshCw, Search, Users, ExternalLink, Ticket, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import {
@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 interface PremiumUser {
   id: string;
@@ -56,9 +57,18 @@ export default function AdminPremium() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [couponDialogOpen, setCouponDialogOpen] = useState(false);
+  const [createCouponDialogOpen, setCreateCouponDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<PremiumUser | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<string>('');
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [isCreatingCoupon, setIsCreatingCoupon] = useState(false);
+  const [newCoupon, setNewCoupon] = useState({
+    name: '',
+    discountType: 'percent' as 'percent' | 'amount',
+    discountValue: '',
+    duration: 'once' as 'once' | 'repeating' | 'forever',
+    durationMonths: '1',
+  });
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -137,6 +147,51 @@ export default function AdminPremium() {
     }
   };
 
+  const handleCreateCoupon = async () => {
+    if (!newCoupon.name || !newCoupon.discountValue) {
+      toast.error('Fyll i alla obligatoriska fält');
+      return;
+    }
+
+    setIsCreatingCoupon(true);
+    try {
+      const body: Record<string, unknown> = {
+        name: newCoupon.name,
+        duration: newCoupon.duration,
+      };
+
+      if (newCoupon.discountType === 'percent') {
+        body.percent_off = parseFloat(newCoupon.discountValue);
+      } else {
+        body.amount_off = parseFloat(newCoupon.discountValue) * 100; // Convert to öre
+      }
+
+      if (newCoupon.duration === 'repeating') {
+        body.duration_in_months = parseInt(newCoupon.durationMonths);
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-coupon', { body });
+      
+      if (error) throw error;
+      
+      toast.success(`Kupong "${newCoupon.name}" skapad`);
+      setCreateCouponDialogOpen(false);
+      setNewCoupon({
+        name: '',
+        discountType: 'percent',
+        discountValue: '',
+        duration: 'once',
+        durationMonths: '1',
+      });
+      await fetchCoupons();
+    } catch (error) {
+      console.error('Error creating coupon:', error);
+      toast.error('Kunde inte skapa kupongen');
+    } finally {
+      setIsCreatingCoupon(false);
+    }
+  };
+
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -194,19 +249,29 @@ export default function AdminPremium() {
                 <span className="font-display text-xl font-bold">Premium-användare</span>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              <span className="ml-2 hidden sm:inline">Uppdatera</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setCreateCouponDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="ml-2 hidden sm:inline">Ny kupong</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                <span className="ml-2 hidden sm:inline">Uppdatera</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -385,6 +450,101 @@ export default function AdminPremium() {
               >
                 {isApplyingCoupon && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 Applicera
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Coupon Dialog */}
+      <Dialog open={createCouponDialogOpen} onOpenChange={setCreateCouponDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Skapa ny kupong</DialogTitle>
+            <DialogDescription>
+              Skapa en ny rabattkupong som kan appliceras på prenumerationer
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="coupon-name">Namn</Label>
+              <Input
+                id="coupon-name"
+                placeholder="t.ex. Gratis månad"
+                value={newCoupon.name}
+                onChange={(e) => setNewCoupon({ ...newCoupon, name: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Rabattyp</Label>
+              <Select 
+                value={newCoupon.discountType} 
+                onValueChange={(v: 'percent' | 'amount') => setNewCoupon({ ...newCoupon, discountType: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percent">Procent (%)</SelectItem>
+                  <SelectItem value="amount">Belopp (SEK)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="discount-value">
+                {newCoupon.discountType === 'percent' ? 'Rabatt (%)' : 'Rabatt (SEK)'}
+              </Label>
+              <Input
+                id="discount-value"
+                type="number"
+                placeholder={newCoupon.discountType === 'percent' ? 't.ex. 50' : 't.ex. 100'}
+                value={newCoupon.discountValue}
+                onChange={(e) => setNewCoupon({ ...newCoupon, discountValue: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Varaktighet</Label>
+              <Select 
+                value={newCoupon.duration} 
+                onValueChange={(v: 'once' | 'repeating' | 'forever') => setNewCoupon({ ...newCoupon, duration: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="once">En gång</SelectItem>
+                  <SelectItem value="repeating">Upprepande</SelectItem>
+                  <SelectItem value="forever">För alltid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {newCoupon.duration === 'repeating' && (
+              <div className="space-y-2">
+                <Label htmlFor="duration-months">Antal månader</Label>
+                <Input
+                  id="duration-months"
+                  type="number"
+                  min="1"
+                  value={newCoupon.durationMonths}
+                  onChange={(e) => setNewCoupon({ ...newCoupon, durationMonths: e.target.value })}
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setCreateCouponDialogOpen(false)}>
+                Avbryt
+              </Button>
+              <Button 
+                onClick={handleCreateCoupon} 
+                disabled={!newCoupon.name || !newCoupon.discountValue || isCreatingCoupon}
+              >
+                {isCreatingCoupon && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Skapa kupong
               </Button>
             </div>
           </div>
