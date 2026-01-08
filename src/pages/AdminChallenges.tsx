@@ -76,6 +76,7 @@ export default function AdminChallenges() {
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [newChallengeData, setNewChallengeData] = useState<CommunityChallenge | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendingPush, setSendingPush] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -191,6 +192,30 @@ export default function AdminChallenges() {
       toast.error("Kunde inte skicka e-post");
     } finally {
       setSendingEmail(false);
+    }
+  };
+
+  const handleSendChallengePush = async () => {
+    if (!newChallengeData) return;
+    
+    setSendingPush(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-challenge-push-notification", {
+        body: {
+          title: `🏆 Ny tävling: ${newChallengeData.title}`,
+          message: newChallengeData.description || newChallengeData.goal_description,
+          url: "/social"
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Push-notis skickad till ${data.sent} användare!`);
+    } catch (error) {
+      console.error("Error sending challenge push:", error);
+      toast.error("Kunde inte skicka push-notis");
+    } finally {
+      setSendingPush(false);
     }
   };
 
@@ -401,11 +426,11 @@ export default function AdminChallenges() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Skicka e-post om tävlingen?
+              <Megaphone className="h-5 w-5" />
+              Meddela användare om tävlingen?
             </DialogTitle>
             <DialogDescription>
-              Vill du skicka ett e-postmeddelande till alla användare som har aktiverat community-notiser?
+              Skicka e-post och/eller push-notis till användare som har aktiverat community-notiser.
             </DialogDescription>
           </DialogHeader>
           
@@ -420,28 +445,54 @@ export default function AdminChallenges() {
             </div>
           )}
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleSendChallengePush} 
+                disabled={sendingPush}
+                variant="outline"
+                className="flex-1"
+              >
+                {sendingPush ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Skickar...
+                  </>
+                ) : (
+                  <>
+                    <Bell className="h-4 w-4 mr-2" />
+                    Skicka push-notis
+                  </>
+                )}
+              </Button>
+              <Button 
+                onClick={handleSendChallengeEmail} 
+                disabled={sendingEmail}
+                variant="outline"
+                className="flex-1"
+              >
+                {sendingEmail ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Skickar...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Skicka e-post
+                  </>
+                )}
+              </Button>
+            </div>
             <Button 
-              variant="outline" 
+              variant="ghost" 
               onClick={() => {
                 setShowEmailDialog(false);
                 setNewChallengeData(null);
               }}
+              className="text-muted-foreground"
             >
               Hoppa över
-            </Button>
-            <Button onClick={handleSendChallengeEmail} disabled={sendingEmail}>
-              {sendingEmail ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Skickar...
-                </>
-              ) : (
-                <>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Skicka e-post
-                </>
-              )}
             </Button>
           </div>
         </DialogContent>
