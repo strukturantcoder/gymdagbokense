@@ -37,6 +37,7 @@ import NextWorkoutSuggestion from '@/components/NextWorkoutSuggestion';
 import { WeeklySummary } from '@/components/WeeklySummary';
 import { WorkoutHistoryChart } from '@/components/WorkoutHistoryChart';
 import { StrengthProgressChart } from '@/components/StrengthProgressChart';
+import { NewChallengePopup } from '@/components/NewChallengePopup';
 import {
   DndContext,
   closestCenter,
@@ -1000,6 +1001,9 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* New Challenge Popup */}
+      <NewChallengePopup />
     </div>
   );
 }
