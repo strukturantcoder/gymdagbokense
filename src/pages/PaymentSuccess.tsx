@@ -21,10 +21,11 @@ export default function PaymentSuccess() {
       colors: ['#f97316', '#fbbf24', '#10b981']
     });
 
-    // Refresh subscription status
+    // Refresh subscription status - force refresh to bypass cache after payment
     const refresh = async () => {
       if (session?.access_token) {
-        await checkSubscription(session.access_token);
+        // Force refresh to ensure we get the latest subscription status from Stripe
+        await checkSubscription(session.access_token, true);
       }
       setIsRefreshing(false);
     };
