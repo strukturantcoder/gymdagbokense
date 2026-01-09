@@ -30,7 +30,8 @@ serve(async (req) => {
     const out = img.resize(300, 300);
 
     // ImageScript encode() outputs PNG bytes.
-    const png = await out.encode();
+    // Use max compression (0-9) to keep file size down.
+    const png = await out.encode(9);
     const pngBytes = new Uint8Array(png);
     const body = pngBytes.buffer.slice(pngBytes.byteOffset, pngBytes.byteOffset + pngBytes.byteLength);
 
