@@ -92,3 +92,6 @@ verify_jwt = false
 
 [functions.generate-instagram-post]
 verify_jwt = true
+
+[functions.garmin-logo]
+verify_jwt = false
