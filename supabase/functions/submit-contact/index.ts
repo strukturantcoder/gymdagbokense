@@ -1,4 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { Resend } from "https://esm.sh/resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -112,6 +115,31 @@ Deno.serve(async (req) => {
     }
 
     console.log('Contact message saved successfully');
+
+    // Send email notification to info@gymdagboken.se
+    try {
+      const emailResponse = await resend.emails.send({
+        from: "Gymdagboken <noreply@gymdagboken.se>",
+        to: ["info@gymdagboken.se"],
+        reply_to: email.trim().toLowerCase(),
+        subject: `Kontaktformulär: ${subject.trim().substring(0, 100)}`,
+        html: `
+          <h2>Nytt meddelande från kontaktformuläret</h2>
+          <p><strong>Från:</strong> ${name.trim()}</p>
+          <p><strong>E-post:</strong> ${email.trim().toLowerCase()}</p>
+          <p><strong>Ämne:</strong> ${subject.trim()}</p>
+          <hr>
+          <p><strong>Meddelande:</strong></p>
+          <p style="white-space: pre-wrap;">${message.trim()}</p>
+          <hr>
+          <p style="color: #666; font-size: 12px;">Du kan svara direkt på detta mail för att kontakta avsändaren.</p>
+        `,
+      });
+      console.log('Email notification sent:', emailResponse);
+    } catch (emailError) {
+      // Log email error but don't fail the request - the message is already saved
+      console.error('Failed to send email notification:', emailError);
+    }
 
     return new Response(
       JSON.stringify({ success: true, message: 'Meddelande skickat!' }),
