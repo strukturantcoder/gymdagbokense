@@ -74,28 +74,33 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Exchange authorization code for access token
+    // STEP 2: Access Token Request per Garmin spec
+    // URL (POST) https://diauth.garmin.com/di-oauth2-service/oauth/token
+    // Parameters sent as form body (NOT Basic auth header)
     const tokenUrl = "https://diauth.garmin.com/di-oauth2-service/oauth/token";
-    // Standard Basic auth format: client_id:client_secret (no space)
-    const clientCredentials = btoa(`${clientId}:${clientSecret}`);
+
+    const formBody = new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: clientId,
+      client_secret: clientSecret,
+      code: code,
+      code_verifier: tempToken.code_verifier,
+    });
+
+    // Only include redirect_uri if it was used in Step 1
+    if (tempToken.redirect_uri) {
+      formBody.set("redirect_uri", tempToken.redirect_uri);
+    }
 
     console.log("Exchanging code for token at:", tokenUrl);
     console.log("Using redirect_uri:", tempToken.redirect_uri);
-    console.log("Using code_verifier:", tempToken.code_verifier);
 
     const tokenResponse = await fetch(tokenUrl, {
       method: "POST",
       headers: {
-        "Authorization": `Basic ${clientCredentials}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        code: code,
-        state: state,
-        code_verifier: tempToken.code_verifier,
-        redirect_uri: tempToken.redirect_uri,
-      }).toString(),
+      body: formBody.toString(),
     });
 
     if (!tokenResponse.ok) {
@@ -122,7 +127,7 @@ Deno.serve(async (req) => {
     }
 
     // Calculate token expiry
-    const expiresAt = expiresIn 
+    const expiresAt = expiresIn
       ? new Date(Date.now() + expiresIn * 1000).toISOString()
       : null;
 
