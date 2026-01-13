@@ -843,27 +843,36 @@ export type Database = {
       }
       garmin_oauth_temp: {
         Row: {
+          code_verifier: string | null
           created_at: string
           expires_at: string
           id: string
           oauth_token: string
           oauth_token_secret: string
+          redirect_uri: string | null
+          state: string | null
           user_id: string
         }
         Insert: {
+          code_verifier?: string | null
           created_at?: string
           expires_at?: string
           id?: string
           oauth_token: string
           oauth_token_secret: string
+          redirect_uri?: string | null
+          state?: string | null
           user_id: string
         }
         Update: {
+          code_verifier?: string | null
           created_at?: string
           expires_at?: string
           id?: string
           oauth_token?: string
           oauth_token_secret?: string
+          redirect_uri?: string | null
+          state?: string | null
           user_id?: string
         }
         Relationships: []
