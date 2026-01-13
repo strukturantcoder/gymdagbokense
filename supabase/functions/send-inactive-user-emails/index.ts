@@ -69,14 +69,38 @@ const handler = async (req: Request): Promise<Response> => {
       throw authError;
     }
 
+    // Exclude users we've already successfully emailed recently (avoid re-sending on reruns)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: previouslySent, error: previouslySentError } = await supabaseAdmin
+      .from("email_logs")
+      .select("email")
+      .eq("email_type", "inactive_user_reminder")
+      .eq("status", "sent")
+      .gte("created_at", thirtyDaysAgo.toISOString());
+
+    if (previouslySentError) {
+      console.error("Error fetching previous email logs:", previouslySentError);
+      throw previouslySentError;
+    }
+
+    const alreadySentSet = new Set((previouslySent || []).map(r => r.email));
+
     const emailResults: { email: string; success: boolean; error?: string }[] = [];
     const emailSubject = "🏆 Missa inte januaritävlingen – vinn proteinpulver!";
+    let skippedAlreadySent = 0;
 
     for (const profile of inactiveProfiles) {
       const authUser = authData.users.find(u => u.id === profile.user_id);
       
       if (!authUser?.email) {
         console.log(`No email found for user ${profile.user_id}`);
+        continue;
+      }
+
+      if (alreadySentSet.has(authUser.email)) {
+        skippedAlreadySent++;
         continue;
       }
 
@@ -147,6 +171,11 @@ const handler = async (req: Request): Promise<Response> => {
           `,
         });
 
+        // Resend returns `{ data, error }` and may not throw on error
+        if ((emailResponse as any)?.error) {
+          throw new Error((emailResponse as any).error?.message || "Unknown email send error");
+        }
+
         console.log(`Email sent to ${authUser.email}:`, emailResponse);
         emailResults.push({ email: authUser.email, success: true });
 
@@ -172,21 +201,25 @@ const handler = async (req: Request): Promise<Response> => {
           error_message: emailError.message
         });
       }
+
+      // Throttle to stay below provider rate limits (Resend: ~2 req/s)
+      await new Promise((resolve) => setTimeout(resolve, 600));
     }
 
-    const successCount = emailResults.filter(r => r.success).length;
-    const failCount = emailResults.filter(r => !r.success).length;
+    const successCount = emailResults.filter((r) => r.success).length;
+    const failCount = emailResults.filter((r) => !r.success).length;
 
-    console.log(`Email sending complete: ${successCount} sent, ${failCount} failed`);
+    console.log(`Email sending complete: ${successCount} sent, ${failCount} failed (skipped ${skippedAlreadySent} already-sent)`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         totalInactive: inactiveProfiles.length,
+        skippedAlreadySent,
         emailsSent: successCount,
         emailsFailed: failCount,
         results: emailResults
-      }), 
+      }),
       {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
