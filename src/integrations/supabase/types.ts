@@ -1919,14 +1919,23 @@ export type Database = {
     }
     Functions: {
       abbreviate_name: { Args: { full_name: string }; Returns: string }
-      claim_daily_bonus: {
-        Args: { p_user_id: string }
-        Returns: {
-          is_new_day: boolean
-          new_streak: number
-          xp_earned: number
-        }[]
-      }
+      claim_daily_bonus:
+        | {
+            Args: never
+            Returns: {
+              is_new_day: boolean
+              new_streak: number
+              xp_earned: number
+            }[]
+          }
+        | {
+            Args: { p_user_id: string }
+            Returns: {
+              is_new_day: boolean
+              new_streak: number
+              xp_earned: number
+            }[]
+          }
       complete_friend_challenges: { Args: never; Returns: undefined }
       complete_pool_challenges: { Args: never; Returns: undefined }
       draw_community_challenge_lottery: {
