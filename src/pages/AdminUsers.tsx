@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Search, KeyRound, Loader2, Users, Dumbbell, Activity, Mail, CheckCircle } from "lucide-react";
+import { ArrowLeft, Search, KeyRound, Loader2, Users, Dumbbell, Activity, Mail, CheckCircle, UserCheck, AlertCircle } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -35,8 +35,11 @@ export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [sendingReset, setSendingReset] = useState<string | null>(null);
   const [verifyingUser, setVerifyingUser] = useState<string | null>(null);
+  const [verifyingAll, setVerifyingAll] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+
+  const unverifiedUsers = users.filter((u) => !u.email_confirmed_at);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -124,14 +127,44 @@ export default function AdminUsers() {
 
       if (error) throw error;
 
-      toast.success(`${email} har verifierats!`);
-      // Refresh user list
+      toast.success(`${email} har verifierats och fått välkomstmail!`);
       fetchUsers();
     } catch (error) {
       console.error("Error verifying user:", error);
       toast.error("Kunde inte verifiera användaren");
     } finally {
       setVerifyingUser(null);
+    }
+  };
+
+  const handleVerifyAll = async () => {
+    if (unverifiedUsers.length === 0) {
+      toast.info("Inga overifierade användare");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Är du säker på att du vill verifiera ${unverifiedUsers.length} användare? De kommer också få välkomstmail.`
+    );
+    if (!confirmed) return;
+
+    setVerifyingAll(true);
+    try {
+      const userIds = unverifiedUsers.map((u) => u.id);
+      const { data, error } = await supabase.functions.invoke("admin-verify-user", {
+        body: { userIds },
+      });
+
+      if (error) throw error;
+
+      const successCount = data.results?.filter((r: any) => r.success).length || 0;
+      toast.success(`${successCount} användare har verifierats och fått välkomstmail!`);
+      fetchUsers();
+    } catch (error) {
+      console.error("Error verifying all users:", error);
+      toast.error("Kunde inte verifiera alla användare");
+    } finally {
+      setVerifyingAll(false);
     }
   };
 
@@ -209,6 +242,44 @@ export default function AdminUsers() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Unverified users alert + verify all */}
+        {unverifiedUsers.length > 0 && (
+          <Card className="mb-6 border-yellow-500/50 bg-yellow-500/5">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-500/10 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-yellow-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{unverifiedUsers.length} overifierade användare</p>
+                    <p className="text-sm text-muted-foreground">
+                      Dessa användare har inte verifierat sin e-post
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleVerifyAll}
+                  disabled={verifyingAll}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {verifyingAll ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Verifierar...
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      Verifiera alla ({unverifiedUsers.length})
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Search */}
         <Card className="mb-6">
