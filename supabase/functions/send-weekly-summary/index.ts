@@ -156,7 +156,22 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log(`Found ${profiles?.length || 0} profiles and ${allAuthUsers.length} auth users`);
 
-    const results: { email: string; success: boolean; error?: string }[] = [];
+    // Get notification preferences to respect user opt-outs
+    const { data: notificationPrefs, error: prefsError } = await supabaseAdmin
+      .from("notification_preferences")
+      .select("user_id, weekly_summary_emails");
+    
+    if (prefsError) {
+      console.error("Error fetching notification preferences:", prefsError);
+    }
+
+    // Create a map for quick lookup - default to true (send) if no preference exists
+    const prefsMap = new Map<string, boolean>();
+    notificationPrefs?.forEach(pref => {
+      prefsMap.set(pref.user_id, pref.weekly_summary_emails ?? true);
+    });
+
+    const results: { email: string; success: boolean; error?: string; skipped?: boolean }[] = [];
     const emailSubject = "Din veckosammanfattning från Gymdagboken 📊";
 
     // If test email, only process that user
@@ -172,6 +187,14 @@ const handler = async (req: Request): Promise<Response> => {
     for (const profile of usersToProcess) {
       const authUser = allAuthUsers.find(u => u.id === profile.user_id);
       if (!authUser?.email) continue;
+
+      // Check if user has opted out of weekly summary emails
+      const wantsWeeklySummary = prefsMap.get(profile.user_id) ?? true; // Default to true if no preference
+      if (!wantsWeeklySummary && !testEmail) {
+        console.log(`Skipping ${authUser.email} - opted out of weekly summaries`);
+        results.push({ email: authUser.email, success: true, skipped: true });
+        continue;
+      }
 
       try {
         // Get this week's workout stats
