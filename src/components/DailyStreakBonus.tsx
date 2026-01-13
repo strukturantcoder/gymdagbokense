@@ -76,9 +76,7 @@ export default function DailyStreakBonus() {
     setClaiming(true);
 
     try {
-      const { data, error } = await supabase.rpc("claim_daily_bonus", {
-        p_user_id: user.id,
-      });
+      const { data, error } = await supabase.rpc("claim_daily_bonus");
 
       if (error) {
         console.error("Error claiming bonus:", error);
