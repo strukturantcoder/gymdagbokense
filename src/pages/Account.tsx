@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import { Youtube, Music } from 'lucide-react';
+import { Youtube, Music, Watch } from 'lucide-react';
+import { GarminConnectSettings } from '@/components/GarminConnectSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { APP_VERSION, forceAppUpdate } from '@/components/PWAUpdateNotification';
@@ -895,6 +896,9 @@ export default function Account() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Garmin Connect Integration */}
+        <GarminConnectSettings />
 
         {/* Notification Settings Card */}
         <Card>
