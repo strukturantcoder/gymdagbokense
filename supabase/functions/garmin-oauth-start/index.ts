@@ -65,7 +65,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { callbackUrl } = await req.json();
+    // Garmin's official redirect URI for OAuth 2.0
+    const garminRedirectUri = "https://apis.garmin.com/tools/oauth2/confirmUser";
 
     // OAuth 2.0 with PKCE - Generate verifier, challenge, and state
     const codeVerifier = generateCodeVerifier();
@@ -75,11 +76,11 @@ Deno.serve(async (req) => {
     // Store PKCE verifier, state, and redirect_uri for callback verification
     await supabase.from("garmin_oauth_temp").upsert({
       user_id: user.id,
-      oauth_token: state, // Using oauth_token field to store state
-      oauth_token_secret: codeVerifier, // Using oauth_token_secret field to store code_verifier
+      oauth_token: state,
+      oauth_token_secret: codeVerifier,
       code_verifier: codeVerifier,
       state: state,
-      redirect_uri: callbackUrl,
+      redirect_uri: garminRedirectUri,
     }, { onConflict: "user_id" });
 
     // Build OAuth 2.0 authorization URL
@@ -87,7 +88,7 @@ Deno.serve(async (req) => {
     authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("response_type", "code");
     authorizeUrl.searchParams.set("state", state);
-    authorizeUrl.searchParams.set("redirect_uri", callbackUrl);
+    authorizeUrl.searchParams.set("redirect_uri", garminRedirectUri);
     authorizeUrl.searchParams.set("code_challenge", codeChallenge);
     authorizeUrl.searchParams.set("code_challenge_method", "S256");
     // Request scopes for activities

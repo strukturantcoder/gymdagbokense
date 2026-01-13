@@ -89,23 +89,21 @@ export function useGarminConnect() {
     }
   }, [connection, fetchActivities]);
 
-  const startConnect = async () => {
+  const startConnect = async (): Promise<string | null> => {
     if (!session?.access_token) {
       toast({
         title: "Ej inloggad",
         description: "Du måste vara inloggad för att koppla Garmin.",
         variant: "destructive",
       });
-      return;
+      return null;
     }
 
     setIsConnecting(true);
 
     try {
-      const callbackUrl = `${window.location.origin}/account?garmin_callback=true`;
-      
       const response = await supabase.functions.invoke("garmin-oauth-start", {
-        body: { callbackUrl },
+        body: {},
       });
 
       if (response.error) {
@@ -115,8 +113,9 @@ export function useGarminConnect() {
       const { authorizeUrl } = response.data;
       
       if (authorizeUrl) {
-        // Redirect to Garmin authorization
-        window.location.href = authorizeUrl;
+        // Open Garmin authorization in new window/tab
+        window.open(authorizeUrl, "_blank");
+        return authorizeUrl;
       } else {
         throw new Error("No authorization URL received");
       }
@@ -128,21 +127,26 @@ export function useGarminConnect() {
         variant: "destructive",
       });
       setIsConnecting(false);
+      return null;
     }
   };
 
-  const completeConnect = async (oauthToken: string, oauthVerifier: string) => {
+  const completeConnect = async (authorizationCode: string, state: string) => {
     if (!session?.access_token) return false;
 
     setIsConnecting(true);
 
     try {
       const response = await supabase.functions.invoke("garmin-oauth-callback", {
-        body: { oauth_token: oauthToken, oauth_verifier: oauthVerifier },
+        body: { code: authorizationCode, state: state },
       });
 
       if (response.error) {
         throw new Error(response.error.message);
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
       }
 
       toast({
@@ -158,13 +162,17 @@ export function useGarminConnect() {
       console.error("Error completing Garmin connect:", error);
       toast({
         title: "Anslutningsfel",
-        description: "Kunde inte slutföra Garmin-anslutning.",
+        description: error instanceof Error ? error.message : "Kunde inte slutföra Garmin-anslutning.",
         variant: "destructive",
       });
       return false;
     } finally {
       setIsConnecting(false);
     }
+  };
+
+  const cancelConnect = () => {
+    setIsConnecting(false);
   };
 
   const syncActivities = async (startDate?: string, endDate?: string) => {
@@ -242,6 +250,7 @@ export function useGarminConnect() {
     isConnected: !!connection,
     startConnect,
     completeConnect,
+    cancelConnect,
     syncActivities,
     disconnect,
     fetchActivities,
