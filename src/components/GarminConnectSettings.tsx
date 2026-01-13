@@ -5,10 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Watch, RefreshCw, Link2, Unlink, Loader2, Clock, Activity, Flame, Heart } from "lucide-react";
+import { RefreshCw, Link2, Unlink, Loader2, Clock, Activity, Flame, Heart } from "lucide-react";
 import { useGarminConnect } from "@/hooks/useGarminConnect";
 import { format, formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
+
+// Garmin logo component per brand guidelines
+const GarminLogo = ({ className = "h-6" }: { className?: string }) => (
+  <img 
+    src="/logo-garmin-256.png" 
+    alt="Garmin" 
+    className={className}
+    style={{ height: 'auto' }}
+  />
+);
 
 export function GarminConnectSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -74,13 +84,13 @@ export function GarminConnectSettings() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Watch className="h-5 w-5 text-primary" />
+            <div className="p-2 rounded-lg bg-white border">
+              <GarminLogo className="h-5 w-auto" />
             </div>
             <div>
-              <CardTitle className="text-lg">Garmin Connect</CardTitle>
+              <CardTitle className="text-lg">Garmin Connect™</CardTitle>
               <CardDescription>
-                Synkronisera träningsdata från din Garmin-enhet
+                Synkronisera träningsdata från din Garmin®-enhet
               </CardDescription>
             </div>
           </div>
@@ -215,8 +225,11 @@ export function GarminConnectSettings() {
           </>
         ) : (
           <div className="text-center py-4 space-y-4">
+            <div className="flex justify-center mb-4">
+              <GarminLogo className="h-8 w-auto" />
+            </div>
             <p className="text-sm text-muted-foreground">
-              Koppla ditt Garmin-konto för att automatiskt synkronisera dina träningspass, löprundor och mer.
+              Koppla ditt Garmin Connect™-konto för att automatiskt synkronisera dina träningspass, löprundor och mer.
             </p>
             <Button onClick={startConnect} disabled={isConnecting}>
               {isConnecting ? (
@@ -224,8 +237,11 @@ export function GarminConnectSettings() {
               ) : (
                 <Link2 className="h-4 w-4 mr-2" />
               )}
-              Koppla Garmin
+              Anslut med Garmin Connect™
             </Button>
+            <p className="text-xs text-muted-foreground mt-4">
+              Garmin®, Garmin Connect™ och relaterade varumärken tillhör Garmin Ltd. eller dess dotterbolag.
+            </p>
           </div>
         )}
       </CardContent>

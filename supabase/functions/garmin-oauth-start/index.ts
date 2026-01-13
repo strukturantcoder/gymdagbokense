@@ -6,6 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Garmin Health API endpoints
+const GARMIN_REQUEST_TOKEN_URL = "https://connectapi.garmin.com/oauth-service/oauth/request_token";
+const GARMIN_AUTHORIZE_URL = "https://connect.garmin.com/oauthConfirm";
+
 // OAuth 1.0a helper functions
 function generateNonce(): string {
   return crypto.randomUUID().replace(/-/g, "");
