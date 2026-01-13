@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Garmin OAuth2 token endpoint
-const GARMIN_TOKEN_URL = "https://connectapi.garmin.com/oauth-service/oauth/token";
+// Garmin OAuth2 token endpoint (from official documentation)
+const GARMIN_TOKEN_URL = "https://diauth.garmin.com/di-oauth2-service/oauth/token";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -54,6 +54,8 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log("Received callback with code and state for user:", user.id);
+
     // Get the stored code verifier and validate state
     const { data: tempData, error: tempError } = await supabase
       .from("garmin_oauth_temp")
@@ -71,6 +73,7 @@ Deno.serve(async (req) => {
 
     // Validate state to prevent CSRF attacks
     if (tempData.state !== state) {
+      console.error("State mismatch:", { expected: tempData.state, received: state });
       return new Response(
         JSON.stringify({ error: "Invalid state parameter" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -78,30 +81,30 @@ Deno.serve(async (req) => {
     }
 
     // Exchange authorization code for access token
+    // Per Garmin spec: grant_type, client_id, client_secret, code, code_verifier are required
+    // redirect_uri required if used in step 1
     const tokenParams = new URLSearchParams({
       grant_type: "authorization_code",
+      client_id: clientId,
+      client_secret: clientSecret,
       code: code,
-      redirect_uri: tempData.redirect_uri || "",
       code_verifier: tempData.code_verifier || "",
+      redirect_uri: tempData.redirect_uri || "",
     });
 
-    // Create Basic auth header
-    const credentials = btoa(`${clientId}:${clientSecret}`);
-
-    console.log("Exchanging code for token...");
+    console.log("Exchanging code for token at:", GARMIN_TOKEN_URL);
 
     const tokenResponse = await fetch(GARMIN_TOKEN_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": `Basic ${credentials}`,
       },
       body: tokenParams.toString(),
     });
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error("Garmin token exchange error:", errorText);
+      console.error("Garmin token exchange error:", tokenResponse.status, errorText);
       return new Response(
         JSON.stringify({ error: "Failed to exchange code for token", details: errorText }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -112,8 +115,10 @@ Deno.serve(async (req) => {
     const accessToken = tokenData.access_token;
     const refreshToken = tokenData.refresh_token;
     const expiresIn = tokenData.expires_in;
+    const refreshTokenExpiresIn = tokenData.refresh_token_expires_in;
 
     if (!accessToken) {
+      console.error("No access token in response:", tokenData);
       return new Response(
         JSON.stringify({ error: "No access token in response" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -121,11 +126,31 @@ Deno.serve(async (req) => {
     }
 
     console.log("Token exchange successful for user:", user.id);
+    console.log("Access token expires in:", expiresIn, "seconds");
 
-    // Store the access token (using existing fields)
+    // Fetch user ID from Garmin
+    let garminUserId = null;
+    try {
+      const userIdResponse = await fetch("https://apis.garmin.com/wellness-api/rest/user/id", {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
+      
+      if (userIdResponse.ok) {
+        const userIdData = await userIdResponse.json();
+        garminUserId = userIdData.userId;
+        console.log("Fetched Garmin User ID:", garminUserId);
+      }
+    } catch (error) {
+      console.error("Failed to fetch Garmin user ID:", error);
+    }
+
+    // Store the access token
     // oauth_token = access_token, oauth_token_secret = refresh_token for OAuth2
     await supabase.from("garmin_connections").upsert({
       user_id: user.id,
+      garmin_user_id: garminUserId,
       oauth_token: accessToken,
       oauth_token_secret: refreshToken || "",
       connected_at: new Date().toISOString(),

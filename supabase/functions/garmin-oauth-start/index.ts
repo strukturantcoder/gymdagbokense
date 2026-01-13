@@ -6,11 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Garmin OAuth2 endpoints
-const GARMIN_AUTHORIZE_URL = "https://connect.garmin.com/oauthConfirm";
-const GARMIN_TOKEN_URL = "https://connectapi.garmin.com/oauth-service/oauth/token";
+// Garmin OAuth2 PKCE endpoints (from official documentation)
+const GARMIN_AUTHORIZE_URL = "https://connect.garmin.com/oauth2Confirm";
 
-// Generate a random code verifier for PKCE
+// Generate a random code verifier for PKCE (43-128 chars, A-Z, a-z, 0-9, -, ., _, ~)
 function generateCodeVerifier(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
@@ -27,7 +26,7 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
 
 // Generate a random state parameter
 function generateState(): string {
-  const array = new Uint8Array(16);
+  const array = new Uint8Array(32);
   crypto.getRandomValues(array);
   return base64UrlEncode(array);
 }
@@ -41,9 +40,8 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const clientId = Deno.env.get("GARMIN_CONSUMER_KEY");
-    const clientSecret = Deno.env.get("GARMIN_CONSUMER_SECRET");
 
-    if (!clientId || !clientSecret) {
+    if (!clientId) {
       return new Response(
         JSON.stringify({ error: "Garmin API credentials not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -77,6 +75,10 @@ Deno.serve(async (req) => {
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     const state = generateState();
 
+    console.log("Generated PKCE params for user:", user.id);
+    console.log("Code verifier length:", codeVerifier.length);
+    console.log("Redirect URI:", callbackUrl);
+
     // Store the code verifier and state for the callback
     await supabase.from("garmin_oauth_temp").upsert({
       user_id: user.id,
@@ -88,19 +90,20 @@ Deno.serve(async (req) => {
     }, { onConflict: "user_id" });
 
     // Build the authorization URL with OAuth2 PKCE parameters
+    // Per Garmin spec: response_type, client_id, code_challenge, code_challenge_method are required
+    // redirect_uri and state are optional
     const params = new URLSearchParams({
-      client_id: clientId,
       response_type: "code",
-      redirect_uri: callbackUrl,
-      scope: "activity:read activity:write profile:read",
-      state: state,
+      client_id: clientId,
       code_challenge: codeChallenge,
       code_challenge_method: "S256",
+      redirect_uri: callbackUrl,
+      state: state,
     });
 
     const authorizeUrl = `${GARMIN_AUTHORIZE_URL}?${params.toString()}`;
 
-    console.log("Generated OAuth2 authorize URL for user:", user.id);
+    console.log("Authorization URL generated:", authorizeUrl);
 
     return new Response(
       JSON.stringify({ authorizeUrl }),
