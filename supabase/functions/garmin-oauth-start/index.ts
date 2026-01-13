@@ -9,11 +9,11 @@ const corsHeaders = {
 // Generate a code verifier using allowed characters: A-Z, a-z, 0-9, -._~
 // Length: 43-128 characters
 function generateCodeVerifier(): string {
-  const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const length = 50; // 50 characters
+  const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+  const length = 64; // 64 characters
   const array = new Uint8Array(length);
   crypto.getRandomValues(array);
-  
+
   let verifier = "";
   for (let i = 0; i < length; i++) {
     verifier += charset[array[i] % charset.length];
@@ -36,7 +36,7 @@ function generateState(): string {
   const length = 32;
   const array = new Uint8Array(length);
   crypto.getRandomValues(array);
-  
+
   let state = "";
   for (let i = 0; i < length; i++) {
     state += charset[array[i] % charset.length];
@@ -53,10 +53,19 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const clientId = Deno.env.get("GARMIN_CLIENT_ID");
+    // Use configured redirect URI (must match what's registered in Garmin Developer Console)
+    const redirectUri = Deno.env.get("GARMIN_REDIRECT_URI");
 
     if (!clientId) {
       return new Response(
         JSON.stringify({ error: "Garmin Client ID not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!redirectUri) {
+      return new Response(
+        JSON.stringify({ error: "Garmin Redirect URI not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -81,40 +90,41 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Redirect back to this app after user approves in Garmin
-    const origin = req.headers.get("origin") ?? "";
-    const redirectUri = origin ? `${origin}/garmin/callback` : null;
-
-    if (!redirectUri) {
-      return new Response(
-        JSON.stringify({ error: "Missing request origin; cannot determine redirect_uri" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // OAuth 2.0 with PKCE - Generate verifier, challenge, and state
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     const state = generateState();
 
+    console.log("Generated PKCE params - verifier length:", codeVerifier.length, "challenge:", codeChallenge);
+
     // Store PKCE verifier, state, and redirect_uri for callback verification
-    await supabase.from("garmin_oauth_temp").upsert({
+    const { error: upsertError } = await supabase.from("garmin_oauth_temp").upsert({
       user_id: user.id,
       oauth_token: state,
       oauth_token_secret: codeVerifier,
       code_verifier: codeVerifier,
       state: state,
       redirect_uri: redirectUri,
+      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 min expiry
     }, { onConflict: "user_id" });
 
-    // Build OAuth 2.0 authorization URL
+    if (upsertError) {
+      console.error("Failed to store OAuth temp data:", upsertError);
+      return new Response(
+        JSON.stringify({ error: "Failed to initialize OAuth session" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Build OAuth 2.0 authorization URL per Garmin spec
+    // URL(GET): https://connect.garmin.com/oauth2Confirm
     const authorizeUrl = new URL("https://connect.garmin.com/oauth2Confirm");
-    authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("response_type", "code");
-    authorizeUrl.searchParams.set("state", state);
-    authorizeUrl.searchParams.set("redirect_uri", redirectUri);
+    authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("code_challenge", codeChallenge);
     authorizeUrl.searchParams.set("code_challenge_method", "S256");
+    authorizeUrl.searchParams.set("redirect_uri", redirectUri);
+    authorizeUrl.searchParams.set("state", state);
 
     console.log("Generated OAuth 2.0 authorization URL for user:", user.id);
 
