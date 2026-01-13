@@ -535,7 +535,7 @@ export default function AdminChallenges() {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <Tabs defaultValue="stats" className="w-full">
-          <TabsList className="grid w-full grid-cols-8 max-w-5xl">
+          <TabsList className="grid w-full grid-cols-9 max-w-6xl">
             <TabsTrigger value="stats" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Statistik</span>
@@ -551,6 +551,10 @@ export default function AdminChallenges() {
             <TabsTrigger value="challenges" className="gap-2">
               <Trophy className="h-4 w-4" />
               <span className="hidden sm:inline">Tävlingar</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="gap-2" onClick={() => navigate("/admin/users")}>
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Användare</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" />
