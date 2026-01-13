@@ -72,11 +72,14 @@ Deno.serve(async (req) => {
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     const state = generateState();
 
-    // Store PKCE verifier and state for callback verification
+    // Store PKCE verifier, state, and redirect_uri for callback verification
     await supabase.from("garmin_oauth_temp").upsert({
       user_id: user.id,
       oauth_token: state, // Using oauth_token field to store state
       oauth_token_secret: codeVerifier, // Using oauth_token_secret field to store code_verifier
+      code_verifier: codeVerifier,
+      state: state,
+      redirect_uri: callbackUrl,
     }, { onConflict: "user_id" });
 
     // Build OAuth 2.0 authorization URL
