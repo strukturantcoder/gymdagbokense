@@ -22,6 +22,11 @@ const handler = async (req: Request): Promise<Response> => {
       { auth: { persistSession: false } }
     );
 
+    // Calculate date 10 days ago
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+    const tenDaysAgoStr = tenDaysAgo.toISOString().split('T')[0];
+
     // Get all users with their activity status
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from("profiles")
@@ -32,23 +37,26 @@ const handler = async (req: Request): Promise<Response> => {
       throw profilesError;
     }
 
-    // Get users with programs
-    const { data: usersWithPrograms } = await supabaseAdmin
-      .from("workout_programs")
-      .select("user_id")
-      .is("deleted_at", null);
-
-    // Get users with workout logs
-    const { data: usersWithLogs } = await supabaseAdmin
+    // Get users who have logged workouts in the last 10 days
+    const { data: recentWorkoutUsers } = await supabaseAdmin
       .from("workout_logs")
-      .select("user_id");
+      .select("user_id")
+      .gte("completed_at", tenDaysAgoStr);
 
-    const usersWithProgramsSet = new Set(usersWithPrograms?.map(p => p.user_id) || []);
-    const usersWithLogsSet = new Set(usersWithLogs?.map(l => l.user_id) || []);
+    // Get users who have logged cardio in the last 10 days
+    const { data: recentCardioUsers } = await supabaseAdmin
+      .from("cardio_logs")
+      .select("user_id")
+      .gte("completed_at", tenDaysAgoStr);
 
-    // Filter to users who have neither programs nor logs
+    const recentlyActiveSet = new Set([
+      ...(recentWorkoutUsers?.map(u => u.user_id) || []),
+      ...(recentCardioUsers?.map(u => u.user_id) || [])
+    ]);
+
+    // Filter to users who have NOT been active in the last 10 days
     const inactiveProfiles = profiles?.filter(p => 
-      !usersWithProgramsSet.has(p.user_id) && !usersWithLogsSet.has(p.user_id)
+      !recentlyActiveSet.has(p.user_id)
     ) || [];
 
     console.log(`Found ${inactiveProfiles.length} inactive users`);
@@ -62,7 +70,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResults: { email: string; success: boolean; error?: string }[] = [];
-    const emailSubject = "Vi saknar dig på Gymdagboken! 💪";
+    const emailSubject = "🏆 Missa inte januaritävlingen – vinn proteinpulver!";
 
     for (const profile of inactiveProfiles) {
       const authUser = authData.users.find(u => u.id === profile.user_id);
@@ -94,19 +102,34 @@ const handler = async (req: Request): Promise<Response> => {
                 <div style="padding: 40px 30px;">
                   <h2 style="margin: 0 0 20px 0; font-size: 24px; color: #ffffff;">Hej ${displayName}! 👋</h2>
                   <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #a0a0a0;">
-                    Vi märkte att du inte har kommit igång med din träning än. Ingen fara – det är aldrig för sent att börja!
+                    Vi har saknat dig! Det har gått ett tag sedan du loggade din senaste träning. Nu är det perfekt läge att komma igång igen!
                   </p>
-                  <div style="background: #1f1f1f; border-radius: 12px; padding: 24px; margin: 30px 0;">
-                    <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #f97316;">🎯 Så här enkelt kommer du igång:</h3>
-                    <ol style="margin: 0; padding: 0 0 0 20px; color: #a0a0a0; line-height: 1.8;">
-                      <li><strong style="color: #ffffff;">Skapa ditt träningsprogram</strong> – På bara 30 sekunder genererar vårt AI ett personligt program baserat på dina mål</li>
-                      <li><strong style="color: #ffffff;">Logga ditt första pass</strong> – Tryck på "Starta pass" och börja spåra din träning</li>
-                      <li><strong style="color: #ffffff;">Se dina framsteg</strong> – Följ din utveckling med statistik och personliga rekord</li>
-                    </ol>
+                  
+                  <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: 12px; padding: 24px; margin: 30px 0; text-align: center;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 20px; color: #ffffff;">🏆 JANUARITÄVLING!</h3>
+                    <p style="margin: 0 0 16px 0; font-size: 16px; color: #d1fae5;">
+                      Logga träningspass i januari och var med och tävla om <strong style="color: #ffffff;">proteinpulver från Gymgrossisten!</strong>
+                    </p>
+                    <p style="margin: 0; font-size: 14px; color: #a7f3d0;">
+                      Ju fler pass du loggar, desto större chans att vinna!
+                    </p>
                   </div>
+
+                  <div style="background: #1f1f1f; border-radius: 12px; padding: 24px; margin: 30px 0;">
+                    <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #f97316;">💪 Tips: Fyll på med kosttillskott!</h3>
+                    <p style="margin: 0 0 16px 0; font-size: 14px; color: #a0a0a0;">
+                      Behöver du protein, kreatin eller andra kosttillskott för att maximera dina resultat? Kolla in Gymgrossistens stora utbud!
+                    </p>
+                    <div style="text-align: center;">
+                      <a href="https://www.gymgrossisten.com/?utm_source=gymdagboken&utm_medium=email&utm_campaign=inactive_reminder" style="display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 14px;">
+                        Handla på Gymgrossisten →
+                      </a>
+                    </div>
+                  </div>
+
                   <div style="text-align: center; margin: 30px 0;">
                     <a href="https://gymdagboken.se/training" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                      Skapa mitt program nu →
+                      Börja logga nu! 🚀
                     </a>
                   </div>
                   <p style="margin: 30px 0 0 0; font-size: 14px; color: #666666; text-align: center;">
