@@ -224,14 +224,11 @@ export function GarminConnectSettings() {
             )}
           </>
         ) : (
-          <div className="text-center py-4 space-y-4">
-            <div className="flex justify-center mb-4">
-              <GarminLogo className="h-8 w-auto" />
-            </div>
+          <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Koppla ditt Garmin Connect™-konto för att automatiskt synkronisera dina träningspass, löprundor och mer.
+              Synkronisera dina träningspass automatiskt från Garmin.
             </p>
-            <Button onClick={startConnect} disabled={isConnecting}>
+            <Button variant="outline" onClick={startConnect} disabled={isConnecting} className="w-full sm:w-auto">
               {isConnecting ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
@@ -239,9 +236,6 @@ export function GarminConnectSettings() {
               )}
               Anslut med Garmin Connect™
             </Button>
-            <p className="text-xs text-muted-foreground mt-4">
-              Garmin®, Garmin Connect™ och relaterade varumärken tillhör Garmin Ltd. eller dess dotterbolag.
-            </p>
           </div>
         )}
       </CardContent>
