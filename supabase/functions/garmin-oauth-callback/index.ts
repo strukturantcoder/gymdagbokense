@@ -76,8 +76,8 @@ Deno.serve(async (req) => {
 
     // Exchange authorization code for access token
     const tokenUrl = "https://diauth.garmin.com/di-oauth2-service/oauth/token";
-    // Garmin expects "client_id: client_secret" format with space after colon
-    const clientCredentials = btoa(`${clientId}: ${clientSecret}`);
+    // Standard Basic auth format: client_id:client_secret (no space)
+    const clientCredentials = btoa(`${clientId}:${clientSecret}`);
 
     console.log("Exchanging code for token at:", tokenUrl);
     console.log("Using redirect_uri:", tempToken.redirect_uri);
