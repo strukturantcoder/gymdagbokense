@@ -31,6 +31,7 @@ const AdminInstagramImages = lazy(() => import("./pages/AdminInstagramImages"));
 const AdminAds = lazy(() => import("./pages/AdminAds"));
 const AdminEmails = lazy(() => import("./pages/AdminEmails"));
 const AdminPremium = lazy(() => import("./pages/AdminPremium"));
+const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCanceled = lazy(() => import("./pages/PaymentCanceled"));
 const Account = lazy(() => import("./pages/Account"));
@@ -80,6 +81,7 @@ const AppContent = () => {
             <Route path="/admin/ads" element={<AdminAds />} />
             <Route path="/admin/emails" element={<AdminEmails />} />
             <Route path="/admin/premium" element={<AdminPremium />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/account" element={<Account />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-canceled" element={<PaymentCanceled />} />
