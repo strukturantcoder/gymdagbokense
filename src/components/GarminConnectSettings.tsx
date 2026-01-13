@@ -36,18 +36,18 @@ export function GarminConnectSettings() {
     disconnect,
   } = useGarminConnect();
 
-  // Handle OAuth callback
+  // Handle OAuth2 callback (code + state)
   useEffect(() => {
     const isCallback = searchParams.get("garmin_callback");
-    const oauthToken = searchParams.get("oauth_token");
-    const oauthVerifier = searchParams.get("oauth_verifier");
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
 
-    if (isCallback && oauthToken && oauthVerifier) {
-      completeConnect(oauthToken, oauthVerifier).then(() => {
+    if (isCallback && code && state) {
+      completeConnect(code, state).then(() => {
         // Clean up URL params
         searchParams.delete("garmin_callback");
-        searchParams.delete("oauth_token");
-        searchParams.delete("oauth_verifier");
+        searchParams.delete("code");
+        searchParams.delete("state");
         setSearchParams(searchParams);
       });
     }
