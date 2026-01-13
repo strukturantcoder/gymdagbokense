@@ -59,29 +59,50 @@ Deno.serve(async (req) => {
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const search = url.searchParams.get('search') || '';
 
-    // Get all users from auth.users
-    const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-      page: page,
-      perPage: limit,
-    });
+    // Fetch ALL users by paginating through all pages
+    let allUsers: any[] = [];
+    let currentPage = 1;
+    let hasMore = true;
+    
+    while (hasMore) {
+      const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+        page: currentPage,
+        perPage: 1000, // Max allowed per page
+      });
 
-    if (authError) {
-      console.error('Error fetching users:', authError);
-      throw authError;
+      if (authError) {
+        console.error('Error fetching users:', authError);
+        throw authError;
+      }
+
+      allUsers = [...allUsers, ...authUsers.users];
+      
+      // If we got less than 1000, we've reached the end
+      if (authUsers.users.length < 1000) {
+        hasMore = false;
+      } else {
+        currentPage++;
+      }
     }
 
+    const totalUsers = allUsers.length;
+
     // Filter by search if provided
-    let filteredUsers = authUsers.users;
+    let filteredUsers = allUsers;
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredUsers = authUsers.users.filter(u => 
+      filteredUsers = allUsers.filter(u => 
         u.email?.toLowerCase().includes(searchLower) ||
         u.user_metadata?.display_name?.toLowerCase().includes(searchLower)
       );
     }
 
-    // Get workout counts for all users
-    const userIds = filteredUsers.map(u => u.id);
+    // Apply pagination after filtering
+    const startIndex = (page - 1) * limit;
+    const paginatedUsers = filteredUsers.slice(startIndex, startIndex + limit);
+
+    // Get workout counts for paginated users only (for performance)
+    const userIds = paginatedUsers.map(u => u.id);
     
     const { data: workoutCounts } = await supabaseAdmin
       .from('workout_logs')
@@ -115,7 +136,7 @@ Deno.serve(async (req) => {
     });
 
     // Map users with stats
-    const usersWithStats = filteredUsers.map(u => ({
+    const usersWithStats = paginatedUsers.map(u => ({
       id: u.id,
       email: u.email,
       created_at: u.created_at,
@@ -136,9 +157,10 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       users: usersWithStats,
-      total: authUsers.users.length,
+      total: search ? filteredUsers.length : totalUsers,
       page,
       limit,
+      totalPages: Math.ceil((search ? filteredUsers.length : totalUsers) / limit),
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
