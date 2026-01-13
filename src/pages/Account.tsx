@@ -626,6 +626,15 @@ export default function Account() {
 
               <Separator />
 
+              {/* Garmin Connect Integration - inline */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Watch className="h-4 w-4" />
+                  Garmin Connect™
+                </div>
+                <GarminConnectSettings />
+              </div>
+
               {/* Social Media Links */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
@@ -897,8 +906,6 @@ export default function Account() {
           </CardContent>
         </Card>
 
-        {/* Garmin Connect Integration */}
-        <GarminConnectSettings />
 
         {/* Notification Settings Card */}
         <Card>
