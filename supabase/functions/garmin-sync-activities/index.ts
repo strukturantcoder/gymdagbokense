@@ -120,6 +120,16 @@ function mapActivityType(garminType: string): string {
   return typeMap[garminType.toLowerCase()] || "other";
 }
 
+// Check if activity type should be synced to cardio_logs
+function isCardioActivity(activityType: string): boolean {
+  const cardioTypes = [
+    "running", "cycling", "swimming", "walking", "hiking", 
+    "cardio", "rowing", "elliptical", "stair_climbing",
+    "indoor_cycling", "indoor_running", "treadmill_running"
+  ];
+  return cardioTypes.includes(activityType.toLowerCase());
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -228,25 +238,68 @@ Deno.serve(async (req) => {
     const syncedActivities: any[] = [];
 
     // Process and store each activity
+    let cardioLogsSynced = 0;
+    
     for (const activity of activities) {
       const garminActivityId = activity.activityId?.toString() || activity.summaryId?.toString();
       
       if (!garminActivityId) continue;
 
+      const mappedActivityType = mapActivityType(activity.activityType || "other");
+      const startTime = new Date(activity.startTimeInSeconds * 1000).toISOString();
+      const durationSeconds = activity.durationInSeconds || activity.activeTimeInSeconds;
+      const distanceMeters = activity.distanceInMeters;
+      const calories = activity.activeKilocalories || activity.calories;
+
+      // Check if this activity already exists
+      const { data: existingActivity } = await supabase
+        .from("garmin_activities")
+        .select("id, synced_to_cardio_log_id")
+        .eq("user_id", user.id)
+        .eq("garmin_activity_id", garminActivityId)
+        .maybeSingle();
+
+      let cardioLogId: string | null = existingActivity?.synced_to_cardio_log_id || null;
+
+      // If it's a cardio activity and not already synced to cardio_logs, create one
+      if (isCardioActivity(activity.activityType || "") && !cardioLogId) {
+        const cardioLogData = {
+          user_id: user.id,
+          activity_type: mappedActivityType,
+          duration_minutes: durationSeconds ? Math.round(durationSeconds / 60) : 0,
+          distance_km: distanceMeters ? Number((distanceMeters / 1000).toFixed(2)) : null,
+          calories_burned: calories || null,
+          completed_at: startTime,
+          notes: `Synkad från Garmin: ${activity.activityName || activity.activityType || "Aktivitet"}`,
+        };
+
+        const { data: newCardioLog, error: cardioError } = await supabase
+          .from("cardio_logs")
+          .insert(cardioLogData)
+          .select("id")
+          .single();
+
+        if (!cardioError && newCardioLog) {
+          cardioLogId = newCardioLog.id;
+          cardioLogsSynced++;
+        }
+      }
+
       const activityData = {
         user_id: user.id,
         garmin_activity_id: garminActivityId,
-        activity_type: mapActivityType(activity.activityType || "other"),
+        activity_type: mappedActivityType,
         activity_name: activity.activityName || activity.activityType || "Garmin Activity",
-        start_time: new Date(activity.startTimeInSeconds * 1000).toISOString(),
-        duration_seconds: activity.durationInSeconds || activity.activeTimeInSeconds,
-        distance_meters: activity.distanceInMeters,
-        calories: activity.activeKilocalories || activity.calories,
+        start_time: startTime,
+        duration_seconds: durationSeconds,
+        distance_meters: distanceMeters,
+        calories: calories,
         average_heart_rate: activity.averageHeartRateInBeatsPerMinute,
         max_heart_rate: activity.maxHeartRateInBeatsPerMinute,
         average_speed: activity.averageSpeedInMetersPerSecond,
         elevation_gain: activity.elevationGainInMeters,
         raw_data: activity,
+        synced_to_cardio_log_id: cardioLogId,
       };
 
       const { error: upsertError } = await supabase
@@ -271,8 +324,9 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         syncedCount,
+        cardioLogsSynced,
         totalActivities: activities.length,
-        message: `Synced ${syncedCount} activities from Garmin`,
+        message: `Synkade ${syncedCount} aktiviteter från Garmin (${cardioLogsSynced} nya cardio-loggar)`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
