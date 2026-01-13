@@ -81,8 +81,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Garmin's official redirect URI for OAuth 2.0
-    const garminRedirectUri = "https://apis.garmin.com/tools/oauth2/confirmUser";
+    // Redirect back to this app after user approves in Garmin
+    const origin = req.headers.get("origin") ?? "";
+    const redirectUri = origin ? `${origin}/garmin/callback` : null;
+
+    if (!redirectUri) {
+      return new Response(
+        JSON.stringify({ error: "Missing request origin; cannot determine redirect_uri" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // OAuth 2.0 with PKCE - Generate verifier, challenge, and state
     const codeVerifier = generateCodeVerifier();
@@ -96,15 +104,15 @@ Deno.serve(async (req) => {
       oauth_token_secret: codeVerifier,
       code_verifier: codeVerifier,
       state: state,
-      redirect_uri: garminRedirectUri,
+      redirect_uri: redirectUri,
     }, { onConflict: "user_id" });
 
-    // Build OAuth 2.0 authorization URL (matching Garmin's expected format exactly)
+    // Build OAuth 2.0 authorization URL
     const authorizeUrl = new URL("https://connect.garmin.com/oauth2Confirm");
     authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("response_type", "code");
     authorizeUrl.searchParams.set("state", state);
-    authorizeUrl.searchParams.set("redirect_uri", garminRedirectUri);
+    authorizeUrl.searchParams.set("redirect_uri", redirectUri);
     authorizeUrl.searchParams.set("code_challenge", codeChallenge);
     authorizeUrl.searchParams.set("code_challenge_method", "S256");
 

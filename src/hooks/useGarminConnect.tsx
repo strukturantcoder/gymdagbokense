@@ -89,14 +89,14 @@ export function useGarminConnect() {
     }
   }, [connection, fetchActivities]);
 
-  const startConnect = async (): Promise<string | null> => {
+  const startConnect = async (): Promise<void> => {
     if (!session?.access_token) {
       toast({
         title: "Ej inloggad",
         description: "Du måste vara inloggad för att koppla Garmin.",
         variant: "destructive",
       });
-      return null;
+      return;
     }
 
     setIsConnecting(true);
@@ -111,14 +111,13 @@ export function useGarminConnect() {
       }
 
       const { authorizeUrl } = response.data;
-      
-      if (authorizeUrl) {
-        // Open Garmin authorization in new window/tab
-        window.open(authorizeUrl, "_blank");
-        return authorizeUrl;
-      } else {
+
+      if (!authorizeUrl) {
         throw new Error("No authorization URL received");
       }
+
+      // Redirect this tab to Garmin. Garmin will redirect back to /garmin/callback
+      window.location.assign(authorizeUrl);
     } catch (error) {
       console.error("Error starting Garmin connect:", error);
       toast({
@@ -127,7 +126,6 @@ export function useGarminConnect() {
         variant: "destructive",
       });
       setIsConnecting(false);
-      return null;
     }
   };
 
