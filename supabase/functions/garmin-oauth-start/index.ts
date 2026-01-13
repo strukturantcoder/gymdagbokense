@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
       redirect_uri: garminRedirectUri,
     }, { onConflict: "user_id" });
 
-    // Build OAuth 2.0 authorization URL
+    // Build OAuth 2.0 authorization URL (matching Garmin's expected format exactly)
     const authorizeUrl = new URL("https://connect.garmin.com/oauth2Confirm");
     authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("response_type", "code");
@@ -107,8 +107,6 @@ Deno.serve(async (req) => {
     authorizeUrl.searchParams.set("redirect_uri", garminRedirectUri);
     authorizeUrl.searchParams.set("code_challenge", codeChallenge);
     authorizeUrl.searchParams.set("code_challenge_method", "S256");
-    // Request scopes for activities
-    authorizeUrl.searchParams.set("scope", "activity_export activity_read");
 
     console.log("Generated OAuth 2.0 authorization URL for user:", user.id);
 
