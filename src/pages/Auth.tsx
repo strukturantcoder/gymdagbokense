@@ -101,13 +101,13 @@ export default function Auth() {
         const { error } = await signUp(email, password, displayName);
         if (error) { toast.error(error.message.includes('already registered') ? t('auth.emailAlreadyRegistered') : error.message); }
         else { 
-          toast.success(t('auth.accountCreated'), {
-            description: t('auth.accountCreatedHelpLink'),
+          toast.success(t('auth.accountCreatedSuccess'), {
+            description: t('auth.checkSpamFolder'),
             action: {
-              label: '→',
+              label: t('auth.emailHelp'),
               onClick: () => navigate('/email-help')
             },
-            duration: 10000
+            duration: 15000
           }); 
           // Send welcome email
           supabase.functions.invoke('send-welcome-email', {
@@ -146,6 +146,14 @@ export default function Auth() {
             {isSignUp && (<div className="space-y-2"><Label htmlFor="displayName">{t('auth.name')}</Label><div className="relative"><User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" /><Input id="displayName" type="text" placeholder={t('auth.namePlaceholder')} value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="pl-10 bg-background border-border" /></div></div>)}
             <div className="space-y-2"><Label htmlFor="email">{t('auth.email')}</Label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" /><Input id="email" type="email" placeholder={t('auth.emailPlaceholder')} value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 bg-background border-border" /></div></div>
             <div className="space-y-2"><Label htmlFor="password">{t('auth.password')}</Label><div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" /><Input id="password" type="password" placeholder={t('auth.passwordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10 bg-background border-border" /></div></div>
+            {isSignUp && (
+              <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <p className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
+                  <Mail className="h-4 w-4 flex-shrink-0" />
+                  <span>{t('auth.spamWarning')}</span>
+                </p>
+              </div>
+            )}
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>{isLoading ? t('common.loading') : isSignUp ? t('auth.createAccount') : t('auth.login')}</Button>
           </form>
           <div className="relative my-6"><div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">{t('common.or')}</span></div></div>

@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Stripe from "https://esm.sh/stripe@18.5.0";
 
-// Updated: verify_jwt = false in config.toml
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -68,6 +68,34 @@ Deno.serve(async (req) => {
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const search = url.searchParams.get('search') || '';
+
+    // Initialize Stripe for premium checking
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    let stripe: Stripe | null = null;
+    let premiumEmails: Set<string> = new Set();
+    
+    if (stripeKey) {
+      stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+      
+      // Fetch all customers with active subscriptions
+      try {
+        const subscriptions = await stripe.subscriptions.list({
+          status: 'active',
+          limit: 100,
+          expand: ['data.customer'],
+        });
+        
+        for (const sub of subscriptions.data) {
+          const customer = sub.customer as Stripe.Customer;
+          if (customer.email) {
+            premiumEmails.add(customer.email.toLowerCase());
+          }
+        }
+        console.log('[admin-users] Found premium users:', premiumEmails.size);
+      } catch (stripeError) {
+        console.error('[admin-users] Stripe error:', stripeError);
+      }
+    }
 
     // Fetch ALL users by paginating through all pages
     let allUsers: any[] = [];
@@ -145,6 +173,11 @@ Deno.serve(async (req) => {
       profileMap[p.user_id] = { display_name: p.display_name, avatar_url: p.avatar_url };
     });
 
+    // Count total premium users from all users
+    const totalPremiumCount = allUsers.filter(u => 
+      u.email && premiumEmails.has(u.email.toLowerCase())
+    ).length;
+
     // Map users with stats
     const usersWithStats = paginatedUsers.map(u => ({
       id: u.id,
@@ -156,6 +189,7 @@ Deno.serve(async (req) => {
       workout_count: workoutCountMap[u.id] || 0,
       cardio_count: cardioCountMap[u.id] || 0,
       email_confirmed_at: u.email_confirmed_at,
+      is_premium: u.email && premiumEmails.has(u.email.toLowerCase()),
     }));
 
     // Sort by last sign in (most recent first)
@@ -168,6 +202,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       users: usersWithStats,
       total: search ? filteredUsers.length : totalUsers,
+      totalPremium: totalPremiumCount,
       page,
       limit,
       totalPages: Math.ceil((search ? filteredUsers.length : totalUsers) / limit),

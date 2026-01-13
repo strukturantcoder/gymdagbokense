@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Search, KeyRound, Loader2, Users, Dumbbell, Activity, Mail, CheckCircle, UserCheck, AlertCircle } from "lucide-react";
+import { ArrowLeft, Search, KeyRound, Loader2, Users, Dumbbell, Activity, Mail, CheckCircle, UserCheck, AlertCircle, Crown } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -24,6 +24,7 @@ interface AdminUser {
   workout_count: number;
   cardio_count: number;
   email_confirmed_at: string | null;
+  is_premium: boolean;
 }
 
 export default function AdminUsers() {
@@ -38,6 +39,7 @@ export default function AdminUsers() {
   const [verifyingAll, setVerifyingAll] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [totalPremium, setTotalPremium] = useState(0);
 
   const unverifiedUsers = users.filter((u) => !u.email_confirmed_at);
 
@@ -86,6 +88,7 @@ export default function AdminUsers() {
       const result = await response.json();
       setUsers(result.users || []);
       setTotal(result.total || 0);
+      setTotalPremium(result.totalPremium || 0);
     } catch (error) {
       console.error("Error fetching users:", error);
       toast.error("Kunde inte hämta användare");
@@ -201,7 +204,7 @@ export default function AdminUsers() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -211,6 +214,19 @@ export default function AdminUsers() {
                 <div>
                   <p className="text-sm text-muted-foreground">Totalt användare</p>
                   <p className="text-2xl font-bold">{total}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-yellow-500/30 bg-yellow-500/5">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-500/10 rounded-lg">
+                  <Crown className="h-5 w-5 text-yellow-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Premium-användare</p>
+                  <p className="text-2xl font-bold text-yellow-600">{totalPremium}</p>
                 </div>
               </div>
             </CardContent>
@@ -342,6 +358,12 @@ export default function AdminUsers() {
                         </TableCell>
                         <TableCell>
                           <span className="text-sm">{u.email}</span>
+                          {u.is_premium && (
+                            <Badge className="ml-2 bg-yellow-500/20 text-yellow-600 border-yellow-500/30">
+                              <Crown className="h-3 w-3 mr-1" />
+                              Premium
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           {u.last_sign_in_at ? (
