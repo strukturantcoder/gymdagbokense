@@ -131,14 +131,15 @@ export function useGarminConnect() {
     }
   };
 
-  const completeConnect = async (oauthToken: string, oauthVerifier: string) => {
+  // OAuth2 callback - receives code and state
+  const completeConnect = async (code: string, state: string) => {
     if (!session?.access_token) return false;
 
     setIsConnecting(true);
 
     try {
       const response = await supabase.functions.invoke("garmin-oauth-callback", {
-        body: { oauth_token: oauthToken, oauth_verifier: oauthVerifier },
+        body: { code, state },
       });
 
       if (response.error) {
