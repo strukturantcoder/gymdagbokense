@@ -6,14 +6,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Generate a random string for PKCE code verifier
+// Generate a code verifier using allowed characters: A-Z, a-z, 0-9, -._~
+// Length: 43-128 characters
 function generateCodeVerifier(): string {
-  const array = new Uint8Array(32);
+  const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const length = 50; // 50 characters
+  const array = new Uint8Array(length);
   crypto.getRandomValues(array);
-  return base64UrlEncode(array);
+  
+  let verifier = "";
+  for (let i = 0; i < length; i++) {
+    verifier += charset[array[i] % charset.length];
+  }
+  return verifier;
 }
 
 // Generate code challenge from verifier (S256 method)
+// BASE64-URL-encoded SHA256 hash of the code verifier
 async function generateCodeChallenge(verifier: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(verifier);
@@ -23,9 +32,16 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
 
 // Generate random state for CSRF protection
 function generateState(): string {
-  const array = new Uint8Array(32);
+  const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const length = 32;
+  const array = new Uint8Array(length);
   crypto.getRandomValues(array);
-  return base64UrlEncode(array);
+  
+  let state = "";
+  for (let i = 0; i < length; i++) {
+    state += charset[array[i] % charset.length];
+  }
+  return state;
 }
 
 Deno.serve(async (req) => {
