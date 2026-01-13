@@ -83,16 +83,11 @@ export function GarminConnectSettings() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-white border">
-              <GarminLogo className="h-5 w-auto" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Garmin Connect™</CardTitle>
-              <CardDescription>
-                Synkronisera träningsdata från din Garmin®-enhet
-              </CardDescription>
-            </div>
+          <div>
+            <CardTitle className="text-lg">Garmin Connect™</CardTitle>
+            <CardDescription>
+              Synkronisera träningsdata från din Garmin®-enhet
+            </CardDescription>
           </div>
           {isConnected && (
             <Badge variant="secondary" className="bg-green-500/10 text-green-600">
