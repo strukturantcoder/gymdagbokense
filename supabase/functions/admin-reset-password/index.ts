@@ -63,6 +63,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Find the user ID for the target email
+    const { data: targetUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const targetUser = targetUsers?.users?.find(u => u.email === email);
+    const targetUserId = targetUser?.id || null;
+
     // Send password reset email
     const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
       redirectTo: `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com')}/auth?reset=true`,
@@ -70,8 +75,28 @@ Deno.serve(async (req) => {
 
     if (resetError) {
       console.error('Error sending reset email:', resetError);
+      
+      // Log failed attempt
+      await supabaseAdmin.from('email_logs').insert({
+        email,
+        email_type: 'password_reset',
+        subject: 'Återställning av lösenord',
+        status: 'failed',
+        error_message: resetError.message,
+        user_id: targetUserId
+      });
+      
       throw resetError;
     }
+
+    // Log successful email
+    await supabaseAdmin.from('email_logs').insert({
+      email,
+      email_type: 'password_reset',
+      subject: 'Återställning av lösenord',
+      status: 'sent',
+      user_id: targetUserId
+    });
 
     console.log(`Password reset email sent to ${email} by admin ${user.email}`);
 
