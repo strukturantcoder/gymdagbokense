@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Search, KeyRound, Loader2, Users, Dumbbell, Activity, Mail } from "lucide-react";
+import { ArrowLeft, Search, KeyRound, Loader2, Users, Dumbbell, Activity, Mail, CheckCircle } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -34,6 +34,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sendingReset, setSendingReset] = useState<string | null>(null);
+  const [verifyingUser, setVerifyingUser] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
@@ -111,6 +112,26 @@ export default function AdminUsers() {
       toast.error("Kunde inte skicka återställningslänk");
     } finally {
       setSendingReset(null);
+    }
+  };
+
+  const handleVerifyUser = async (userId: string, email: string) => {
+    setVerifyingUser(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-verify-user", {
+        body: { userId },
+      });
+
+      if (error) throw error;
+
+      toast.success(`${email} har verifierats!`);
+      // Refresh user list
+      fetchUsers();
+    } catch (error) {
+      console.error("Error verifying user:", error);
+      toast.error("Kunde inte verifiera användaren");
+    } finally {
+      setVerifyingUser(null);
     }
   };
 
@@ -285,21 +306,41 @@ export default function AdminUsers() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleSendResetPassword(u.email)}
-                            disabled={sendingReset === u.email}
-                          >
-                            {sendingReset === u.email ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <KeyRound className="h-4 w-4 mr-1" />
-                                Återställ lösenord
-                              </>
+                          <div className="flex items-center justify-end gap-2">
+                            {!u.email_confirmed_at && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleVerifyUser(u.id, u.email)}
+                                disabled={verifyingUser === u.id}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              >
+                                {verifyingUser === u.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Verifiera
+                                  </>
+                                )}
+                              </Button>
                             )}
-                          </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSendResetPassword(u.email)}
+                              disabled={sendingReset === u.email}
+                            >
+                              {sendingReset === u.email ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <KeyRound className="h-4 w-4 mr-1" />
+                                  Återställ
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
