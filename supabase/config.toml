@@ -95,3 +95,12 @@ verify_jwt = true
 
 [functions.garmin-logo]
 verify_jwt = false
+
+[functions.admin-verify-user]
+verify_jwt = false
+
+[functions.admin-reset-password]
+verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = false
