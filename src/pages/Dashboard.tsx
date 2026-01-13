@@ -19,6 +19,7 @@ import { InstallAppButton } from '@/components/InstallPrompt';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import SubscriptionButton from '@/components/SubscriptionButton';
 import AdBanner from '@/components/AdBanner';
+import PriorityAdBanner from '@/components/PriorityAdBanner';
 import ExerciseInfo from '@/components/ExerciseInfo';
 import WelcomeGuide from '@/components/WelcomeGuide';
 import OnboardingChecklist from '@/components/OnboardingChecklist';
@@ -514,6 +515,9 @@ export default function Dashboard() {
       </header>
 
       <main className="container px-4 py-8">
+        {/* Priority Ad Banner - Most visible, shown first */}
+        <PriorityAdBanner className="mb-6" />
+
         {/* Ad Banner - horizontal on top */}
         <AdBanner format="horizontal" placement="dashboard_top" className="mb-6" />
 
