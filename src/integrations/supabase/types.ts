@@ -724,6 +724,150 @@ export type Database = {
         }
         Relationships: []
       }
+      garmin_activities: {
+        Row: {
+          activity_name: string | null
+          activity_type: string
+          average_heart_rate: number | null
+          average_speed: number | null
+          calories: number | null
+          created_at: string
+          distance_meters: number | null
+          duration_seconds: number | null
+          elevation_gain: number | null
+          garmin_activity_id: string
+          id: string
+          max_heart_rate: number | null
+          raw_data: Json | null
+          start_time: string
+          synced_to_cardio_log_id: string | null
+          synced_to_workout_log_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_name?: string | null
+          activity_type: string
+          average_heart_rate?: number | null
+          average_speed?: number | null
+          calories?: number | null
+          created_at?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          elevation_gain?: number | null
+          garmin_activity_id: string
+          id?: string
+          max_heart_rate?: number | null
+          raw_data?: Json | null
+          start_time: string
+          synced_to_cardio_log_id?: string | null
+          synced_to_workout_log_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_name?: string | null
+          activity_type?: string
+          average_heart_rate?: number | null
+          average_speed?: number | null
+          calories?: number | null
+          created_at?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          elevation_gain?: number | null
+          garmin_activity_id?: string
+          id?: string
+          max_heart_rate?: number | null
+          raw_data?: Json | null
+          start_time?: string
+          synced_to_cardio_log_id?: string | null
+          synced_to_workout_log_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garmin_activities_synced_to_cardio_log_id_fkey"
+            columns: ["synced_to_cardio_log_id"]
+            isOneToOne: false
+            referencedRelation: "cardio_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "garmin_activities_synced_to_workout_log_id_fkey"
+            columns: ["synced_to_workout_log_id"]
+            isOneToOne: false
+            referencedRelation: "workout_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garmin_connections: {
+        Row: {
+          connected_at: string
+          created_at: string
+          display_name: string | null
+          garmin_user_id: string | null
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          oauth_token: string
+          oauth_token_secret: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string
+          created_at?: string
+          display_name?: string | null
+          garmin_user_id?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          oauth_token: string
+          oauth_token_secret: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string
+          created_at?: string
+          display_name?: string | null
+          garmin_user_id?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          oauth_token?: string
+          oauth_token_secret?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      garmin_oauth_temp: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          oauth_token: string
+          oauth_token_secret: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          oauth_token: string
+          oauth_token_secret: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          oauth_token?: string
+          oauth_token_secret?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invite_codes: {
         Row: {
           code: string
