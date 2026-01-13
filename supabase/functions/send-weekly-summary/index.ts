@@ -132,9 +132,29 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (profilesError) throw profilesError;
 
-    // Get auth users for emails
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-    if (authError) throw authError;
+    // Get ALL auth users with pagination (listUsers has a default limit of 50)
+    let allAuthUsers: any[] = [];
+    let page = 1;
+    const perPage = 1000;
+    
+    while (true) {
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+      
+      if (authError) throw authError;
+      
+      allAuthUsers = allAuthUsers.concat(authData.users);
+      
+      // If we got less than perPage users, we've reached the end
+      if (authData.users.length < perPage) {
+        break;
+      }
+      page++;
+    }
+    
+    console.log(`Found ${profiles?.length || 0} profiles and ${allAuthUsers.length} auth users`);
 
     const results: { email: string; success: boolean; error?: string }[] = [];
     const emailSubject = "Din veckosammanfattning från Gymdagboken 📊";
@@ -142,7 +162,7 @@ const handler = async (req: Request): Promise<Response> => {
     // If test email, only process that user
     let usersToProcess = profiles || [];
     if (testEmail) {
-      const testUser = authData.users.find(u => u.email === testEmail);
+      const testUser = allAuthUsers.find(u => u.email === testEmail);
       if (testUser) {
         const testProfile = profiles?.find(p => p.user_id === testUser.id);
         usersToProcess = testProfile ? [testProfile] : [];
@@ -150,7 +170,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     for (const profile of usersToProcess) {
-      const authUser = authData.users.find(u => u.id === profile.user_id);
+      const authUser = allAuthUsers.find(u => u.id === profile.user_id);
       if (!authUser?.email) continue;
 
       try {
