@@ -38,7 +38,6 @@ const JoinTeam = lazy(() => import("./pages/JoinTeam"));
 const EmailHelp = lazy(() => import("./pages/EmailHelp"));
 const PublicPrograms = lazy(() => import("./pages/PublicPrograms"));
 const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
-const GarminCallback = lazy(() => import("./pages/GarminCallback"));
 const queryClient = new QueryClient();
 
 // Minimal loading fallback
@@ -82,7 +81,6 @@ const AppContent = () => {
             <Route path="/admin/emails" element={<AdminEmails />} />
             <Route path="/admin/premium" element={<AdminPremium />} />
             <Route path="/account" element={<Account />} />
-            <Route path="/garmin/callback" element={<GarminCallback />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-canceled" element={<PaymentCanceled />} />
             <Route path="/join-team/:code" element={<JoinTeam />} />

@@ -1,9 +1,60 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encode as base64Encode } from "https://deno.land/std@0.208.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+function generateNonce(): string {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
+function generateTimestamp(): string {
+  return Math.floor(Date.now() / 1000).toString();
+}
+
+function percentEncode(str: string): string {
+  return encodeURIComponent(str)
+    .replace(/!/g, "%21")
+    .replace(/\*/g, "%2A")
+    .replace(/'/g, "%27")
+    .replace(/\(/g, "%28")
+    .replace(/\)/g, "%29");
+}
+
+function createSignatureBaseString(
+  method: string,
+  url: string,
+  params: Record<string, string>
+): string {
+  const sortedParams = Object.keys(params)
+    .sort()
+    .map((key) => `${percentEncode(key)}=${percentEncode(params[key])}`)
+    .join("&");
+
+  return `${method.toUpperCase()}&${percentEncode(url)}&${percentEncode(sortedParams)}`;
+}
+
+async function createSignature(
+  baseString: string,
+  consumerSecret: string,
+  tokenSecret: string = ""
+): Promise<string> {
+  const signingKey = `${percentEncode(consumerSecret)}&${percentEncode(tokenSecret)}`;
+  const encoder = new TextEncoder();
+  
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(signingKey),
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"]
+  );
+  
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(baseString));
+  return base64Encode(signature);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -13,10 +64,10 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const clientId = Deno.env.get("GARMIN_CLIENT_ID");
-    const clientSecret = Deno.env.get("GARMIN_CLIENT_SECRET");
+    const consumerKey = Deno.env.get("GARMIN_CONSUMER_KEY");
+    const consumerSecret = Deno.env.get("GARMIN_CONSUMER_SECRET");
 
-    if (!clientId || !clientSecret) {
+    if (!consumerKey || !consumerSecret) {
       return new Response(
         JSON.stringify({ error: "Garmin API credentials not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -42,111 +93,83 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { code, state } = await req.json();
+    const { oauth_token, oauth_verifier } = await req.json();
 
-    if (!code || !state) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization code or state" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get stored PKCE data
+    // Get temporary token secret
     const { data: tempToken, error: tempError } = await supabase
       .from("garmin_oauth_temp")
-      .select("code_verifier, state, redirect_uri")
+      .select("oauth_token_secret")
       .eq("user_id", user.id)
+      .eq("oauth_token", oauth_token)
       .single();
 
     if (tempError || !tempToken) {
-      console.error("Temp token error:", tempError);
       return new Response(
-        JSON.stringify({ error: "Invalid or expired OAuth session" }),
+        JSON.stringify({ error: "Invalid or expired OAuth token" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Verify state matches
-    if (tempToken.state !== state) {
-      return new Response(
-        JSON.stringify({ error: "State mismatch - possible CSRF attack" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Exchange for access token
+    const accessTokenUrl = "https://connectapi.garmin.com/oauth-service/oauth/access_token";
+    const nonce = generateNonce();
+    const timestamp = generateTimestamp();
 
-    // STEP 2: Access Token Request per Garmin spec
-    // URL (POST) https://diauth.garmin.com/di-oauth2-service/oauth/token
-    // Parameters sent as form body (NOT Basic auth header)
-    const tokenUrl = "https://diauth.garmin.com/di-oauth2-service/oauth/token";
+    const oauthParams: Record<string, string> = {
+      oauth_consumer_key: consumerKey,
+      oauth_token: oauth_token,
+      oauth_signature_method: "HMAC-SHA1",
+      oauth_timestamp: timestamp,
+      oauth_nonce: nonce,
+      oauth_version: "1.0",
+      oauth_verifier: oauth_verifier,
+    };
 
-    const formBody = new URLSearchParams({
-      grant_type: "authorization_code",
-      client_id: clientId,
-      client_secret: clientSecret,
-      code: code,
-      code_verifier: tempToken.code_verifier,
-    });
+    const baseString = createSignatureBaseString("POST", accessTokenUrl, oauthParams);
+    const signature = await createSignature(baseString, consumerSecret, tempToken.oauth_token_secret);
+    oauthParams.oauth_signature = signature;
 
-    // Only include redirect_uri if it was used in Step 1
-    if (tempToken.redirect_uri) {
-      formBody.set("redirect_uri", tempToken.redirect_uri);
-    }
+    const authHeaderValue = "OAuth " + Object.keys(oauthParams)
+      .map((key) => `${percentEncode(key)}="${percentEncode(oauthParams[key])}"`)
+      .join(", ");
 
-    console.log("Exchanging code for token at:", tokenUrl);
-    console.log("Using redirect_uri:", tempToken.redirect_uri);
-
-    const tokenResponse = await fetch(tokenUrl, {
+    const response = await fetch(accessTokenUrl, {
       method: "POST",
       headers: {
+        Authorization: authHeaderValue,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: formBody.toString(),
     });
 
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error("Garmin token error:", tokenResponse.status, errorText);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Garmin access token error:", errorText);
       return new Response(
-        JSON.stringify({ error: "Failed to exchange code for token", details: errorText }),
+        JSON.stringify({ error: "Failed to get access token from Garmin" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const tokenData = await tokenResponse.json();
-    console.log("Token response received successfully");
+    const responseText = await response.text();
+    const tokenParams = new URLSearchParams(responseText);
+    const accessToken = tokenParams.get("oauth_token");
+    const accessTokenSecret = tokenParams.get("oauth_token_secret");
 
-    const accessToken = tokenData.access_token;
-    const refreshToken = tokenData.refresh_token;
-    const expiresIn = tokenData.expires_in;
-
-    if (!accessToken) {
+    if (!accessToken || !accessTokenSecret) {
       return new Response(
-        JSON.stringify({ error: "No access token in response" }),
+        JSON.stringify({ error: "Invalid access token response" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Calculate token expiry
-    const expiresAt = expiresIn
-      ? new Date(Date.now() + expiresIn * 1000).toISOString()
-      : null;
 
     // Store the access token
-    const { error: upsertError } = await supabase.from("garmin_connections").upsert({
+    await supabase.from("garmin_connections").upsert({
       user_id: user.id,
       oauth_token: accessToken,
-      oauth_token_secret: refreshToken || "",
+      oauth_token_secret: accessTokenSecret,
       connected_at: new Date().toISOString(),
       is_active: true,
     }, { onConflict: "user_id" });
-
-    if (upsertError) {
-      console.error("Error storing connection:", upsertError);
-      return new Response(
-        JSON.stringify({ error: "Failed to store connection" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     // Clean up temp token
     await supabase.from("garmin_oauth_temp").delete().eq("user_id", user.id);

@@ -89,7 +89,7 @@ export function useGarminConnect() {
     }
   }, [connection, fetchActivities]);
 
-  const startConnect = async (): Promise<void> => {
+  const startConnect = async () => {
     if (!session?.access_token) {
       toast({
         title: "Ej inloggad",
@@ -102,8 +102,10 @@ export function useGarminConnect() {
     setIsConnecting(true);
 
     try {
+      const callbackUrl = `${window.location.origin}/account?garmin_callback=true`;
+      
       const response = await supabase.functions.invoke("garmin-oauth-start", {
-        body: {},
+        body: { callbackUrl },
       });
 
       if (response.error) {
@@ -111,13 +113,13 @@ export function useGarminConnect() {
       }
 
       const { authorizeUrl } = response.data;
-
-      if (!authorizeUrl) {
+      
+      if (authorizeUrl) {
+        // Redirect to Garmin authorization
+        window.location.href = authorizeUrl;
+      } else {
         throw new Error("No authorization URL received");
       }
-
-      // Redirect this tab to Garmin. Garmin will redirect back to /garmin/callback
-      window.location.assign(authorizeUrl);
     } catch (error) {
       console.error("Error starting Garmin connect:", error);
       toast({
@@ -129,22 +131,18 @@ export function useGarminConnect() {
     }
   };
 
-  const completeConnect = async (authorizationCode: string, state: string) => {
+  const completeConnect = async (oauthToken: string, oauthVerifier: string) => {
     if (!session?.access_token) return false;
 
     setIsConnecting(true);
 
     try {
       const response = await supabase.functions.invoke("garmin-oauth-callback", {
-        body: { code: authorizationCode, state: state },
+        body: { oauth_token: oauthToken, oauth_verifier: oauthVerifier },
       });
 
       if (response.error) {
         throw new Error(response.error.message);
-      }
-
-      if (response.data?.error) {
-        throw new Error(response.data.error);
       }
 
       toast({
@@ -160,17 +158,13 @@ export function useGarminConnect() {
       console.error("Error completing Garmin connect:", error);
       toast({
         title: "Anslutningsfel",
-        description: error instanceof Error ? error.message : "Kunde inte slutföra Garmin-anslutning.",
+        description: "Kunde inte slutföra Garmin-anslutning.",
         variant: "destructive",
       });
       return false;
     } finally {
       setIsConnecting(false);
     }
-  };
-
-  const cancelConnect = () => {
-    setIsConnecting(false);
   };
 
   const syncActivities = async (startDate?: string, endDate?: string) => {
@@ -248,7 +242,6 @@ export function useGarminConnect() {
     isConnected: !!connection,
     startConnect,
     completeConnect,
-    cancelConnect,
     syncActivities,
     disconnect,
     fetchActivities,
