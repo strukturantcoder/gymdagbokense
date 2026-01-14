@@ -1,14 +1,30 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Footprints, Flame, Clock, Trophy, TrendingUp, Calendar } from "lucide-react";
+import { Dumbbell, Footprints, Flame, Clock, Trophy, TrendingUp, Calendar, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, startOfWeek, endOfWeek, differenceInDays, subDays, isAfter } from "date-fns";
 import { sv } from "date-fns/locale";
+import SpontaneousWorkout from "./SpontaneousWorkout";
+import SpontaneousWorkoutSession from "./SpontaneousWorkoutSession";
+
+interface GeneratedWorkout {
+  name: string;
+  focus: string;
+  estimatedDuration: number;
+  exercises: {
+    name: string;
+    sets: number;
+    reps: string;
+    rest: string;
+    notes?: string;
+    supersetGroup?: number | null;
+  }[];
+}
 
 interface RecentActivity {
   type: "workout" | "cardio";
@@ -37,6 +53,8 @@ export default function QuickActions() {
     weekStreak: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [showSpontaneous, setShowSpontaneous] = useState(false);
+  const [activeWorkout, setActiveWorkout] = useState<GeneratedWorkout | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -210,24 +228,33 @@ export default function QuickActions() {
       className="mb-6 space-y-4"
     >
       {/* Quick Action Buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         <Button
           variant="hero"
           size="lg"
-          className="h-16 text-base sm:text-lg"
+          className="h-14 text-sm sm:text-base flex-col gap-1 p-2"
           onClick={() => navigate("/training")}
         >
-          <Dumbbell className="w-5 h-5 mr-2" />
-          Starta styrka
+          <Dumbbell className="w-5 h-5" />
+          <span>Styrka</span>
         </Button>
         <Button
           variant="outline"
           size="lg"
-          className="h-16 text-base sm:text-lg border-gym-orange/50 hover:bg-gym-orange/10"
+          className="h-14 text-sm sm:text-base flex-col gap-1 p-2 border-green-500/50 hover:bg-green-500/10"
           onClick={() => navigate("/training?tab=cardio")}
         >
-          <Footprints className="w-5 h-5 mr-2" />
-          Starta kondition
+          <Footprints className="w-5 h-5 text-green-500" />
+          <span>Kondition</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          className="h-14 text-sm sm:text-base flex-col gap-1 p-2 border-gym-orange/50 hover:bg-gym-orange/10 bg-gradient-to-br from-gym-orange/5 to-transparent"
+          onClick={() => setShowSpontaneous(true)}
+        >
+          <Sparkles className="w-5 h-5 text-gym-orange" />
+          <span>Spontan</span>
         </Button>
       </div>
 
@@ -353,6 +380,25 @@ export default function QuickActions() {
           </CardContent>
         </Card>
       )}
+
+      {/* Spontaneous Workout Modal */}
+      <AnimatePresence>
+        {showSpontaneous && (
+          <SpontaneousWorkout 
+            onClose={() => setShowSpontaneous(false)}
+            onStartWorkout={(workout) => {
+              setActiveWorkout(workout);
+              setShowSpontaneous(false);
+            }}
+          />
+        )}
+        {activeWorkout && (
+          <SpontaneousWorkoutSession
+            workout={activeWorkout}
+            onClose={() => setActiveWorkout(null)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
