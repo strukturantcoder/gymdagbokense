@@ -99,6 +99,9 @@ verify_jwt = true
 [functions.garmin-logo]
 verify_jwt = false
 
+[functions.garmin-test-config]
+verify_jwt = false
+
 [functions.garmin-oauth-start]
 verify_jwt = false
 
