@@ -151,8 +151,9 @@ Deno.serve(async (req) => {
     const uploadStartTime = Math.floor(new Date(startDate).getTime() / 1000);
     const uploadEndTime = Math.floor(new Date(endDate + "T23:59:59").getTime() / 1000);
 
-    // Fetch activities from Garmin using OAuth2 Bearer token
-    const activitiesUrl = `https://apis.garmin.com/wellness-api/rest/activities?uploadStartTimeInSeconds=${uploadStartTime}&uploadEndTimeInSeconds=${uploadEndTime}`;
+    // Fetch activities from Garmin Partner API
+    // Partner API uses different endpoint than Wellness API
+    const activitiesUrl = `https://gcpsapi-cv1.garmin.com/partner-gateway/rest/activities?uploadStartTimeInSeconds=${uploadStartTime}&uploadEndTimeInSeconds=${uploadEndTime}`;
     
     console.log("Fetching activities from:", activitiesUrl);
     
