@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,12 +15,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { RefreshCw, Link2, Unlink, Loader2, Clock, Activity, Flame, Heart } from "lucide-react";
+import { RefreshCw, Link2, Unlink, Loader2, Clock, Activity, Flame, Heart, Settings2, CheckCircle2, XCircle } from "lucide-react";
 import { useGarminConnect } from "@/hooks/useGarminConnect";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
 
 // Garmin logo component per brand guidelines
 const GarminLogo = ({ className = "h-6" }: { className?: string }) => (
@@ -29,11 +30,26 @@ const GarminLogo = ({ className = "h-6" }: { className?: string }) => (
 
 const GARMIN_PENDING_KEY = "garmin_oauth_pending";
 
+interface TestResult {
+  ok: boolean;
+  message: string;
+}
+
+interface TestResults {
+  credentials?: TestResult;
+  supabase?: TestResult;
+  auth?: TestResult;
+  tempSession?: TestResult;
+  connection?: TestResult;
+}
+
 export function GarminConnectSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { session, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const hasHandledCallback = useRef(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResults, setTestResults] = useState<TestResults | null>(null);
 
   const {
     connection,
@@ -47,6 +63,27 @@ export function GarminConnectSettings() {
     syncActivities,
     disconnect,
   } = useGarminConnect();
+
+  const testConnection = async () => {
+    if (!session?.access_token) {
+      toast({ title: "Ej inloggad", variant: "destructive" });
+      return;
+    }
+    setIsTesting(true);
+    setTestResults(null);
+    try {
+      const response = await supabase.functions.invoke("garmin-test-config", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (response.error) throw new Error(response.error.message);
+      setTestResults(response.data.results as TestResults);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Okänt fel";
+      toast({ title: "Testfel", description: msg, variant: "destructive" });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   // Handle OAuth2 callback (code + state) robustly (wait for auth session)
   useEffect(() => {
@@ -303,13 +340,44 @@ export function GarminConnectSettings() {
             <p className="text-sm text-muted-foreground">
               Synkronisera dina träningspass automatiskt från Garmin.
             </p>
-            <Button variant="outline" onClick={startConnect} disabled={isConnecting} className="w-full sm:w-auto">
-              {isConnecting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Link2 className="h-4 w-4 mr-2" />
-              )}
-              Anslut med Garmin Connect™
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={startConnect} disabled={isConnecting} className="w-full sm:w-auto">
+                {isConnecting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Link2 className="h-4 w-4 mr-2" />
+                )}
+                Anslut med Garmin Connect™
+              </Button>
+              <Button variant="ghost" size="sm" onClick={testConnection} disabled={isTesting}>
+                {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Settings2 className="h-4 w-4 mr-1" />}
+                Testa konfiguration
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Test Results Panel */}
+        {testResults && (
+          <div className="mt-4 p-3 rounded-lg border bg-muted/30 space-y-2">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <Settings2 className="h-4 w-4" /> Konfigurationstest
+            </h4>
+            {Object.entries(testResults).map(([key, result]) => (
+              <div key={key} className="flex items-start gap-2 text-xs">
+                {result.ok ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <span className="font-medium capitalize">{key}: </span>
+                  <span className="text-muted-foreground">{result.message}</span>
+                </div>
+              </div>
+            ))}
+            <Button variant="ghost" size="sm" className="mt-2" onClick={() => setTestResults(null)}>
+              Stäng
             </Button>
           </div>
         )}
