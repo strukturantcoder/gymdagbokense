@@ -162,61 +162,67 @@ export function GarminConnectSettings() {
             </div>
 
             {/* Recent Activities */}
-            {activities.length > 0 && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Senaste aktiviteter</h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {activities.slice(0, 5).map((activity) => (
-                      <div
-                        key={activity.id}
-                        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-full bg-primary/10">
-                            <Activity className="h-4 w-4 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">
-                              {activity.activity_name || activity.activity_type}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {format(new Date(activity.start_time), "d MMM yyyy, HH:mm", { locale: sv })}
-                            </p>
-                          </div>
+            <Separator />
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Senaste aktiviteter</h4>
+              {activities.length > 0 ? (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {activities.slice(0, 5).map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-primary/10">
+                          <Activity className="h-4 w-4 text-primary" />
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          {activity.duration_seconds && (
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {formatDuration(activity.duration_seconds)}
-                            </div>
-                          )}
-                          {activity.distance_meters && (
-                            <div className="hidden sm:flex items-center gap-1">
-                              {formatDistance(activity.distance_meters)}
-                            </div>
-                          )}
-                          {activity.calories && (
-                            <div className="hidden md:flex items-center gap-1">
-                              <Flame className="h-3 w-3" />
-                              {activity.calories}
-                            </div>
-                          )}
-                          {activity.average_heart_rate && (
-                            <div className="hidden md:flex items-center gap-1">
-                              <Heart className="h-3 w-3" />
-                              {activity.average_heart_rate}
-                            </div>
-                          )}
+                        <div>
+                          <p className="text-sm font-medium">
+                            {activity.activity_name || activity.activity_type}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(activity.start_time), "d MMM yyyy, HH:mm", { locale: sv })}
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        {activity.duration_seconds && (
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {formatDuration(activity.duration_seconds)}
+                          </div>
+                        )}
+                        {activity.distance_meters && (
+                          <div className="hidden sm:flex items-center gap-1">
+                            {formatDistance(activity.distance_meters)}
+                          </div>
+                        )}
+                        {activity.calories && (
+                          <div className="hidden md:flex items-center gap-1">
+                            <Flame className="h-3 w-3" />
+                            {activity.calories}
+                          </div>
+                        )}
+                        {activity.average_heart_rate && (
+                          <div className="hidden md:flex items-center gap-1">
+                            <Heart className="h-3 w-3" />
+                            {activity.average_heart_rate}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </>
-            )}
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Activity className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">Inga aktiviteter hittades</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">
+                    Synkronisera aktiviteter från din Garmin-enhet eller vänta på att nya aktiviteter registreras.
+                  </p>
+                </div>
+              )}
+            </div>
           </>
         ) : (
           <div className="space-y-3">
