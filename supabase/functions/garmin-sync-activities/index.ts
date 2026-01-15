@@ -1,101 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encode as base64Encode } from "https://deno.land/std@0.208.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-function generateNonce(): string {
-  return crypto.randomUUID().replace(/-/g, "");
-}
-
-function generateTimestamp(): string {
-  return Math.floor(Date.now() / 1000).toString();
-}
-
-function percentEncode(str: string): string {
-  return encodeURIComponent(str)
-    .replace(/!/g, "%21")
-    .replace(/\*/g, "%2A")
-    .replace(/'/g, "%27")
-    .replace(/\(/g, "%28")
-    .replace(/\)/g, "%29");
-}
-
-function createSignatureBaseString(
-  method: string,
-  url: string,
-  params: Record<string, string>
-): string {
-  const sortedParams = Object.keys(params)
-    .sort()
-    .map((key) => `${percentEncode(key)}=${percentEncode(params[key])}`)
-    .join("&");
-
-  return `${method.toUpperCase()}&${percentEncode(url)}&${percentEncode(sortedParams)}`;
-}
-
-async function createSignature(
-  baseString: string,
-  consumerSecret: string,
-  tokenSecret: string = ""
-): Promise<string> {
-  const signingKey = `${percentEncode(consumerSecret)}&${percentEncode(tokenSecret)}`;
-  const encoder = new TextEncoder();
-  
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(signingKey),
-    { name: "HMAC", hash: "SHA-1" },
-    false,
-    ["sign"]
-  );
-  
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(baseString));
-  return base64Encode(signature);
-}
-
-async function makeGarminRequest(
-  url: string,
-  consumerKey: string,
-  consumerSecret: string,
-  accessToken: string,
-  accessTokenSecret: string,
-  queryParams: Record<string, string> = {}
-): Promise<Response> {
-  const nonce = generateNonce();
-  const timestamp = generateTimestamp();
-
-  const oauthParams: Record<string, string> = {
-    oauth_consumer_key: consumerKey,
-    oauth_token: accessToken,
-    oauth_signature_method: "HMAC-SHA1",
-    oauth_timestamp: timestamp,
-    oauth_nonce: nonce,
-    oauth_version: "1.0",
-  };
-
-  const allParams = { ...oauthParams, ...queryParams };
-  const baseString = createSignatureBaseString("GET", url, allParams);
-  const signature = await createSignature(baseString, consumerSecret, accessTokenSecret);
-  oauthParams.oauth_signature = signature;
-
-  const authHeaderValue = "OAuth " + Object.keys(oauthParams)
-    .map((key) => `${percentEncode(key)}="${percentEncode(oauthParams[key])}"`)
-    .join(", ");
-
-  const queryString = Object.keys(queryParams).length > 0
-    ? "?" + new URLSearchParams(queryParams).toString()
-    : "";
-
-  return fetch(url + queryString, {
-    method: "GET",
-    headers: {
-      Authorization: authHeaderValue,
-    },
-  });
-}
 
 // Map Garmin activity types to our activity types
 function mapActivityType(garminType: string): string {
@@ -130,6 +38,45 @@ function isCardioActivity(activityType: string): boolean {
   return cardioTypes.includes(activityType.toLowerCase());
 }
 
+// Garmin OAuth2 token refresh
+async function refreshAccessToken(
+  refreshToken: string,
+  clientId: string,
+  clientSecret: string
+): Promise<{ accessToken: string; refreshToken: string; expiresIn: number } | null> {
+  try {
+    const tokenUrl = "https://diauth.garmin.com/di-oauth2-service/oauth/token";
+    
+    const response = await fetch(tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+      }).toString(),
+    });
+
+    if (!response.ok) {
+      console.error("Token refresh failed:", response.status, await response.text());
+      return null;
+    }
+
+    const data = await response.json();
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token || refreshToken,
+      expiresIn: data.expires_in,
+    };
+  } catch (error) {
+    console.error("Token refresh error:", error);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -138,10 +85,10 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const consumerKey = Deno.env.get("GARMIN_CONSUMER_KEY");
-    const consumerSecret = Deno.env.get("GARMIN_CONSUMER_SECRET");
+    const clientId = Deno.env.get("GARMIN_CONSUMER_KEY");
+    const clientSecret = Deno.env.get("GARMIN_CONSUMER_SECRET");
 
-    if (!consumerKey || !consumerSecret) {
+    if (!clientId || !clientSecret) {
       return new Response(
         JSON.stringify({ error: "Garmin API credentials not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -182,6 +129,10 @@ Deno.serve(async (req) => {
       );
     }
 
+    // oauth_token = access_token, oauth_token_secret = refresh_token (for OAuth2)
+    let accessToken = connection.oauth_token;
+    const refreshToken = connection.oauth_token_secret;
+
     // Parse optional date range from request
     let startDate: string;
     let endDate: string;
@@ -196,25 +147,55 @@ Deno.serve(async (req) => {
       endDate = new Date().toISOString().split("T")[0];
     }
 
-    // Fetch activities from Garmin
-    const activitiesUrl = "https://apis.garmin.com/wellness-api/rest/activities";
-    const response = await makeGarminRequest(
-      activitiesUrl,
-      consumerKey,
-      consumerSecret,
-      connection.oauth_token,
-      connection.oauth_token_secret,
-      {
-        uploadStartTimeInSeconds: Math.floor(new Date(startDate).getTime() / 1000).toString(),
-        uploadEndTimeInSeconds: Math.floor(new Date(endDate).getTime() / 1000).toString(),
+    // Calculate epoch seconds for date range
+    const uploadStartTime = Math.floor(new Date(startDate).getTime() / 1000);
+    const uploadEndTime = Math.floor(new Date(endDate + "T23:59:59").getTime() / 1000);
+
+    // Fetch activities from Garmin using OAuth2 Bearer token
+    const activitiesUrl = `https://apis.garmin.com/wellness-api/rest/activities?uploadStartTimeInSeconds=${uploadStartTime}&uploadEndTimeInSeconds=${uploadEndTime}`;
+    
+    console.log("Fetching activities from:", activitiesUrl);
+    
+    let response = await fetch(activitiesUrl, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+      },
+    });
+
+    // If token is expired, try to refresh it
+    if (response.status === 401 && refreshToken) {
+      console.log("Access token expired, attempting refresh...");
+      
+      const newTokens = await refreshAccessToken(refreshToken, clientId, clientSecret);
+      
+      if (newTokens) {
+        // Update stored tokens
+        await supabase
+          .from("garmin_connections")
+          .update({
+            oauth_token: newTokens.accessToken,
+            oauth_token_secret: newTokens.refreshToken,
+          })
+          .eq("user_id", user.id);
+        
+        accessToken = newTokens.accessToken;
+        
+        // Retry the request with new token
+        response = await fetch(activitiesUrl, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+          },
+        });
       }
-    );
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Garmin API error:", errorText);
+      console.error("Garmin API error:", response.status, errorText);
       
-      // Check if token is expired/invalid
+      // If still 401, mark connection as inactive
       if (response.status === 401) {
         await supabase
           .from("garmin_connections")
@@ -228,25 +209,30 @@ Deno.serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ error: "Failed to fetch activities from Garmin" }),
+        JSON.stringify({ error: "Failed to fetch activities from Garmin", details: errorText }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const activities = await response.json();
+    console.log(`Received ${Array.isArray(activities) ? activities.length : 0} activities from Garmin`);
+    
+    // Handle case where activities is not an array
+    const activityList = Array.isArray(activities) ? activities : [];
+    
     let syncedCount = 0;
-    const syncedActivities: any[] = [];
+    let cardioLogsSynced = 0;
 
     // Process and store each activity
-    let cardioLogsSynced = 0;
-    
-    for (const activity of activities) {
+    for (const activity of activityList) {
       const garminActivityId = activity.activityId?.toString() || activity.summaryId?.toString();
       
       if (!garminActivityId) continue;
 
       const mappedActivityType = mapActivityType(activity.activityType || "other");
-      const startTime = new Date(activity.startTimeInSeconds * 1000).toISOString();
+      const startTime = activity.startTimeInSeconds 
+        ? new Date(activity.startTimeInSeconds * 1000).toISOString()
+        : new Date().toISOString();
       const durationSeconds = activity.durationInSeconds || activity.activeTimeInSeconds;
       const distanceMeters = activity.distanceInMeters;
       const calories = activity.activeKilocalories || activity.calories;
@@ -310,7 +296,6 @@ Deno.serve(async (req) => {
 
       if (!upsertError) {
         syncedCount++;
-        syncedActivities.push(activityData);
       }
     }
 
@@ -325,7 +310,7 @@ Deno.serve(async (req) => {
         success: true,
         syncedCount,
         cardioLogsSynced,
-        totalActivities: activities.length,
+        totalActivities: activityList.length,
         message: `Synkade ${syncedCount} aktiviteter från Garmin (${cardioLogsSynced} nya cardio-loggar)`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
