@@ -199,7 +199,10 @@ export function useGarminConnect() {
         });
 
         if (response.error) {
-          throw new Error(response.error.message);
+          // Surface as much as possible for debugging
+          const msg = response.error.message || "Unknown function error";
+          console.error("garmin-oauth-callback invoke error:", response.error);
+          throw new Error(msg);
         }
 
         toast({
@@ -212,10 +215,11 @@ export function useGarminConnect() {
 
         return true;
       } catch (error) {
+        const message = error instanceof Error ? error.message : "Okänt fel";
         console.error("Error completing Garmin connect:", error);
         toast({
           title: "Anslutningsfel",
-          description: "Kunde inte slutföra Garmin-anslutning.",
+          description: `Kunde inte slutföra Garmin-anslutning. (${message})`,
           variant: "destructive",
         });
         return false;
