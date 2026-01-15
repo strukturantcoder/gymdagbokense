@@ -147,79 +147,92 @@ Deno.serve(async (req) => {
       endDate = new Date().toISOString().split("T")[0];
     }
 
-    // Calculate epoch seconds for date range
-    const uploadStartTime = Math.floor(new Date(startDate).getTime() / 1000);
-    const uploadEndTime = Math.floor(new Date(endDate + "T23:59:59").getTime() / 1000);
+    // Garmin API has a max time range of 86400 seconds (24 hours)
+    // We need to fetch in 24-hour chunks
+    const MAX_RANGE_SECONDS = 86400;
+    const startTimestamp = Math.floor(new Date(startDate).getTime() / 1000);
+    const endTimestamp = Math.floor(new Date(endDate + "T23:59:59").getTime() / 1000);
 
-    // Fetch activities from Garmin API
-    // Using apis.garmin.com which is the standard publicly accessible domain
-    const activitiesUrl = `https://apis.garmin.com/wellness-api/rest/activities?uploadStartTimeInSeconds=${uploadStartTime}&uploadEndTimeInSeconds=${uploadEndTime}`;
-    
-    console.log("Fetching activities from:", activitiesUrl);
-    
-    let response = await fetch(activitiesUrl, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-      },
-    });
+    // deno-lint-ignore no-explicit-any
+    let allActivities: any[] = [];
+    let currentStart = startTimestamp;
 
-    // If token is expired, try to refresh it
-    if (response.status === 401 && refreshToken) {
-      console.log("Access token expired, attempting refresh...");
+    // Fetch activities in 24-hour chunks
+    while (currentStart < endTimestamp) {
+      const currentEnd = Math.min(currentStart + MAX_RANGE_SECONDS - 1, endTimestamp);
       
-      const newTokens = await refreshAccessToken(refreshToken, clientId, clientSecret);
+      const activitiesUrl = `https://apis.garmin.com/wellness-api/rest/activities?uploadStartTimeInSeconds=${currentStart}&uploadEndTimeInSeconds=${currentEnd}`;
       
-      if (newTokens) {
-        // Update stored tokens
-        await supabase
-          .from("garmin_connections")
-          .update({
-            oauth_token: newTokens.accessToken,
-            oauth_token_secret: newTokens.refreshToken,
-          })
-          .eq("user_id", user.id);
-        
-        accessToken = newTokens.accessToken;
-        
-        // Retry the request with new token
-        response = await fetch(activitiesUrl, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${accessToken}`,
-          },
-        });
-      }
-    }
+      console.log("Fetching activities from:", activitiesUrl);
+      
+      let response = await fetch(activitiesUrl, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Garmin API error:", response.status, errorText);
-      
-      // If still 401, mark connection as inactive
-      if (response.status === 401) {
-        await supabase
-          .from("garmin_connections")
-          .update({ is_active: false })
-          .eq("user_id", user.id);
+      // If token is expired, try to refresh it
+      if (response.status === 401 && refreshToken) {
+        console.log("Access token expired, attempting refresh...");
         
-        return new Response(
-          JSON.stringify({ error: "Garmin token expired. Please reconnect." }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        const newTokens = await refreshAccessToken(refreshToken, clientId, clientSecret);
+        
+        if (newTokens) {
+          // Update stored tokens
+          await supabase
+            .from("garmin_connections")
+            .update({
+              oauth_token: newTokens.accessToken,
+              oauth_token_secret: newTokens.refreshToken,
+            })
+            .eq("user_id", user.id);
+          
+          accessToken = newTokens.accessToken;
+          
+          // Retry the request with new token
+          response = await fetch(activitiesUrl, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${accessToken}`,
+            },
+          });
+        }
       }
 
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch activities from Garmin", details: errorText }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Garmin API error:", response.status, errorText);
+        
+        // If 401, mark connection as inactive and return error
+        if (response.status === 401) {
+          await supabase
+            .from("garmin_connections")
+            .update({ is_active: false })
+            .eq("user_id", user.id);
+          
+          return new Response(
+            JSON.stringify({ error: "Garmin token expired. Please reconnect." }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // For other errors, continue to next chunk
+        console.error(`Error fetching chunk ${currentStart}-${currentEnd}, continuing...`);
+      } else {
+        const activities = await response.json();
+        if (Array.isArray(activities)) {
+          allActivities = allActivities.concat(activities);
+        }
+      }
+
+      // Move to next 24-hour chunk
+      currentStart = currentEnd + 1;
     }
 
-    const activities = await response.json();
-    console.log(`Received ${Array.isArray(activities) ? activities.length : 0} activities from Garmin`);
+    console.log(`Total activities received from Garmin: ${allActivities.length}`);
     
-    // Handle case where activities is not an array
-    const activityList = Array.isArray(activities) ? activities : [];
+    const activityList = allActivities;
     
     let syncedCount = 0;
     let cardioLogsSynced = 0;
