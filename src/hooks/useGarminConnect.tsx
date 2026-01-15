@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +36,7 @@ export function useGarminConnect() {
   const [isLoading, setIsLoading] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const isCompletingRef = useRef(false);
 
   const fetchConnection = useCallback(async () => {
     if (!user) {
@@ -132,9 +133,16 @@ export function useGarminConnect() {
   };
 
   // OAuth2 callback - receives code and state
-  const completeConnect = async (code: string, state: string) => {
+  const completeConnect = useCallback(async (code: string, state: string) => {
+    // Prevent multiple simultaneous calls
+    if (isCompletingRef.current) {
+      console.log("Already completing Garmin connection, skipping...");
+      return false;
+    }
+    
     if (!session?.access_token) return false;
 
+    isCompletingRef.current = true;
     setIsConnecting(true);
 
     try {
@@ -165,8 +173,9 @@ export function useGarminConnect() {
       return false;
     } finally {
       setIsConnecting(false);
+      isCompletingRef.current = false;
     }
-  };
+  }, [session?.access_token, toast, fetchConnection]);
 
   const syncActivities = async (startDate?: string, endDate?: string) => {
     if (!session?.access_token) return;
