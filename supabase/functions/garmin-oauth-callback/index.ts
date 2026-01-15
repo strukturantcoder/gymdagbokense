@@ -16,12 +16,27 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const clientId = Deno.env.get("GARMIN_CONSUMER_KEY");
-    const clientSecret = Deno.env.get("GARMIN_CONSUMER_SECRET");
+
+    // Garmin credentials: prefer CONSUMER_* but fall back to CLIENT_* (some projects used these names)
+    const consumerKey = Deno.env.get("GARMIN_CONSUMER_KEY");
+    const consumerSecret = Deno.env.get("GARMIN_CONSUMER_SECRET");
+    const altClientId = Deno.env.get("GARMIN_CLIENT_ID");
+    const altClientSecret = Deno.env.get("GARMIN_CLIENT_SECRET");
+
+    const clientId = consumerKey || altClientId;
+    const clientSecret = consumerSecret || altClientSecret;
 
     if (!clientId || !clientSecret) {
       return new Response(
-        JSON.stringify({ error: "Garmin API credentials not configured" }),
+        JSON.stringify({
+          error: "Garmin API credentials not configured",
+          details: {
+            hasConsumerKey: !!consumerKey,
+            hasConsumerSecret: !!consumerSecret,
+            hasAltClientId: !!altClientId,
+            hasAltClientSecret: !!altClientSecret,
+          },
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -83,30 +98,49 @@ Deno.serve(async (req) => {
     // Exchange authorization code for access token
     // Per Garmin spec: grant_type, client_id, client_secret, code, code_verifier are required
     // redirect_uri required if used in step 1
-    const tokenParams = new URLSearchParams({
-      grant_type: "authorization_code",
-      client_id: clientId,
-      client_secret: clientSecret,
-      code: code,
-      code_verifier: tempData.code_verifier || "",
-      redirect_uri: tempData.redirect_uri || "",
-    });
+
+    const exchangeToken = async (id: string, secret: string) => {
+      const tokenParams = new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: id,
+        client_secret: secret,
+        code: code,
+        code_verifier: tempData.code_verifier || "",
+        redirect_uri: tempData.redirect_uri || "",
+      });
+
+      return await fetch(GARMIN_TOKEN_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: tokenParams.toString(),
+      });
+    };
 
     console.log("Exchanging code for token at:", GARMIN_TOKEN_URL);
 
-    const tokenResponse = await fetch(GARMIN_TOKEN_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: tokenParams.toString(),
-    });
+    let tokenResponse = await exchangeToken(clientId, clientSecret);
+
+    // If Garmin says Unauthorized, retry once with alternate env var pair (if configured)
+    if (!tokenResponse.ok && tokenResponse.status === 401 && altClientId && altClientSecret) {
+      console.warn("Garmin token exchange 401 - retrying with GARMIN_CLIENT_ID/SECRET");
+      tokenResponse = await exchangeToken(altClientId, altClientSecret);
+    }
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error("Garmin token exchange error:", tokenResponse.status, errorText);
+      const hint = tokenResponse.status === 401
+        ? "Unauthorized: kontrollera GARMIN_CONSUMER_SECRET (eller GARMIN_CLIENT_SECRET)"
+        : "";
       return new Response(
-        JSON.stringify({ error: "Failed to exchange code for token", details: errorText }),
+        JSON.stringify({
+          error: "Failed to exchange code for token",
+          status: tokenResponse.status,
+          hint,
+          details: errorText,
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
