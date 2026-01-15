@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ const GarminLogo = ({ className = "h-6" }: { className?: string }) => (
 export function GarminConnectSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const hasHandledCallback = useRef(false);
   const {
     connection,
     activities,
@@ -36,19 +37,21 @@ export function GarminConnectSettings() {
     disconnect,
   } = useGarminConnect();
 
-  // Handle OAuth2 callback (code + state)
+  // Handle OAuth2 callback (code + state) - only once
   useEffect(() => {
     const isCallback = searchParams.get("garmin_callback");
     const code = searchParams.get("code");
     const state = searchParams.get("state");
 
-    if (isCallback && code && state) {
-      completeConnect(code, state).then(() => {
+    if (isCallback && code && state && !hasHandledCallback.current) {
+      hasHandledCallback.current = true;
+      
+      completeConnect(code, state).finally(() => {
         // Clean up URL params
         searchParams.delete("garmin_callback");
         searchParams.delete("code");
         searchParams.delete("state");
-        setSearchParams(searchParams);
+        setSearchParams(searchParams, { replace: true });
       });
     }
   }, [searchParams, completeConnect, setSearchParams]);
