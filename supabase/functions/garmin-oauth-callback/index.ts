@@ -128,10 +128,10 @@ Deno.serve(async (req) => {
     console.log("Token exchange successful for user:", user.id);
     console.log("Access token expires in:", expiresIn, "seconds");
 
-    // Fetch user ID from Garmin
+    // Fetch user ID from Garmin Partner API
     let garminUserId = null;
     try {
-      const userIdResponse = await fetch("https://apis.garmin.com/wellness-api/rest/user/id", {
+      const userIdResponse = await fetch("https://gcpsapi-cv1.garmin.com/partner-gateway/rest/user/id", {
         headers: {
           "Authorization": `Bearer ${accessToken}`,
         },
@@ -141,6 +141,8 @@ Deno.serve(async (req) => {
         const userIdData = await userIdResponse.json();
         garminUserId = userIdData.userId;
         console.log("Fetched Garmin User ID:", garminUserId);
+      } else {
+        console.error("Failed to fetch Garmin user ID:", userIdResponse.status, await userIdResponse.text());
       }
     } catch (error) {
       console.error("Failed to fetch Garmin user ID:", error);
