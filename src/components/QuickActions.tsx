@@ -250,11 +250,16 @@ export default function QuickActions() {
         <Button
           variant="outline"
           size="lg"
-          className="h-14 text-sm sm:text-base flex-col gap-1 p-2 border-gym-orange/50 hover:bg-gym-orange/10 bg-gradient-to-br from-gym-orange/5 to-transparent"
+          className="h-14 text-sm sm:text-base flex-col gap-1 p-2 border-gym-orange hover:bg-gym-orange/20 bg-gradient-to-br from-gym-orange/20 via-gym-orange/10 to-amber-500/10 relative overflow-hidden group shadow-lg shadow-gym-orange/20"
           onClick={() => setShowSpontaneous(true)}
         >
-          <Sparkles className="w-5 h-5 text-gym-orange" />
-          <span>Spontan</span>
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-gym-orange/0 via-gym-orange/30 to-gym-orange/0"
+            animate={{ x: ["-100%", "100%"] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          />
+          <Sparkles className="w-5 h-5 text-gym-orange relative z-10 group-hover:scale-110 transition-transform" />
+          <span className="relative z-10 font-semibold text-gym-orange">Spontan</span>
         </Button>
       </div>
 
