@@ -104,8 +104,11 @@ export function useGarminConnect() {
 
     try {
       const callbackUrl = `${window.location.origin}/account?garmin_callback=true`;
-      
+
       const response = await supabase.functions.invoke("garmin-oauth-start", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: { callbackUrl },
       });
 
@@ -114,7 +117,7 @@ export function useGarminConnect() {
       }
 
       const { authorizeUrl } = response.data;
-      
+
       if (authorizeUrl) {
         // Redirect to Garmin authorization
         window.location.href = authorizeUrl;
@@ -132,91 +135,106 @@ export function useGarminConnect() {
     }
   };
 
+  const syncActivities = useCallback(
+    async (startDate?: string, endDate?: string) => {
+      if (!session?.access_token) return;
+
+      setIsSyncing(true);
+
+      try {
+        const response = await supabase.functions.invoke("garmin-sync-activities", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: { startDate, endDate },
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message);
+        }
+
+        const { syncedCount, message } = response.data;
+
+        toast({
+          title: "Synkronisering klar",
+          description: message || `${syncedCount} aktiviteter synkroniserade.`,
+        });
+
+        await fetchActivities();
+        await fetchConnection();
+      } catch (error) {
+        console.error("Error syncing Garmin activities:", error);
+        toast({
+          title: "Synkroniseringsfel",
+          description: "Kunde inte synkronisera aktiviteter från Garmin.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    [session?.access_token, toast, fetchActivities, fetchConnection]
+  );
+
   // OAuth2 callback - receives code and state
-  const completeConnect = useCallback(async (code: string, state: string) => {
-    // Prevent multiple simultaneous calls
-    if (isCompletingRef.current) {
-      console.log("Already completing Garmin connection, skipping...");
-      return false;
-    }
-    
-    if (!session?.access_token) return false;
-
-    isCompletingRef.current = true;
-    setIsConnecting(true);
-
-    try {
-      const response = await supabase.functions.invoke("garmin-oauth-callback", {
-        body: { code, state },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
+  const completeConnect = useCallback(
+    async (code: string, state: string) => {
+      // Prevent multiple simultaneous calls
+      if (isCompletingRef.current) {
+        console.log("Already completing Garmin connection, skipping...");
+        return false;
       }
 
-      toast({
-        title: "Garmin kopplat!",
-        description: "Ditt Garmin-konto är nu kopplat. Synkroniserar aktiviteter...",
-      });
+      if (!session?.access_token) return false;
 
-      await fetchConnection();
-      await syncActivities();
-      
-      return true;
-    } catch (error) {
-      console.error("Error completing Garmin connect:", error);
-      toast({
-        title: "Anslutningsfel",
-        description: "Kunde inte slutföra Garmin-anslutning.",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsConnecting(false);
-      isCompletingRef.current = false;
-    }
-  }, [session?.access_token, toast, fetchConnection]);
+      isCompletingRef.current = true;
+      setIsConnecting(true);
 
-  const syncActivities = async (startDate?: string, endDate?: string) => {
-    if (!session?.access_token) return;
+      try {
+        const response = await supabase.functions.invoke("garmin-oauth-callback", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: { code, state },
+        });
 
-    setIsSyncing(true);
+        if (response.error) {
+          throw new Error(response.error.message);
+        }
 
-    try {
-      const response = await supabase.functions.invoke("garmin-sync-activities", {
-        body: { startDate, endDate },
-      });
+        toast({
+          title: "Garmin kopplat!",
+          description: "Ditt Garmin-konto är nu kopplat. Synkroniserar aktiviteter...",
+        });
 
-      if (response.error) {
-        throw new Error(response.error.message);
+        await fetchConnection();
+        await syncActivities();
+
+        return true;
+      } catch (error) {
+        console.error("Error completing Garmin connect:", error);
+        toast({
+          title: "Anslutningsfel",
+          description: "Kunde inte slutföra Garmin-anslutning.",
+          variant: "destructive",
+        });
+        return false;
+      } finally {
+        setIsConnecting(false);
+        isCompletingRef.current = false;
       }
-
-      const { syncedCount, message } = response.data;
-      
-      toast({
-        title: "Synkronisering klar",
-        description: message || `${syncedCount} aktiviteter synkroniserade.`,
-      });
-
-      await fetchActivities();
-      await fetchConnection();
-    } catch (error) {
-      console.error("Error syncing Garmin activities:", error);
-      toast({
-        title: "Synkroniseringsfel",
-        description: "Kunde inte synkronisera aktiviteter från Garmin.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+    },
+    [session?.access_token, toast, fetchConnection, syncActivities]
+  );
 
   const disconnect = async (deleteActivities = false) => {
     if (!session?.access_token) return;
 
     try {
       const response = await supabase.functions.invoke("garmin-disconnect", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: { deleteActivities },
       });
 
@@ -242,6 +260,7 @@ export function useGarminConnect() {
       });
     }
   };
+
 
   return {
     connection,

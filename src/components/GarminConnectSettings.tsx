@@ -1,29 +1,40 @@
 import { useEffect, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { RefreshCw, Link2, Unlink, Loader2, Clock, Activity, Flame, Heart } from "lucide-react";
 import { useGarminConnect } from "@/hooks/useGarminConnect";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 
 // Garmin logo component per brand guidelines
 const GarminLogo = ({ className = "h-6" }: { className?: string }) => (
-  <img 
-    src="/logo-garmin-256.png" 
-    alt="Garmin" 
-    className={className}
-    style={{ height: 'auto' }}
-  />
+  <img src="/logo-garmin-256.png" alt="Garmin" className={className} style={{ height: "auto" }} />
 );
+
+const GARMIN_PENDING_KEY = "garmin_oauth_pending";
 
 export function GarminConnectSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const { session, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   const hasHandledCallback = useRef(false);
+
   const {
     connection,
     activities,
@@ -37,24 +48,84 @@ export function GarminConnectSettings() {
     disconnect,
   } = useGarminConnect();
 
-  // Handle OAuth2 callback (code + state) - only once
+  // Handle OAuth2 callback (code + state) robustly (wait for auth session)
   useEffect(() => {
     const isCallback = searchParams.get("garmin_callback");
     const code = searchParams.get("code");
     const state = searchParams.get("state");
 
-    if (isCallback && code && state && !hasHandledCallback.current) {
-      hasHandledCallback.current = true;
-      
-      completeConnect(code, state).finally(() => {
-        // Clean up URL params
-        searchParams.delete("garmin_callback");
-        searchParams.delete("code");
-        searchParams.delete("state");
-        setSearchParams(searchParams, { replace: true });
-      });
+    if (!isCallback || !code || !state) return;
+
+    // Persist params so we can retry if auth session isn't ready yet
+    try {
+      sessionStorage.setItem(GARMIN_PENDING_KEY, JSON.stringify({ code, state }));
+    } catch {
+      // ignore
     }
-  }, [searchParams, completeConnect, setSearchParams]);
+
+    // Wait until auth is loaded and we have a session
+    if (authLoading) return;
+
+    if (!session?.access_token) {
+      toast({
+        title: "Ej inloggad",
+        description: "Logga in igen och försök koppla Garmin på nytt.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (hasHandledCallback.current) return;
+    hasHandledCallback.current = true;
+
+    completeConnect(code, state).then((ok) => {
+      if (!ok) {
+        // allow retry after a short delay if needed
+        hasHandledCallback.current = false;
+        return;
+      }
+
+      // Success -> clean up URL + stored pending data
+      try {
+        sessionStorage.removeItem(GARMIN_PENDING_KEY);
+      } catch {
+        // ignore
+      }
+
+      searchParams.delete("garmin_callback");
+      searchParams.delete("code");
+      searchParams.delete("state");
+      setSearchParams(searchParams, { replace: true });
+    });
+  }, [authLoading, session?.access_token, searchParams, completeConnect, setSearchParams, toast]);
+
+  // If we have stored pending OAuth params, retry once auth session is ready
+  useEffect(() => {
+    if (authLoading || !session?.access_token) return;
+    if (hasHandledCallback.current) return;
+
+    try {
+      const raw = sessionStorage.getItem(GARMIN_PENDING_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { code?: string; state?: string };
+      if (!parsed.code || !parsed.state) return;
+
+      hasHandledCallback.current = true;
+      completeConnect(parsed.code, parsed.state).then((ok) => {
+        if (ok) {
+          sessionStorage.removeItem(GARMIN_PENDING_KEY);
+          searchParams.delete("garmin_callback");
+          searchParams.delete("code");
+          searchParams.delete("state");
+          setSearchParams(searchParams, { replace: true });
+        } else {
+          hasHandledCallback.current = false;
+        }
+      });
+    } catch {
+      // ignore
+    }
+  }, [authLoading, session?.access_token, completeConnect, searchParams, setSearchParams]);
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return "-";
