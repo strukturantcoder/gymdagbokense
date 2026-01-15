@@ -3,8 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Dumbbell, Play, ListChecks, Save, Trophy, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-const STORAGE_KEY = 'training-onboarding-completed';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Step {
   icon: React.ReactNode;
@@ -14,8 +13,12 @@ interface Step {
 
 export default function TrainingOnboardingGuide() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+
+  // Use user-specific storage key to persist across sessions
+  const STORAGE_KEY = user ? `training-onboarding-completed-${user.id}` : 'training-onboarding-completed';
 
   const steps: Step[] = [
     {
@@ -46,13 +49,15 @@ export default function TrainingOnboardingGuide() {
   ];
 
   useEffect(() => {
+    if (!user) return;
+    
     const hasCompleted = localStorage.getItem(STORAGE_KEY);
     if (!hasCompleted) {
       // Small delay to let the page render first
       const timer = setTimeout(() => setIsOpen(true), 500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [user, STORAGE_KEY]);
 
   const handleClose = () => {
     localStorage.setItem(STORAGE_KEY, 'true');
