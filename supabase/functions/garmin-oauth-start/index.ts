@@ -39,11 +39,18 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const clientId = Deno.env.get("GARMIN_CONSUMER_KEY");
+
+    // Garmin credentials: prefer CONSUMER_* but fall back to CLIENT_* (some projects used these names)
+    const consumerKey = Deno.env.get("GARMIN_CONSUMER_KEY");
+    const altClientId = Deno.env.get("GARMIN_CLIENT_ID");
+    const clientId = consumerKey || altClientId;
 
     if (!clientId) {
       return new Response(
-        JSON.stringify({ error: "Garmin API credentials not configured" }),
+        JSON.stringify({
+          error: "Garmin API credentials not configured",
+          details: { hasConsumerKey: !!consumerKey, hasAltClientId: !!altClientId },
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -80,14 +87,21 @@ Deno.serve(async (req) => {
     console.log("Redirect URI:", callbackUrl);
 
     // Store the code verifier and state for the callback
-    await supabase.from("garmin_oauth_temp").upsert({
-      user_id: user.id,
-      oauth_token: state, // Using oauth_token field to store state
-      oauth_token_secret: codeVerifier, // Using oauth_token_secret to store code_verifier
-      code_verifier: codeVerifier,
-      state: state,
-      redirect_uri: callbackUrl,
-    }, { onConflict: "user_id" });
+    // NOTE: We set a generous expiry to avoid users timing out while authorizing in Garmin.
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+
+    await supabase.from("garmin_oauth_temp").upsert(
+      {
+        user_id: user.id,
+        oauth_token: state, // Using oauth_token field to store state
+        oauth_token_secret: codeVerifier, // Using oauth_token_secret to store code_verifier
+        code_verifier: codeVerifier,
+        state: state,
+        redirect_uri: callbackUrl,
+        expires_at: expiresAt,
+      },
+      { onConflict: "user_id" }
+    );
 
     // Build the authorization URL with OAuth2 PKCE parameters
     // Per Garmin spec: response_type, client_id, code_challenge, code_challenge_method are required

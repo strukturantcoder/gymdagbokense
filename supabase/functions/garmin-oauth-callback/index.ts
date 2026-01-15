@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     // Get the stored code verifier and validate state
     const { data: tempData, error: tempError } = await supabase
       .from("garmin_oauth_temp")
-      .select("code_verifier, state, redirect_uri")
+      .select("code_verifier, state, redirect_uri, expires_at")
       .eq("user_id", user.id)
       .single();
 
@@ -82,6 +82,19 @@ Deno.serve(async (req) => {
       console.error("Failed to get temp OAuth data:", tempError);
       return new Response(
         JSON.stringify({ error: "Invalid or expired OAuth session" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate expiry (garmin-test-config uses the same column)
+    if (tempData.expires_at && new Date(tempData.expires_at).getTime() < Date.now()) {
+      console.error("OAuth temp session expired:", tempData.expires_at);
+      return new Response(
+        JSON.stringify({
+          error: "OAuth session expired",
+          message: "Sessionen gick ut. Tryck 'Anslut med Garmin Connect™' igen och slutför anslutningen direkt.",
+          expired_at: tempData.expires_at,
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
