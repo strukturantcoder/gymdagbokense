@@ -63,12 +63,17 @@ const steps = [
   },
 ];
 
+const STORAGE_KEY = 'welcome_guide_seen';
+
 export default function WelcomeGuide({ userId }: WelcomeGuideProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
-    const hasSeenGuide = localStorage.getItem(`welcome_guide_seen_${userId}`);
+    // Don't run if userId is not available yet
+    if (!userId) return;
+    
+    const hasSeenGuide = localStorage.getItem(`${STORAGE_KEY}_${userId}`);
     if (!hasSeenGuide) {
       // Small delay to let the dashboard load first
       const timer = setTimeout(() => setIsOpen(true), 500);
@@ -77,7 +82,9 @@ export default function WelcomeGuide({ userId }: WelcomeGuideProps) {
   }, [userId]);
 
   const handleClose = () => {
-    localStorage.setItem(`welcome_guide_seen_${userId}`, 'true');
+    if (userId) {
+      localStorage.setItem(`${STORAGE_KEY}_${userId}`, 'true');
+    }
     setIsOpen(false);
   };
 

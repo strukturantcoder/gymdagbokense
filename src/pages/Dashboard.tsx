@@ -23,6 +23,7 @@ import AdBanner from '@/components/AdBanner';
 
 import ExerciseInfo from '@/components/ExerciseInfo';
 import WelcomeGuide from '@/components/WelcomeGuide';
+import GarminAnnouncementPopup from '@/components/GarminAnnouncementPopup';
 import OnboardingChecklist from '@/components/OnboardingChecklist';
 import ProgramRefineDialog from '@/components/ProgramRefineDialog';
 import SortableExercise from '@/components/SortableExercise';
@@ -412,6 +413,9 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Welcome Guide for new users */}
       {user && <WelcomeGuide userId={user.id} />}
+      
+      {/* Garmin Announcement Popup */}
+      {user && <GarminAnnouncementPopup userId={user.id} />}
       
       {/* Pending Invitations Popup */}
       {user && <PendingInvitationsPopup userId={user.id} />}
