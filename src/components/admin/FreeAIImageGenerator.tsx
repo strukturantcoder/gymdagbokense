@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { Download, Sparkles, Loader2, RefreshCw, Share2, Wand2, ImageIcon, Trash2, Clock, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +41,7 @@ export default function FreeAIImageGenerator() {
   const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [showSaved, setShowSaved] = useState(false);
+  const [includeBranding, setIncludeBranding] = useState(true);
 
   // Load saved images on mount
   useEffect(() => {
@@ -138,7 +140,11 @@ export default function FreeAIImageGenerator() {
           break;
       }
 
-      const fullPrompt = `${prompt}. ${formatPrompt}. Ultra high resolution, professional quality.`;
+      const brandingPrompt = includeBranding 
+        ? " Include the Gymdagboken logo (a stylized orange/black dumbbell icon) and the text 'Gymdagboken.se' in a subtle but visible way, integrated naturally into the image design."
+        : "";
+
+      const fullPrompt = `${prompt}. ${formatPrompt}.${brandingPrompt} Ultra high resolution, professional quality.`;
 
       const { data, error } = await supabase.functions.invoke("generate-challenge-image", {
         body: {
@@ -398,6 +404,23 @@ export default function FreeAIImageGenerator() {
               )}
             </div>
           )}
+
+          {/* Branding toggle */}
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-0.5">
+              <Label htmlFor="branding-toggle" className="text-base font-medium cursor-pointer">
+                Inkludera Gymdagboken-branding
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Lägg till loggan och "Gymdagboken.se" i bilden
+              </p>
+            </div>
+            <Switch
+              id="branding-toggle"
+              checked={includeBranding}
+              onCheckedChange={setIncludeBranding}
+            />
+          </div>
 
           {/* Format selection */}
           <div className="space-y-2">
