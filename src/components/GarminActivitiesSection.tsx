@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Watch, 
@@ -14,11 +15,13 @@ import {
   Activity,
   TrendingUp,
   Zap,
-  Loader2
+  Loader2,
+  Map
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
+import GarminRouteMapDialog from './GarminRouteMapDialog';
 
 interface GarminActivity {
   id: string;
@@ -59,12 +62,19 @@ const activityTypeIcons: Record<string, React.ReactNode> = {
   other: <Activity className="w-4 h-4" />
 };
 
+// Check if activity type typically has GPS
+const hasGpsSupport = (activityType: string): boolean => {
+  const gpsActivities = ['running', 'cycling', 'walking', 'hiking', 'swimming', 'trail_running', 'open_water_swimming'];
+  return gpsActivities.includes(activityType.toLowerCase());
+};
+
 export default function GarminActivitiesSection() {
   const { user } = useAuth();
   const [activities, setActivities] = useState<GarminActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasGarminConnection, setHasGarminConnection] = useState(false);
-
+  const [selectedActivity, setSelectedActivity] = useState<GarminActivity | null>(null);
+  const [mapDialogOpen, setMapDialogOpen] = useState(false);
   useEffect(() => {
     if (user) {
       fetchGarminData();
@@ -326,6 +336,22 @@ export default function GarminActivitiesSection() {
                             )}
                           </div>
                         </div>
+                        
+                        {/* Map button for GPS activities */}
+                        {hasGpsSupport(activity.activity_type) && activity.distance_meters && activity.distance_meters > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() => {
+                              setSelectedActivity(activity);
+                              setMapDialogOpen(true);
+                            }}
+                          >
+                            <Map className="w-4 h-4 mr-1" />
+                            Karta
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -335,6 +361,15 @@ export default function GarminActivitiesSection() {
           </ScrollArea>
         </CardContent>
       </Card>
+
+      {/* Map Dialog */}
+      {selectedActivity && (
+        <GarminRouteMapDialog
+          open={mapDialogOpen}
+          onOpenChange={setMapDialogOpen}
+          activity={selectedActivity}
+        />
+      )}
     </motion.div>
   );
 }
