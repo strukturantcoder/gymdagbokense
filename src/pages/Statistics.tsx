@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dumbbell, ArrowLeft, Loader2, TrendingUp, TrendingDown, Calendar, Flame, Weight, Footprints, MapPin, Timer, Zap, Sparkles, Minus } from 'lucide-react';
+import { Dumbbell, ArrowLeft, Loader2, TrendingUp, TrendingDown, Calendar, Flame, Weight, Footprints, MapPin, Timer, Zap, Sparkles, Minus, Watch } from 'lucide-react';
+import GarminActivitiesSection from '@/components/GarminActivitiesSection';
 import AdBanner from '@/components/AdBanner';
 import TrainingAIAnalysis from '@/components/TrainingAIAnalysis';
 import {
@@ -1022,6 +1023,15 @@ export default function Statistics() {
                   </CardContent>
                 </Card>
               </motion.div>
+            </div>
+
+            {/* Garmin Activities Section */}
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Watch className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold">Garmin Connect</h3>
+              </div>
+              <GarminActivitiesSection />
             </div>
           </TabsContent>
 
