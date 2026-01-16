@@ -6,36 +6,69 @@ const corsHeaders = {
 };
 
 // Map Garmin activity types to our activity types
-function mapActivityType(garminType: string): string {
-  const typeMap: Record<string, string> = {
+// Map Garmin activity types to our activity types
+function mapActivityType(garminType: string): { type: string; category: "cardio" | "strength" | "other" } {
+  const lowerType = garminType?.toLowerCase() || "";
+  
+  // Strength activities
+  const strengthTypes = [
+    "strength_training", "weight_training", "weightlifting", 
+    "gym", "crossfit", "functional_training", "bodyweight",
+    "kettlebell", "resistance_training"
+  ];
+  
+  if (strengthTypes.some(t => lowerType.includes(t))) {
+    return { type: "strength", category: "strength" };
+  }
+  
+  // Cardio type mapping
+  const cardioMap: Record<string, string> = {
     running: "running",
+    trail_running: "running",
+    treadmill_running: "running",
+    indoor_running: "running",
     cycling: "cycling",
+    indoor_cycling: "cycling",
+    virtual_cycling: "cycling",
+    mountain_biking: "cycling",
     swimming: "swimming",
+    pool_swimming: "swimming",
+    open_water_swimming: "swimming",
     walking: "walking",
     hiking: "hiking",
-    strength_training: "strength",
-    cardio: "cardio",
-    indoor_cycling: "cycling",
-    indoor_running: "running",
-    treadmill_running: "running",
-    elliptical: "cardio",
-    stair_climbing: "cardio",
+    elliptical: "elliptical",
+    stair_climbing: "stair_climbing",
     rowing: "rowing",
-    yoga: "yoga",
-    pilates: "pilates",
+    indoor_rowing: "rowing",
+    cardio: "cardio",
+    fitness_equipment: "cardio",
+    other: "other",
   };
-
-  return typeMap[garminType.toLowerCase()] || "other";
+  
+  for (const [key, value] of Object.entries(cardioMap)) {
+    if (lowerType.includes(key)) {
+      return { type: value, category: "cardio" };
+    }
+  }
+  
+  // Flexibility/other
+  const otherTypes = ["yoga", "pilates", "stretching", "meditation", "breathwork"];
+  if (otherTypes.some(t => lowerType.includes(t))) {
+    return { type: lowerType.replace(/_/g, " "), category: "other" };
+  }
+  
+  // Default to cardio for unknown workout types
+  return { type: "other", category: "cardio" };
 }
 
 // Check if activity type should be synced to cardio_logs
-function isCardioActivity(activityType: string): boolean {
-  const cardioTypes = [
-    "running", "cycling", "swimming", "walking", "hiking", 
-    "cardio", "rowing", "elliptical", "stair_climbing",
-    "indoor_cycling", "indoor_running", "treadmill_running"
-  ];
-  return cardioTypes.includes(activityType.toLowerCase());
+function isCardioActivity(garminType: string): boolean {
+  return mapActivityType(garminType).category === "cardio";
+}
+
+// Check if activity type should be synced to workout_logs (strength)
+function isStrengthActivity(garminType: string): boolean {
+  return mapActivityType(garminType).category === "strength";
 }
 
 // Garmin OAuth2 token refresh
@@ -236,6 +269,7 @@ Deno.serve(async (req) => {
     
     let syncedCount = 0;
     let cardioLogsSynced = 0;
+    let workoutLogsSynced = 0;
 
     // Process and store each activity
     for (const activity of activityList) {
@@ -243,34 +277,53 @@ Deno.serve(async (req) => {
       
       if (!garminActivityId) continue;
 
-      const mappedActivityType = mapActivityType(activity.activityType || "other");
+      const garminType = activity.activityType || "other";
+      const mapped = mapActivityType(garminType);
       const startTime = activity.startTimeInSeconds 
         ? new Date(activity.startTimeInSeconds * 1000).toISOString()
         : new Date().toISOString();
       const durationSeconds = activity.durationInSeconds || activity.activeTimeInSeconds;
+      const durationMinutes = durationSeconds ? Math.round(durationSeconds / 60) : 0;
       const distanceMeters = activity.distanceInMeters;
       const calories = activity.activeKilocalories || activity.calories;
+      const activityName = activity.activityName || garminType.replace(/_/g, " ") || "Aktivitet";
 
       // Check if this activity already exists
       const { data: existingActivity } = await supabase
         .from("garmin_activities")
-        .select("id, synced_to_cardio_log_id")
+        .select("id, synced_to_cardio_log_id, synced_to_workout_log_id")
         .eq("user_id", user.id)
         .eq("garmin_activity_id", garminActivityId)
         .maybeSingle();
 
       let cardioLogId: string | null = existingActivity?.synced_to_cardio_log_id || null;
+      let workoutLogId: string | null = existingActivity?.synced_to_workout_log_id || null;
 
-      // If it's a cardio activity and not already synced to cardio_logs, create one
-      if (isCardioActivity(activity.activityType || "") && !cardioLogId) {
+      // Sync to cardio_logs for cardio activities
+      if (isCardioActivity(garminType) && !cardioLogId) {
+        // Build detailed notes with Garmin data
+        const notesParts: string[] = [`Synkad från Garmin: ${activityName}`];
+        if (activity.averageHeartRateInBeatsPerMinute) {
+          notesParts.push(`Snitthjärta: ${activity.averageHeartRateInBeatsPerMinute} bpm`);
+        }
+        if (activity.maxHeartRateInBeatsPerMinute) {
+          notesParts.push(`Maxhjärta: ${activity.maxHeartRateInBeatsPerMinute} bpm`);
+        }
+        if (activity.elevationGainInMeters) {
+          notesParts.push(`Höjdmeter: ${Math.round(activity.elevationGainInMeters)} m`);
+        }
+        if (calories) {
+          notesParts.push(`Kalorier: ${Math.round(calories)} kcal`);
+        }
+
         const cardioLogData = {
           user_id: user.id,
-          activity_type: mappedActivityType,
-          duration_minutes: durationSeconds ? Math.round(durationSeconds / 60) : 0,
+          activity_type: mapped.type,
+          duration_minutes: durationMinutes,
           distance_km: distanceMeters ? Number((distanceMeters / 1000).toFixed(2)) : null,
-          calories_burned: calories || null,
+          calories_burned: calories ? Math.round(calories) : null,
           completed_at: startTime,
-          notes: `Synkad från Garmin: ${activity.activityName || activity.activityType || "Aktivitet"}`,
+          notes: notesParts.join(" | "),
         };
 
         const { data: newCardioLog, error: cardioError } = await supabase
@@ -282,24 +335,129 @@ Deno.serve(async (req) => {
         if (!cardioError && newCardioLog) {
           cardioLogId = newCardioLog.id;
           cardioLogsSynced++;
+          console.log(`Created cardio_log for ${activityName}: ${cardioLogId}`);
+
+          // Award XP for cardio: 2 XP per minute + 10 XP per km
+          const distanceKm = distanceMeters ? distanceMeters / 1000 : 0;
+          const xpEarned = Math.round(durationMinutes * 2 + distanceKm * 10);
+          
+          // Update user stats with XP and cardio totals
+          const { data: currentStats } = await supabase
+            .from("user_stats")
+            .select("total_xp, total_cardio_sessions, total_cardio_minutes, total_cardio_distance_km")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (currentStats) {
+            await supabase
+              .from("user_stats")
+              .update({
+                total_xp: currentStats.total_xp + xpEarned,
+                total_cardio_sessions: currentStats.total_cardio_sessions + 1,
+                total_cardio_minutes: currentStats.total_cardio_minutes + durationMinutes,
+                total_cardio_distance_km: Number(currentStats.total_cardio_distance_km) + distanceKm,
+              })
+              .eq("user_id", user.id);
+            console.log(`Awarded ${xpEarned} XP for cardio activity`);
+          } else {
+            // Create user_stats if it doesn't exist
+            await supabase
+              .from("user_stats")
+              .insert({
+                user_id: user.id,
+                total_xp: xpEarned,
+                total_cardio_sessions: 1,
+                total_cardio_minutes: durationMinutes,
+                total_cardio_distance_km: distanceKm,
+              });
+          }
+        } else if (cardioError) {
+          console.error(`Failed to create cardio_log for ${activityName}:`, cardioError);
+        }
+      }
+
+      // Sync to workout_logs for strength activities
+      if (isStrengthActivity(garminType) && !workoutLogId) {
+        // Build detailed notes with Garmin data
+        const notesParts: string[] = [`Synkad från Garmin: ${activityName}`];
+        if (activity.averageHeartRateInBeatsPerMinute) {
+          notesParts.push(`Snitthjärta: ${activity.averageHeartRateInBeatsPerMinute} bpm`);
+        }
+        if (calories) {
+          notesParts.push(`Kalorier: ${Math.round(calories)} kcal`);
+        }
+
+        const workoutLogData = {
+          user_id: user.id,
+          workout_day: `Garmin: ${activityName}`,
+          duration_minutes: durationMinutes,
+          completed_at: startTime,
+          notes: notesParts.join(" | "),
+        };
+
+        const { data: newWorkoutLog, error: workoutError } = await supabase
+          .from("workout_logs")
+          .insert(workoutLogData)
+          .select("id")
+          .single();
+
+        if (!workoutError && newWorkoutLog) {
+          workoutLogId = newWorkoutLog.id;
+          workoutLogsSynced++;
+          console.log(`Created workout_log for ${activityName}: ${workoutLogId}`);
+
+          // Award XP for strength: 50 base + duration bonus (capped at 200 XP)
+          const xpEarned = Math.min(200, 50 + Math.floor(durationMinutes / 5) * 5);
+          
+          // Update user stats with XP and workout totals
+          const { data: currentStats } = await supabase
+            .from("user_stats")
+            .select("total_xp, total_workouts, total_minutes")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (currentStats) {
+            await supabase
+              .from("user_stats")
+              .update({
+                total_xp: currentStats.total_xp + xpEarned,
+                total_workouts: currentStats.total_workouts + 1,
+                total_minutes: currentStats.total_minutes + durationMinutes,
+              })
+              .eq("user_id", user.id);
+            console.log(`Awarded ${xpEarned} XP for strength activity`);
+          } else {
+            // Create user_stats if it doesn't exist
+            await supabase
+              .from("user_stats")
+              .insert({
+                user_id: user.id,
+                total_xp: xpEarned,
+                total_workouts: 1,
+                total_minutes: durationMinutes,
+              });
+          }
+        } else if (workoutError) {
+          console.error(`Failed to create workout_log for ${activityName}:`, workoutError);
         }
       }
 
       const activityData = {
         user_id: user.id,
         garmin_activity_id: garminActivityId,
-        activity_type: mappedActivityType,
-        activity_name: activity.activityName || activity.activityType || "Garmin Activity",
+        activity_type: mapped.type,
+        activity_name: activityName,
         start_time: startTime,
         duration_seconds: durationSeconds,
         distance_meters: distanceMeters,
-        calories: calories,
+        calories: calories ? Math.round(calories) : null,
         average_heart_rate: activity.averageHeartRateInBeatsPerMinute,
         max_heart_rate: activity.maxHeartRateInBeatsPerMinute,
         average_speed: activity.averageSpeedInMetersPerSecond,
         elevation_gain: activity.elevationGainInMeters,
         raw_data: activity,
         synced_to_cardio_log_id: cardioLogId,
+        synced_to_workout_log_id: workoutLogId,
       };
 
       const { error: upsertError } = await supabase
@@ -310,6 +468,8 @@ Deno.serve(async (req) => {
 
       if (!upsertError) {
         syncedCount++;
+      } else {
+        console.error(`Failed to upsert garmin_activity ${garminActivityId}:`, upsertError);
       }
     }
 
@@ -319,13 +479,16 @@ Deno.serve(async (req) => {
       .update({ last_sync_at: new Date().toISOString() })
       .eq("user_id", user.id);
 
+    console.log(`Sync complete: ${syncedCount} activities, ${cardioLogsSynced} cardio, ${workoutLogsSynced} strength`);
+
     return new Response(
       JSON.stringify({
         success: true,
         syncedCount,
         cardioLogsSynced,
+        workoutLogsSynced,
         totalActivities: activityList.length,
-        message: `Synkade ${syncedCount} aktiviteter från Garmin (${cardioLogsSynced} nya cardio-loggar)`,
+        message: `Synkade ${syncedCount} aktiviteter från Garmin (${cardioLogsSynced} kondition, ${workoutLogsSynced} styrka)`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
