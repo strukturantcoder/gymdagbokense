@@ -16,12 +16,14 @@ import {
   TrendingUp,
   Zap,
   Loader2,
-  Map
+  Map,
+  Instagram
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import GarminRouteMapDialog from './GarminRouteMapDialog';
+import ShareGarminToInstagramDialog from './ShareGarminToInstagramDialog';
 
 interface GarminActivity {
   id: string;
@@ -75,6 +77,9 @@ export default function GarminActivitiesSection() {
   const [hasGarminConnection, setHasGarminConnection] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<GarminActivity | null>(null);
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [activityToShare, setActivityToShare] = useState<GarminActivity | null>(null);
+
   useEffect(() => {
     if (user) {
       fetchGarminData();
@@ -337,21 +342,36 @@ export default function GarminActivitiesSection() {
                           </div>
                         </div>
                         
-                        {/* Map button for GPS activities */}
-                        {hasGpsSupport(activity.activity_type) && activity.distance_meters && activity.distance_meters > 0 && (
+                        {/* Action buttons */}
+                        <div className="flex flex-col gap-2 shrink-0">
+                          {/* Map button for GPS activities */}
+                          {hasGpsSupport(activity.activity_type) && activity.distance_meters && activity.distance_meters > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedActivity(activity);
+                                setMapDialogOpen(true);
+                              }}
+                            >
+                              <Map className="w-4 h-4 mr-1" />
+                              Karta
+                            </Button>
+                          )}
+                          
+                          {/* Instagram share button */}
                           <Button
                             variant="outline"
                             size="sm"
-                            className="shrink-0"
                             onClick={() => {
-                              setSelectedActivity(activity);
-                              setMapDialogOpen(true);
+                              setActivityToShare(activity);
+                              setShareDialogOpen(true);
                             }}
                           >
-                            <Map className="w-4 h-4 mr-1" />
-                            Karta
+                            <Instagram className="w-4 h-4 mr-1" />
+                            Dela
                           </Button>
-                        )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -368,6 +388,15 @@ export default function GarminActivitiesSection() {
           open={mapDialogOpen}
           onOpenChange={setMapDialogOpen}
           activity={selectedActivity}
+        />
+      )}
+
+      {/* Share Dialog */}
+      {activityToShare && (
+        <ShareGarminToInstagramDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          activity={activityToShare}
         />
       )}
     </motion.div>
