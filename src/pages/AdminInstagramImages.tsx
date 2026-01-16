@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import MarketingImageGenerator from "@/components/admin/MarketingImageGenerator";
 import AppScreenshotGenerator from "@/components/admin/AppScreenshotGenerator";
 import { TeamCompetitionGenerator } from "@/components/admin/TeamCompetitionGenerator";
+import FreeAIImageGenerator from "@/components/admin/FreeAIImageGenerator";
 
 // Competition content configuration
 interface CompetitionContent {
@@ -820,7 +821,10 @@ Lycka till! 🚀
         </TabsContent>
 
         <TabsContent value="marketing">
-          <MarketingImageGenerator />
+          <div className="space-y-8">
+            <FreeAIImageGenerator />
+            <MarketingImageGenerator />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
