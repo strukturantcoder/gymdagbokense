@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Download, Sparkles, Loader2, RefreshCw, Share2, Wand2, ImageIcon, Trash2, Clock, FolderOpen } from "lucide-react";
+import { Download, Sparkles, Loader2, RefreshCw, Share2, Wand2, ImageIcon, Trash2, Clock, FolderOpen, Copy, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +42,11 @@ export default function FreeAIImageGenerator() {
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [showSaved, setShowSaved] = useState(false);
   const [includeBranding, setIncludeBranding] = useState(true);
+  
+  // Text generation
+  const [generatedCaption, setGeneratedCaption] = useState("");
+  const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
+  const [autoGenerateCaption, setAutoGenerateCaption] = useState(true);
 
   // Load saved images on mount
   useEffect(() => {
@@ -107,6 +112,32 @@ export default function FreeAIImageGenerator() {
     }
   };
 
+  const generateCaption = async (imagePrompt: string) => {
+    setIsGeneratingCaption(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-marketing-content", {
+        body: {
+          template: "custom",
+          templateName: "Instagram-inlägg",
+          templateDescription: imagePrompt,
+          format: imageFormat === "portrait" ? "story" : "post",
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.caption && data?.hashtags) {
+        const fullCaption = `${data.caption}\n\n${data.hashtags}`;
+        setGeneratedCaption(fullCaption);
+      }
+    } catch (error) {
+      console.error("Error generating caption:", error);
+      // Don't show error toast for caption, it's optional
+    } finally {
+      setIsGeneratingCaption(false);
+    }
+  };
+
   const getFormatDescription = () => {
     switch (imageFormat) {
       case "square":
@@ -164,6 +195,11 @@ export default function FreeAIImageGenerator() {
         setGeneratedImage(data.imageUrl);
         // Automatically save the image
         await saveImage(data.imageUrl, prompt, imageFormat);
+        
+        // Auto-generate caption if enabled
+        if (autoGenerateCaption) {
+          generateCaption(prompt);
+        }
       } else {
         toast.error("Ingen bild returnerades");
       }
@@ -276,6 +312,7 @@ export default function FreeAIImageGenerator() {
     setPrompt(image.prompt);
     setImageFormat(image.format as typeof imageFormat);
     setShowSaved(false);
+    setGeneratedCaption(""); // Clear caption when loading saved image
     toast.success("Bild laddad!");
   };
 
@@ -286,6 +323,11 @@ export default function FreeAIImageGenerator() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const copyCaption = () => {
+    navigator.clipboard.writeText(generatedCaption);
+    toast.success("Text kopierad!");
   };
 
   const examplePrompts = [
@@ -422,6 +464,23 @@ export default function FreeAIImageGenerator() {
             />
           </div>
 
+          {/* Auto-generate caption toggle */}
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-0.5">
+              <Label htmlFor="caption-toggle" className="text-base font-medium cursor-pointer">
+                Generera Instagram-text automatiskt
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                AI skapar en passande text till din bild
+              </p>
+            </div>
+            <Switch
+              id="caption-toggle"
+              checked={autoGenerateCaption}
+              onCheckedChange={setAutoGenerateCaption}
+            />
+          </div>
+
           {/* Format selection */}
           <div className="space-y-2">
             <Label>Bildformat</Label>
@@ -496,6 +555,47 @@ export default function FreeAIImageGenerator() {
                     className="w-full h-auto max-h-[500px] object-contain"
                   />
                 </div>
+              </div>
+
+              {/* Generated caption section */}
+              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Instagram-text
+                  </Label>
+                  {isGeneratingCaption ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => generateCaption(prompt)}
+                      className="h-8"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Generera ny
+                    </Button>
+                  )}
+                </div>
+                <Textarea
+                  value={generatedCaption}
+                  onChange={(e) => setGeneratedCaption(e.target.value)}
+                  placeholder={isGeneratingCaption ? "Genererar text..." : "Klicka på 'Generera ny' för att skapa en text till bilden"}
+                  rows={6}
+                  className="resize-none"
+                />
+                {generatedCaption && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyCaption}
+                    className="w-full"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Kopiera text
+                  </Button>
+                )}
               </div>
 
               {/* Edit image section */}
