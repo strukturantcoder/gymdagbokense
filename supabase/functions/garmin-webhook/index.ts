@@ -6,37 +6,57 @@ const corsHeaders = {
 };
 
 // Map Garmin activity types to our types
-function mapActivityType(garminType: string): string {
-  const typeMap: Record<string, string> = {
+function mapActivityType(garminType: string): { type: string; category: "cardio" | "strength" | "other" } {
+  const lowerType = garminType?.toLowerCase() || "";
+  
+  // Strength activities
+  const strengthTypes = [
+    "strength_training", "weight_training", "weightlifting", 
+    "gym", "crossfit", "functional_training", "bodyweight",
+    "kettlebell", "resistance_training"
+  ];
+  
+  if (strengthTypes.some(t => lowerType.includes(t))) {
+    return { type: "strength", category: "strength" };
+  }
+  
+  // Cardio type mapping
+  const cardioMap: Record<string, string> = {
     running: "running",
+    trail_running: "running",
+    treadmill_running: "running",
+    indoor_running: "running",
     cycling: "cycling",
+    indoor_cycling: "cycling",
+    virtual_cycling: "cycling",
+    mountain_biking: "cycling",
     swimming: "swimming",
+    pool_swimming: "swimming",
+    open_water_swimming: "swimming",
     walking: "walking",
     hiking: "hiking",
-    fitness_equipment: "gym",
-    strength_training: "strength",
-    cardio: "cardio",
-    indoor_cycling: "cycling",
-    indoor_running: "running",
-    treadmill_running: "running",
-    elliptical: "cardio",
-    stair_climbing: "cardio",
+    elliptical: "elliptical",
+    stair_climbing: "stair_climbing",
     rowing: "rowing",
-    yoga: "yoga",
-    pilates: "pilates",
-    other: "other",
+    indoor_rowing: "rowing",
+    cardio: "cardio",
+    fitness_equipment: "cardio",
   };
-  return typeMap[garminType.toLowerCase()] || "other";
-}
-
-// Check if activity type should be synced to cardio_logs
-function isCardioActivity(activityType: string): boolean {
-  const cardioTypes = [
-    "running", "cycling", "swimming", "walking", "hiking", 
-    "cardio", "rowing", "elliptical", "stair_climbing",
-    "indoor_cycling", "indoor_running", "treadmill_running"
-  ];
-  return cardioTypes.includes(activityType.toLowerCase());
+  
+  for (const [key, value] of Object.entries(cardioMap)) {
+    if (lowerType.includes(key)) {
+      return { type: value, category: "cardio" };
+    }
+  }
+  
+  // Flexibility/other
+  const otherTypes = ["yoga", "pilates", "stretching", "meditation", "breathwork"];
+  if (otherTypes.some(t => lowerType.includes(t))) {
+    return { type: lowerType.replace(/_/g, " "), category: "other" };
+  }
+  
+  // Default to other
+  return { type: "other", category: "other" };
 }
 
 Deno.serve(async (req) => {
@@ -89,34 +109,38 @@ Deno.serve(async (req) => {
         
         if (!garminActivityId) continue;
 
-        const mappedActivityType = mapActivityType(activity.activityType || "other");
+        const garminActivityType = activity.activityType || "other";
+        const mapped = mapActivityType(garminActivityType);
         const startTime = activity.startTimeInSeconds 
           ? new Date(activity.startTimeInSeconds * 1000).toISOString()
           : new Date().toISOString();
         const durationSeconds = activity.durationInSeconds || activity.activeTimeInSeconds;
+        const durationMinutes = durationSeconds ? Math.round(durationSeconds / 60) : 0;
         const distanceMeters = activity.distanceInMeters;
         const calories = activity.activeKilocalories || activity.calories;
+        const activityName = activity.activityName || garminActivityType.replace(/_/g, " ");
 
         // Check if this activity already exists
         const { data: existingActivity } = await supabase
           .from("garmin_activities")
-          .select("id, synced_to_cardio_log_id")
+          .select("id, synced_to_cardio_log_id, synced_to_workout_log_id")
           .eq("user_id", userId)
           .eq("garmin_activity_id", garminActivityId)
           .maybeSingle();
 
         let cardioLogId: string | null = existingActivity?.synced_to_cardio_log_id || null;
+        let workoutLogId: string | null = existingActivity?.synced_to_workout_log_id || null;
 
         // If it's a cardio activity and not already synced to cardio_logs, create one
-        if (isCardioActivity(activity.activityType || "") && !cardioLogId) {
+        if (mapped.category === "cardio" && !cardioLogId && durationMinutes > 0) {
           const cardioLogData = {
             user_id: userId,
-            activity_type: mappedActivityType,
-            duration_minutes: durationSeconds ? Math.round(durationSeconds / 60) : 0,
+            activity_type: mapped.type,
+            duration_minutes: durationMinutes,
             distance_km: distanceMeters ? Number((distanceMeters / 1000).toFixed(2)) : null,
             calories_burned: calories || null,
             completed_at: startTime,
-            notes: `Synkad från Garmin: ${activity.activityName || activity.activityType || "Aktivitet"}`,
+            notes: `Synkad från Garmin: ${activityName}`,
           };
 
           const { data: newCardioLog, error: cardioError } = await supabase
@@ -130,11 +154,70 @@ Deno.serve(async (req) => {
           }
         }
 
+        // If it's a strength activity and not already synced to workout_logs, create one
+        if (mapped.category === "strength" && !workoutLogId && durationMinutes > 0) {
+          const notesParts: string[] = [`Synkad från Garmin: ${activityName}`];
+          if (activity.averageHeartRateInBeatsPerMinute) {
+            notesParts.push(`Snitthjärta: ${activity.averageHeartRateInBeatsPerMinute} bpm`);
+          }
+          if (calories) {
+            notesParts.push(`Kalorier: ${Math.round(calories)} kcal`);
+          }
+
+          const workoutLogData = {
+            user_id: userId,
+            workout_day: `Garmin: ${activityName}`,
+            duration_minutes: durationMinutes,
+            completed_at: startTime,
+            notes: notesParts.join(" | "),
+          };
+
+          const { data: newWorkoutLog, error: workoutError } = await supabase
+            .from("workout_logs")
+            .insert(workoutLogData)
+            .select("id")
+            .single();
+
+          if (!workoutError && newWorkoutLog) {
+            workoutLogId = newWorkoutLog.id;
+            console.log("Created workout log from webhook:", workoutLogId);
+
+            // Award XP for strength: 50 base + duration bonus (capped at 200 XP)
+            const xpEarned = Math.min(200, 50 + Math.floor(durationMinutes / 5) * 5);
+            
+            const { data: currentStats } = await supabase
+              .from("user_stats")
+              .select("total_xp, total_workouts, total_minutes")
+              .eq("user_id", userId)
+              .maybeSingle();
+
+            if (currentStats) {
+              await supabase
+                .from("user_stats")
+                .update({
+                  total_xp: currentStats.total_xp + xpEarned,
+                  total_workouts: currentStats.total_workouts + 1,
+                  total_minutes: currentStats.total_minutes + durationMinutes,
+                })
+                .eq("user_id", userId);
+            } else {
+              await supabase
+                .from("user_stats")
+                .insert({
+                  user_id: userId,
+                  total_xp: xpEarned,
+                  total_workouts: 1,
+                  total_minutes: durationMinutes,
+                });
+            }
+          }
+        }
+
         const activityData = {
           user_id: userId,
           garmin_activity_id: garminActivityId,
-          activity_type: mappedActivityType,
-          activity_name: activity.activityName || activity.activityType || "Garmin Activity",
+          activity_type: mapped.type,
+          activity_name: activityName,
           start_time: startTime,
           duration_seconds: durationSeconds,
           distance_meters: distanceMeters,
@@ -145,6 +228,7 @@ Deno.serve(async (req) => {
           elevation_gain: activity.elevationGainInMeters,
           raw_data: activity,
           synced_to_cardio_log_id: cardioLogId,
+          synced_to_workout_log_id: workoutLogId,
         };
 
         await supabase
