@@ -395,11 +395,13 @@ export default function StrengthBentoGrid() {
 
         {/* Programs Section Header */}
         {programs.length > 0 && (
-          <div className="col-span-2 md:col-span-3 flex items-center justify-between pt-2">
-            <h3 className="font-display font-bold text-sm">Mina program</h3>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/public-programs')} className="text-xs h-7">
-              Utforska fler <ChevronRight className="w-3 h-3 ml-1" />
-            </Button>
+          <div className="col-span-2 md:col-span-3 pt-4">
+            <div className="flex items-center justify-between border-l-4 border-primary bg-primary/5 rounded-r-lg px-3 py-2">
+              <h3 className="font-display font-bold text-sm text-foreground">Mina program</h3>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/public-programs')} className="text-xs h-7 text-primary hover:text-primary">
+                Utforska fler <ChevronRight className="w-3 h-3 ml-1" />
+              </Button>
+            </div>
           </div>
         )}
 
@@ -480,11 +482,13 @@ export default function StrengthBentoGrid() {
         {/* Recent Workouts Section */}
         {recentLogs.length > 0 && (
           <>
-            <div className="col-span-2 md:col-span-3 flex items-center justify-between pt-2">
-              <h3 className="font-display font-bold text-sm">Senaste pass</h3>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/workout-log')} className="text-xs h-7">
-                Visa alla <ChevronRight className="w-3 h-3 ml-1" />
-              </Button>
+            <div className="col-span-2 md:col-span-3 pt-4">
+              <div className="flex items-center justify-between border-l-4 border-primary bg-primary/5 rounded-r-lg px-3 py-2">
+                <h3 className="font-display font-bold text-sm text-foreground">Senaste pass</h3>
+                <Button variant="ghost" size="sm" onClick={() => navigate('/workout-log')} className="text-xs h-7 text-primary hover:text-primary">
+                  Visa alla <ChevronRight className="w-3 h-3 ml-1" />
+                </Button>
+              </div>
             </div>
 
             {recentLogs.slice(0, 3).map((log, index) => (
