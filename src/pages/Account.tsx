@@ -425,34 +425,33 @@ export default function Account() {
         </div>
       </header>
 
-      {/* Main content - fixed height, no scroll */}
-      <main className="flex-1 flex flex-col px-3 py-3 md:px-4 md:py-4 pb-16 md:pb-4 overflow-hidden">
-        {/* Top Ad Banner */}
-        <div className="shrink-0 mb-3">
+      {/* Main content - scrollable */}
+      <main className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 pb-20 md:pb-4">
+        <div className="space-y-3">
+          {/* Top Ad Banner */}
           <AdBanner format="mobile_banner" placement="account_top" showPremiumPrompt={false} />
-        </div>
-        
-        {/* User Profile Card - compact */}
-        <Card className="shrink-0 mb-3">
-          <CardContent className="p-3 flex items-center gap-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-primary/10">
-                {profile?.display_name?.slice(0, 2).toUpperCase() || user?.email?.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">{profile?.display_name || 'Användare'}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
+          
+          {/* User Profile Card - compact */}
+          <Card>
+            <CardContent className="p-3 flex items-center gap-3">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10">
+                  {profile?.display_name?.slice(0, 2).toUpperCase() || user?.email?.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{profile?.display_name || 'Användare'}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
 
-        {/* Account section cards - 2x3 grid (excluding admin) */}
-        <div className="flex-1 grid grid-cols-2 gap-2 min-h-0 content-start">
+          {/* Account section cards - 2x3 grid (excluding admin) */}
+          <div className="grid grid-cols-2 gap-2">
           {accountSections
             .filter(sec => !sec.adminOnly)
             .map((sec, index) => (
@@ -477,33 +476,31 @@ export default function Account() {
               </Card>
             </motion.div>
           ))}
-        </div>
+          </div>
 
-        {/* Admin button - separate from grid, only for admins */}
-        {isAdmin && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="shrink-0 mt-3"
-          >
-            <Card 
-              className="cursor-pointer bg-gradient-to-br from-red-500/20 to-rose-500/20 border-red-500/30 hover:border-red-500/60 transition-all"
-              onClick={() => navigate('/admin')}
+          {/* Admin button - separate from grid, only for admins */}
+          {isAdmin && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
             >
-              <CardContent className="p-3 flex items-center gap-3">
-                <Shield className="w-5 h-5 text-red-500" />
-                <div>
-                  <p className="text-sm font-semibold">Admin</p>
-                  <p className="text-[10px] text-muted-foreground">Adminpanel</p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+              <Card 
+                className="cursor-pointer bg-gradient-to-br from-red-500/20 to-rose-500/20 border-red-500/30 hover:border-red-500/60 transition-all"
+                onClick={() => navigate('/admin')}
+              >
+                <CardContent className="p-3 flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-red-500" />
+                  <div>
+                    <p className="text-sm font-semibold">Admin</p>
+                    <p className="text-[10px] text-muted-foreground">Adminpanel</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
-        {/* Update Button */}
-        <div className="shrink-0 mt-3">
+          {/* Update Button */}
           <Button 
             variant="outline" 
             className="w-full" 
@@ -517,16 +514,14 @@ export default function Account() {
             )}
             {isClearing ? 'Uppdaterar...' : 'Rensa cache & uppdatera'}
           </Button>
-        </div>
 
-        {/* Bottom Ad Banner - after cache button */}
-        <div className="shrink-0 mt-3">
+          {/* Bottom Ad Banner - after cache button */}
           <AdBanner format="mobile_banner" placement="account_bottom" showPremiumPrompt={false} />
-        </div>
 
-        {/* Version info */}
-        <div className="shrink-0 mt-2 text-center">
-          <p className="text-[10px] text-muted-foreground">Version {APP_VERSION}</p>
+          {/* Version info */}
+          <div className="text-center">
+            <p className="text-[10px] text-muted-foreground">Version {APP_VERSION}</p>
+          </div>
         </div>
       </main>
     </div>
