@@ -125,3 +125,6 @@ verify_jwt = false
 
 [functions.suggest-goals]
 verify_jwt = true
+
+[functions.delete-workout-log]
+verify_jwt = true

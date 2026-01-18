@@ -713,23 +713,28 @@ export default function WorkoutLogContent() {
 
   const handleDeleteLog = async () => {
     if (!selectedLog) return;
-    
+
     setIsDeleting(true);
     try {
-      // Delete exercise logs first (cascade would handle this but being explicit)
-      await supabase
-        .from('exercise_logs')
-        .delete()
-        .eq('workout_log_id', selectedLog.id);
-      
-      // Delete the workout log
-      const { error } = await supabase
-        .from('workout_logs')
-        .delete()
-        .eq('id', selectedLog.id);
-      
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const { error } = await supabase.functions.invoke('delete-workout-log', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: {
+          workoutLogId: selectedLog.id,
+        },
+      });
+
       if (error) throw error;
-      
+
       toast.success('Träningspass borttaget');
       setShowDeleteLogDialog(false);
       setShowLogDetails(false);
