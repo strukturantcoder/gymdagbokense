@@ -510,7 +510,7 @@ export default function CardioLog() {
   }
 
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
       {/* Compact Header */}
       <header className="border-b border-border bg-card shrink-0">
         <div className="px-3 py-2 md:px-4 md:py-3">

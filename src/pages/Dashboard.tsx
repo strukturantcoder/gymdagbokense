@@ -41,7 +41,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
       {/* Welcome Guide for new users */}
       {user && <WelcomeGuide userId={user.id} />}
       

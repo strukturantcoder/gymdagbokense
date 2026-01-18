@@ -152,7 +152,7 @@ const CreatorProfile = () => {
   }
 
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
       {/* Scrollable content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-4">
         {/* Top Ad Banner */}

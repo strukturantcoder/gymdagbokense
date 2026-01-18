@@ -347,7 +347,7 @@ export default function Account() {
   // If a section is selected, show that content
   if (section) {
     return (
-      <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+      <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
         {/* Header */}
         <header className="border-b border-border bg-card shrink-0">
           <div className="px-3 py-2 md:px-4 md:py-3">
@@ -388,7 +388,7 @@ export default function Account() {
 
   // Main account section view
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
       <WeightLogDialog
         open={showWeightDialog}
         onOpenChange={setShowWeightDialog}
