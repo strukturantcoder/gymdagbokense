@@ -72,7 +72,7 @@ export default function Training() {
     if (type === 'strength') {
       navigate('/workout-log');
     } else if (type === 'crossfit') {
-      navigate('/workout-session?type=crossfit');
+      navigate('/training/session?type=crossfit');
     } else if (type === 'cardio') {
       navigate('/cardio-log');
     }

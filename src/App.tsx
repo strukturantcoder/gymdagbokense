@@ -39,6 +39,8 @@ const JoinTeam = lazy(() => import("./pages/JoinTeam"));
 const EmailHelp = lazy(() => import("./pages/EmailHelp"));
 const PublicPrograms = lazy(() => import("./pages/PublicPrograms"));
 const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
+const WorkoutLog = lazy(() => import("./pages/WorkoutLog"));
+const CardioLog = lazy(() => import("./pages/CardioLog"));
 const queryClient = new QueryClient();
 
 // Minimal loading fallback
@@ -49,7 +51,7 @@ const PageLoader = () => (
 );
 
 // Pages that should show bottom nav
-const pagesWithBottomNav = ["/dashboard", "/training", "/stats", "/social", "/account"];
+const pagesWithBottomNav = ["/dashboard", "/training", "/stats", "/social", "/account", "/workout-log", "/cardio-log", "/social/friends", "/social/teams", "/social/challenges", "/social/pool", "/social/community", "/social/achievements", "/stats/strength", "/stats/cardio", "/stats/crossfit", "/stats/weight", "/account/profile", "/account/notifications", "/account/garmin"];
 
 const AppContent = () => {
   const location = useLocation();
@@ -69,7 +71,9 @@ const AppContent = () => {
             <Route path="/log" element={<Training />} />
             <Route path="/cardio" element={<Training />} />
             <Route path="/stats" element={<Statistics />} />
+            <Route path="/stats/:category" element={<Statistics />} />
             <Route path="/social" element={<Social />} />
+            <Route path="/social/:category" element={<Social />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
@@ -83,6 +87,9 @@ const AppContent = () => {
             <Route path="/admin/premium" element={<AdminPremium />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/account/:section" element={<Account />} />
+            <Route path="/workout-log" element={<WorkoutLog />} />
+            <Route path="/cardio-log" element={<CardioLog />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-canceled" element={<PaymentCanceled />} />
             <Route path="/join-team/:code" element={<JoinTeam />} />

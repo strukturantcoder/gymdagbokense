@@ -1,26 +1,32 @@
-import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { Scale, Watch } from 'lucide-react';
 import { GarminConnectSettings } from '@/components/GarminConnectSettings';
+import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { APP_VERSION, forceAppUpdate } from '@/components/PWAUpdateNotification';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { 
   User, Camera, Loader2, ArrowLeft, Crown,
-  LogOut, Settings, Sun, Moon, RefreshCw, Bell
+  LogOut, Settings, Sun, Moon, RefreshCw, Bell, Save
 } from 'lucide-react';
 import WeightLogDialog from '@/components/WeightLogDialog';
+import WeightHistoryChart from '@/components/WeightHistoryChart';
 import { motion } from 'framer-motion';
 
 interface Profile {
   display_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
 }
 
 const accountSections = [
@@ -81,15 +87,21 @@ const accountSections = [
 ];
 
 export default function Account() {
-  const { user, loading, signOut, session, checkSubscription: authCheckSubscription } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const { section } = useParams<{ section?: string }>();
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [showWeightDialog, setShowWeightDialog] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Profile form state
+  const [displayName, setDisplayName] = useState('');
+  const [bio, setBio] = useState('');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -104,12 +116,19 @@ export default function Account() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.display_name || '');
+      setBio(profile.bio || '');
+    }
+  }, [profile]);
+
   const fetchProfile = async () => {
     if (!user) return;
     
     const { data } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url')
+      .select('display_name, avatar_url, bio')
       .eq('user_id', user.id)
       .single();
 
@@ -148,20 +167,29 @@ export default function Account() {
     }
   };
 
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        display_name: displayName,
+        bio: bio,
+      })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast.error('Kunde inte spara profil');
+    } else {
+      toast.success('Profil sparad!');
+      fetchProfile();
+    }
+    setIsSaving(false);
+  };
+
   const handleSectionClick = (id: string) => {
     switch (id) {
-      case 'profile':
-        navigate('/account/profile');
-        break;
-      case 'weight':
-        setShowWeightDialog(true);
-        break;
-      case 'notifications':
-        navigate('/account/notifications');
-        break;
-      case 'garmin':
-        navigate('/account/garmin');
-        break;
       case 'theme':
         setTheme(theme === 'dark' ? 'light' : 'dark');
         toast.success(`Tema ändrat till ${theme === 'dark' ? 'ljust' : 'mörkt'}`);
@@ -169,6 +197,16 @@ export default function Account() {
       case 'maintenance':
         handleForceUpdate();
         break;
+      default:
+        navigate(`/account/${id}`);
+    }
+  };
+
+  const handleBack = () => {
+    if (section) {
+      navigate('/account');
+    } else {
+      navigate('/dashboard');
     }
   };
 
@@ -180,6 +218,119 @@ export default function Account() {
     );
   }
 
+  const currentSection = accountSections.find(s => s.id === section);
+  const CurrentIcon = currentSection?.icon || Settings;
+
+  // Render section content
+  const renderSectionContent = () => {
+    switch (section) {
+      case 'profile':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Redigera profil</CardTitle>
+              <CardDescription>Uppdatera din profilinformation</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-center mb-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-2xl">
+                    {displayName?.slice(0, 2).toUpperCase() || user?.email?.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="displayName">Visningsnamn</Label>
+                <Input
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Ditt namn"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Berätta lite om dig själv..."
+                  rows={3}
+                />
+              </div>
+              <Button onClick={handleSaveProfile} disabled={isSaving} className="w-full">
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Spara profil
+              </Button>
+            </CardContent>
+          </Card>
+        );
+      case 'weight':
+        return (
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="p-4">
+                <Button onClick={() => setShowWeightDialog(true)} className="w-full">
+                  <Scale className="h-4 w-4 mr-2" />
+                  Logga ny vikt
+                </Button>
+              </CardContent>
+            </Card>
+            <WeightHistoryChart />
+            <WeightLogDialog
+              open={showWeightDialog}
+              onOpenChange={setShowWeightDialog}
+              onSuccess={() => toast.success('Vikt loggad!')}
+            />
+          </div>
+        );
+      case 'notifications':
+        return <PushNotificationSettings />;
+      case 'garmin':
+        return <GarminConnectSettings />;
+      default:
+        return null;
+    }
+  };
+
+  // If a section is selected, show that content
+  if (section) {
+    return (
+      <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="border-b border-border bg-card shrink-0">
+          <div className="px-3 py-2 md:px-4 md:py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleBack}
+                  className="h-8 w-8"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 bg-gradient-to-br ${currentSection?.gradient || 'from-gym-orange to-gym-amber'} rounded-lg flex items-center justify-center`}>
+                    <CurrentIcon className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <span className="font-display text-base font-bold uppercase">{currentSection?.label || 'Konto'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Scrollable content */}
+        <main className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 pb-20 md:pb-4">
+          {renderSectionContent()}
+        </main>
+      </div>
+    );
+  }
+
+  // Main account section view
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       <WeightLogDialog
@@ -241,23 +392,23 @@ export default function Account() {
 
         {/* Account section cards - 2x3 grid */}
         <div className="flex-1 grid grid-cols-2 gap-2 min-h-0 content-start">
-          {accountSections.map((section, index) => (
+          {accountSections.map((sec, index) => (
             <motion.div
-              key={section.id}
+              key={sec.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               whileTap={{ scale: 0.97 }}
             >
               <Card 
-                className={`cursor-pointer bg-gradient-to-br ${section.gradient} ${section.border} transition-all h-full`}
-                onClick={() => handleSectionClick(section.id)}
+                className={`cursor-pointer bg-gradient-to-br ${sec.gradient} ${sec.border} transition-all h-full`}
+                onClick={() => handleSectionClick(sec.id)}
               >
                 <CardContent className="p-3 flex flex-col justify-between h-full min-h-[80px]">
-                  <section.icon className={`w-5 h-5 ${section.iconColor}`} />
+                  <sec.icon className={`w-5 h-5 ${sec.iconColor}`} />
                   <div>
-                    <p className="text-sm font-semibold">{section.label}</p>
-                    <p className="text-[10px] text-muted-foreground line-clamp-1">{section.description}</p>
+                    <p className="text-sm font-semibold">{sec.label}</p>
+                    <p className="text-[10px] text-muted-foreground line-clamp-1">{sec.description}</p>
                   </div>
                 </CardContent>
               </Card>
