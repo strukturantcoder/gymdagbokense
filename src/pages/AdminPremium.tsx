@@ -235,9 +235,9 @@ export default function AdminPremium() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10 shrink-0">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="h-8 w-8">
@@ -279,7 +279,7 @@ export default function AdminPremium() {
         </div>
       </header>
 
-      <main className="container px-4 py-6 max-w-6xl mx-auto space-y-6">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden container px-4 py-6 pb-20 max-w-6xl mx-auto space-y-6">
         {/* Stats Card */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>

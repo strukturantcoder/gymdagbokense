@@ -1130,7 +1130,7 @@ export default function WorkoutSession() {
   // Summary Screen
   if (showSummary && summaryData) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
           <div className="flex items-center justify-center p-4">
             <h1 className="font-display font-bold text-lg">Träningspass avslutat!</h1>
@@ -1347,7 +1347,7 @@ export default function WorkoutSession() {
   const isGoalReached = goal?.target_weight_kg && currentMaxWeight >= goal.target_weight_kg;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="flex items-center justify-between p-4">

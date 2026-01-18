@@ -26,7 +26,7 @@ export default function Crossfit() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col pb-20 md:pb-4">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       <header className="border-b border-border bg-card shrink-0">
         <div className="px-3 py-2 md:px-4 md:py-3">
           <div className="flex items-center justify-between">
@@ -50,17 +50,20 @@ export default function Crossfit() {
         </div>
       </header>
 
-      <div className="px-3 pt-2 md:px-4">
-        <AdBanner format="horizontal" placement="training_top" />
-      </div>
+      {/* Scrollable content */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-4">
+        <div className="px-3 pt-2 md:px-4">
+          <AdBanner format="horizontal" placement="training_top" />
+        </div>
 
-      <main className="px-3 py-3 md:px-4">
-        <CrossFitWOD />
+        <div className="px-3 py-3 md:px-4">
+          <CrossFitWOD />
+        </div>
+
+        <div className="px-3 pb-4 md:px-4">
+          <AdBanner format="horizontal" placement="training_bottom" />
+        </div>
       </main>
-
-      <div className="px-3 pb-4 md:px-4">
-        <AdBanner format="horizontal" placement="training_bottom" />
-      </div>
     </div>
   );
 }

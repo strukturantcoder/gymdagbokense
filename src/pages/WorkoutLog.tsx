@@ -794,9 +794,9 @@ export default function WorkoutLog() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      <header className="border-b border-border bg-card shrink-0">
         <div className="container px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
@@ -812,7 +812,7 @@ export default function WorkoutLog() {
         </div>
       </header>
 
-      <main className="container px-4 py-8">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden container px-4 py-8 pb-20 md:pb-8">
         {/* Ad Banner */}
         <AdBanner className="mb-6" />
         

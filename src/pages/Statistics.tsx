@@ -82,7 +82,7 @@ export default function Statistics() {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col pb-20 md:pb-4">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Compact Header */}
       <header className="border-b border-border bg-card shrink-0">
         <div className="px-3 py-2 md:px-4 md:py-3">
@@ -106,7 +106,7 @@ export default function Statistics() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 space-y-4">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 md:px-4 md:py-4 pb-20 md:pb-4 space-y-4">
         {/* Top Ad Banner */}
         <AdBanner format="horizontal" placement="statistics_top" />
         {/* Quick Stats Row */}
