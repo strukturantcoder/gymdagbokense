@@ -456,8 +456,25 @@ export default function Account() {
           <AdBanner format="mobile_banner" placement="account_bottom" showPremiumPrompt={false} />
         </div>
 
+        {/* Update Button */}
+        <div className="shrink-0 mt-3">
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleForceUpdate}
+            disabled={isClearing}
+          >
+            {isClearing ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            {isClearing ? 'Uppdaterar...' : 'Rensa cache & uppdatera'}
+          </Button>
+        </div>
+
         {/* Version info */}
-        <div className="shrink-0 mt-1 text-center">
+        <div className="shrink-0 mt-2 text-center">
           <p className="text-[10px] text-muted-foreground">Version {APP_VERSION}</p>
         </div>
       </main>
