@@ -216,7 +216,7 @@ export default function Account() {
         handleForceUpdate();
         break;
       case 'admin':
-        navigate('/admin/challenges');
+        navigate('/admin');
         break;
       default:
         navigate(`/account/${id}`);
