@@ -73,25 +73,27 @@ const AdminEmails = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/admin")}
-          >
-            <ArrowLeft className="h-5 w-5" />
+      {/* Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">E-posthantering</h1>
-            <p className="text-muted-foreground">
-              Designa, förhandsgranska och skicka mejl
-            </p>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-lg flex items-center justify-center">
+              <Mail className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">Mejl</h1>
+              <p className="text-xs text-muted-foreground">E-postkampanjer</p>
+            </div>
           </div>
         </div>
+      </header>
 
+      <main className="container mx-auto px-4 py-6 max-w-7xl">
         <EmailDesignerWithDrafts />
-      </div>
+      </main>
     </div>
   );
 };

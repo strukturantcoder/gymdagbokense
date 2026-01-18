@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, Image, BarChart3, MousePointerClick, TrendingUp, Code } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, Image, BarChart3, MousePointerClick, TrendingUp, Code, Megaphone } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Ad {
@@ -325,14 +325,26 @@ const AdminAds = () => {
   const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00";
 
   return (
-    <div className="min-h-screen bg-background p-4 pb-24">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
-            <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-screen bg-background pb-24">
+      {/* Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold text-foreground">Annonshantering</h1>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center">
+              <Megaphone className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">Annonser</h1>
+              <p className="text-xs text-muted-foreground">Hantera annonser</p>
+            </div>
+          </div>
         </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto p-4 space-y-6">
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 max-w-xs">
@@ -648,7 +660,7 @@ const AdminAds = () => {
             )}
           </DialogContent>
         </Dialog>
-      </div>
+      </main>
     </div>
   );
 };
