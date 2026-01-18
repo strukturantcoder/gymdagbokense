@@ -4,23 +4,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSocial } from '@/hooks/useSocial';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
   Dumbbell, 
   Footprints, 
   Flame, 
   TrendingUp,
-  Scale,
   Trophy,
-  Target,
-  Plus,
-  Zap
+  Zap,
+  User
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import GoalOnboardingDialog from './GoalOnboardingDialog';
 import CompactGoalCard from './CompactGoalCard';
-import WeightLogDialog from './WeightLogDialog';
 
 interface DashboardBentoGridProps {
   className?: string;
@@ -33,7 +29,6 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
   const [weeklyWorkouts, setWeeklyWorkouts] = useState(0);
   const [weeklyCardio, setWeeklyCardio] = useState(0);
   const [showGoalDialog, setShowGoalDialog] = useState(false);
-  const [showWeightDialog, setShowWeightDialog] = useState(false);
   const [needsGoalOnboarding, setNeedsGoalOnboarding] = useState(false);
   const [goalRefreshTrigger, setGoalRefreshTrigger] = useState(0);
 
@@ -120,12 +115,6 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
         onComplete={handleGoalComplete}
       />
 
-      <WeightLogDialog
-        open={showWeightDialog}
-        onOpenChange={setShowWeightDialog}
-        onSuccess={() => setGoalRefreshTrigger(prev => prev + 1)}
-      />
-
       {/* Compact 2x3 grid - fits on screen without scroll */}
       <div className={`grid grid-cols-3 gap-2 md:gap-3 ${className}`}>
         {/* Row 1: Goals + Level + Streak */}
@@ -200,14 +189,14 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
 
         <motion.div whileTap={{ scale: 0.97 }}>
           <Card 
-            className="h-24 cursor-pointer bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 hover:border-blue-500/40 transition-all"
-            onClick={() => setShowWeightDialog(true)}
+            className="h-24 cursor-pointer bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20 hover:border-green-500/40 transition-all"
+            onClick={() => navigate('/training?tab=crossfit')}
           >
             <CardContent className="p-3 h-full flex flex-col justify-between">
-              <Scale className="w-5 h-5 text-blue-500" />
+              <Zap className="w-5 h-5 text-green-500" />
               <div>
-                <p className="text-sm font-medium leading-none">Logga</p>
-                <p className="text-[10px] text-muted-foreground">vikt</p>
+                <p className="text-sm font-medium leading-none">WOD</p>
+                <p className="text-[10px] text-muted-foreground">CrossFit</p>
               </div>
             </CardContent>
           </Card>
@@ -241,11 +230,11 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
         <motion.div whileTap={{ scale: 0.97 }}>
           <Card 
             className="h-20 cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => navigate('/training?tab=crossfit')}
+            onClick={() => navigate('/account')}
           >
             <CardContent className="p-3 h-full flex items-center gap-3">
-              <Zap className="w-5 h-5 text-green-500" />
-              <span className="text-xs font-medium">CrossFit</span>
+              <User className="w-5 h-5 text-gray-500" />
+              <span className="text-xs font-medium">Konto</span>
             </CardContent>
           </Card>
         </motion.div>
