@@ -28,19 +28,11 @@ import OnboardingChecklist from '@/components/OnboardingChecklist';
 import ProgramRefineDialog from '@/components/ProgramRefineDialog';
 import SortableExercise from '@/components/SortableExercise';
 import { NotificationBell } from '@/components/NotificationBell';
-import QuickActions from '@/components/QuickActions';
-import GamificationHero from '@/components/GamificationHero';
-import NextMilestoneWidget from '@/components/NextMilestoneWidget';
+import DashboardBentoGrid from '@/components/DashboardBentoGrid';
 import DailyStreakBonus from '@/components/DailyStreakBonus';
 import InviteFriendNudge from '@/components/InviteFriendNudge';
 import { PendingInvitationsPopup } from '@/components/PendingInvitationsPopup';
-import WeeklyCalendar from '@/components/WeeklyCalendar';
 import RecommendedPrograms from '@/components/RecommendedPrograms';
-import RecentActivity from '@/components/RecentActivity';
-import NextWorkoutSuggestion from '@/components/NextWorkoutSuggestion';
-import { WeeklySummary } from '@/components/WeeklySummary';
-import { WorkoutHistoryChart } from '@/components/WorkoutHistoryChart';
-import { StrengthProgressChart } from '@/components/StrengthProgressChart';
 import { NewChallengePopup } from '@/components/NewChallengePopup';
 import {
   DndContext,
@@ -529,62 +521,11 @@ export default function Dashboard() {
         {/* Daily Streak Bonus */}
         <DailyStreakBonus />
 
-        {/* Gamification Hero - XP, Level, Achievements */}
-        <GamificationHero />
-
-        {/* Quick Actions with Streak and Weekly Stats */}
-        <QuickActions />
-
-        {/* Weekly Summary */}
-        <div className="mb-6">
-          <WeeklySummary />
-        </div>
-
-        {/* Workout History Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <WorkoutHistoryChart />
-          <StrengthProgressChart />
-        </div>
-
-        {/* Next Workout Suggestion */}
-        <NextWorkoutSuggestion />
-
-        {/* Next Milestone Widget */}
-        <div className="mb-6">
-          <NextMilestoneWidget />
-        </div>
-
-        {/* Weekly Calendar */}
-        <div className="mb-6">
-          <WeeklyCalendar />
-        </div>
-
-        {/* Recent Activity */}
-        <RecentActivity />
+        {/* NEW: Bento Grid Dashboard - Goals, Stats, Quick Actions */}
+        <DashboardBentoGrid className="mb-6" />
 
         {/* Recommended Programs */}
         <RecommendedPrograms />
-        
-        {/* Quick link to challenges */}
-        <Card 
-          className="mb-6 cursor-pointer hover:border-primary/50 transition-colors bg-gradient-to-r from-gym-orange/10 to-amber-500/10"
-          onClick={() => navigate('/social')}
-        >
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-gym-orange to-amber-500 rounded-lg flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Community-tävlingar</h3>
-                <p className="text-sm text-muted-foreground">Tävla mot andra och vinn XP!</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm">
-              Se tävlingar
-            </Button>
-          </CardContent>
-        </Card>
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div className="min-w-0">

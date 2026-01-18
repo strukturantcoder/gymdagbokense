@@ -1129,6 +1129,7 @@ export type Database = {
           display_name: string | null
           facebook_url: string | null
           gender: string | null
+          has_set_initial_goals: boolean | null
           id: string
           instagram_username: string | null
           show_facebook: boolean
@@ -1151,6 +1152,7 @@ export type Database = {
           display_name?: string | null
           facebook_url?: string | null
           gender?: string | null
+          has_set_initial_goals?: boolean | null
           id?: string
           instagram_username?: string | null
           show_facebook?: boolean
@@ -1173,6 +1175,7 @@ export type Database = {
           display_name?: string | null
           facebook_url?: string | null
           gender?: string | null
+          has_set_initial_goals?: boolean | null
           id?: string
           instagram_username?: string | null
           show_facebook?: boolean
@@ -1689,6 +1692,57 @@ export type Database = {
           follower_id?: string
           following_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      user_goals: {
+        Row: {
+          ai_suggested: boolean | null
+          created_at: string
+          current_value: number | null
+          description: string | null
+          goal_type: string
+          id: string
+          start_date: string
+          status: string
+          target_date: string | null
+          target_unit: string | null
+          target_value: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_suggested?: boolean | null
+          created_at?: string
+          current_value?: number | null
+          description?: string | null
+          goal_type: string
+          id?: string
+          start_date?: string
+          status?: string
+          target_date?: string | null
+          target_unit?: string | null
+          target_value?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_suggested?: boolean | null
+          created_at?: string
+          current_value?: number | null
+          description?: string | null
+          goal_type?: string
+          id?: string
+          start_date?: string
+          status?: string
+          target_date?: string | null
+          target_unit?: string | null
+          target_value?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
