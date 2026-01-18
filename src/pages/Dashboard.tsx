@@ -100,20 +100,20 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Main content - fixed height, no scroll */}
-      <main className="flex-1 flex flex-col px-2 py-2 md:px-4 md:py-3 pb-16 md:pb-3 overflow-hidden">
+      {/* Main content - scrollable */}
+      <main className="flex-1 flex flex-col px-2 py-1.5 md:px-4 md:py-2 pb-16 md:pb-2 overflow-y-auto">
         {/* Daily Streak Bonus - very compact */}
-        <div className="shrink-0 mb-2">
+        <div className="shrink-0 mb-1.5">
           <DailyStreakBonus />
         </div>
 
-        {/* Bento Grid - takes remaining space */}
-        <div className="flex-1 min-h-0">
-          <DashboardBentoGrid className="h-full" />
+        {/* Bento Grid */}
+        <div className="shrink-0">
+          <DashboardBentoGrid />
         </div>
 
-        {/* Ad Banner at bottom - fixed height */}
-        <div className="shrink-0 mt-2">
+        {/* Ad Banner at bottom */}
+        <div className="shrink-0 mt-1.5">
           <AdBanner format="mobile_banner" placement="dashboard_bottom" showPremiumPrompt={false} />
         </div>
       </main>
