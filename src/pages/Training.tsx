@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CalendarSyncDialog from '@/components/CalendarSyncDialog';
 import WorkoutReminderSettings from '@/components/WorkoutReminderSettings';
 import StrengthBentoGrid from '@/components/training/StrengthBentoGrid';
+import AdBanner from '@/components/AdBanner';
 import { motion } from 'framer-motion';
 
 export default function Training() {
@@ -96,6 +97,11 @@ export default function Training() {
         </div>
       </header>
 
+      {/* Top Ad Banner */}
+      <div className="px-3 pt-2 md:px-4">
+        <AdBanner format="horizontal" placement="training_top" />
+      </div>
+
       {/* Tabs for training types */}
       <div className="px-3 py-2 md:px-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
@@ -126,6 +132,11 @@ export default function Training() {
             {/* Redirect handled above */}
           </TabsContent>
         </Tabs>
+      </div>
+
+      {/* Bottom Ad Banner */}
+      <div className="px-3 pb-4 md:px-4">
+        <AdBanner format="horizontal" placement="training_bottom" />
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ import { ArrowLeft, Trophy, TrendingUp, Search, Dumbbell, Loader2, Crown, Medal,
 import { PublicProgramCard } from '@/components/training/PublicProgramCard';
 import { ProgramDetailDialog } from '@/components/training/ProgramDetailDialog';
 import { FollowedCreatorsPrograms } from '@/components/training/FollowedCreatorsPrograms';
+import AdBanner from '@/components/AdBanner';
 
 interface PopularProgram {
   program_id: string;
@@ -141,6 +142,9 @@ export default function PublicPrograms() {
       </header>
 
       <main className="container px-4 py-8">
+        {/* Top Ad Banner */}
+        <AdBanner className="mb-6" format="horizontal" placement="public_programs_top" />
+        
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -366,6 +370,9 @@ export default function PublicPrograms() {
           </Tabs>
           </div>
         )}
+
+        {/* Bottom Ad Banner */}
+        <AdBanner className="mt-8" format="horizontal" placement="public_programs_bottom" />
 
         {/* Program Detail Dialog */}
         <ProgramDetailDialog
