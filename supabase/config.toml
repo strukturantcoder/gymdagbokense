@@ -120,3 +120,8 @@ verify_jwt = false
 [functions.admin-reset-password]
 verify_jwt = false
 
+[functions.send-goal-reminders]
+verify_jwt = false
+
+[functions.suggest-goals]
+verify_jwt = true
