@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import { Scale, Watch } from 'lucide-react';
+import { Scale, Watch, Shield } from 'lucide-react';
 import { GarminConnectSettings } from '@/components/GarminConnectSettings';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { APP_VERSION, forceAppUpdate } from '@/components/PWAUpdateNotification';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,8 @@ const accountSections = [
     gradient: 'from-blue-500/20 to-indigo-500/20',
     border: 'border-blue-500/30 hover:border-blue-500/60',
     iconColor: 'text-blue-500',
-    description: 'Redigera din profil'
+    description: 'Redigera din profil',
+    adminOnly: false
   },
   { 
     id: 'weight', 
@@ -46,7 +48,8 @@ const accountSections = [
     gradient: 'from-green-500/20 to-emerald-500/20',
     border: 'border-green-500/30 hover:border-green-500/60',
     iconColor: 'text-green-500',
-    description: 'Logga & spåra vikt'
+    description: 'Logga & spåra vikt',
+    adminOnly: false
   },
   { 
     id: 'notifications', 
@@ -55,7 +58,8 @@ const accountSections = [
     gradient: 'from-yellow-500/20 to-amber-500/20',
     border: 'border-yellow-500/30 hover:border-yellow-500/60',
     iconColor: 'text-yellow-500',
-    description: 'Hantera notiser'
+    description: 'Hantera notiser',
+    adminOnly: false
   },
   { 
     id: 'garmin', 
@@ -64,7 +68,8 @@ const accountSections = [
     gradient: 'from-purple-500/20 to-pink-500/20',
     border: 'border-purple-500/30 hover:border-purple-500/60',
     iconColor: 'text-purple-500',
-    description: 'Koppla Garmin-enhet'
+    description: 'Koppla Garmin-enhet',
+    adminOnly: false
   },
   { 
     id: 'theme', 
@@ -73,7 +78,8 @@ const accountSections = [
     gradient: 'from-orange-500/20 to-red-500/20',
     border: 'border-orange-500/30 hover:border-orange-500/60',
     iconColor: 'text-orange-500',
-    description: 'Ljust / Mörkt läge'
+    description: 'Ljust / Mörkt läge',
+    adminOnly: false
   },
   { 
     id: 'maintenance', 
@@ -82,12 +88,24 @@ const accountSections = [
     gradient: 'from-gray-500/20 to-slate-500/20',
     border: 'border-gray-500/30 hover:border-gray-500/60',
     iconColor: 'text-gray-500',
-    description: 'Cache & uppdateringar'
+    description: 'Cache & uppdateringar',
+    adminOnly: false
+  },
+  { 
+    id: 'admin', 
+    label: 'Admin', 
+    icon: Shield, 
+    gradient: 'from-red-500/20 to-rose-500/20',
+    border: 'border-red-500/30 hover:border-red-500/60',
+    iconColor: 'text-red-500',
+    description: 'Adminpanel',
+    adminOnly: true
   },
 ];
 
 export default function Account() {
   const { user, loading, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { section } = useParams<{ section?: string }>();
@@ -196,6 +214,9 @@ export default function Account() {
         break;
       case 'maintenance':
         handleForceUpdate();
+        break;
+      case 'admin':
+        navigate('/admin/challenges');
         break;
       default:
         navigate(`/account/${id}`);
@@ -392,7 +413,9 @@ export default function Account() {
 
         {/* Account section cards - 2x3 grid */}
         <div className="flex-1 grid grid-cols-2 gap-2 min-h-0 content-start">
-          {accountSections.map((sec, index) => (
+          {accountSections
+            .filter(sec => !sec.adminOnly || isAdmin)
+            .map((sec, index) => (
             <motion.div
               key={sec.id}
               initial={{ opacity: 0, scale: 0.95 }}
