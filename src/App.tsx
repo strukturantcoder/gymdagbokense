@@ -18,6 +18,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Training = lazy(() => import("./pages/Training"));
+const Crossfit = lazy(() => import("./pages/Crossfit"));
 const WorkoutSession = lazy(() => import("./pages/WorkoutSession"));
 const Statistics = lazy(() => import("./pages/Statistics"));
 const Social = lazy(() => import("./pages/Social"));
@@ -52,7 +53,7 @@ const PageLoader = () => (
 );
 
 // Pages that should show bottom nav
-const pagesWithBottomNav = ["/dashboard", "/training", "/stats", "/social", "/account", "/workout-log", "/cardio-log", "/social/friends", "/social/teams", "/social/challenges", "/social/pool", "/social/community", "/social/achievements", "/stats/strength", "/stats/cardio", "/stats/crossfit", "/stats/weight", "/account/profile", "/account/notifications", "/account/garmin"];
+const pagesWithBottomNav = ["/dashboard", "/training", "/training/crossfit", "/stats", "/social", "/account", "/workout-log", "/cardio-log", "/social/friends", "/social/teams", "/social/challenges", "/social/pool", "/social/community", "/social/achievements", "/stats/strength", "/stats/cardio", "/stats/crossfit", "/stats/weight", "/account/profile", "/account/notifications", "/account/garmin"];
 
 const AppContent = () => {
   const location = useLocation();
@@ -68,6 +69,7 @@ const AppContent = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/training" element={<Training />} />
+            <Route path="/training/crossfit" element={<Crossfit />} />
             <Route path="/training/session" element={<WorkoutSession />} />
             <Route path="/log" element={<Training />} />
             <Route path="/cardio" element={<Training />} />
