@@ -105,20 +105,33 @@ export default function Training() {
       {/* Tabs for training types */}
       <div className="px-3 py-2 md:px-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-11 gap-1 bg-muted/50 p-1">
-            <TabsTrigger value="strength" className="text-xs gap-1.5 rounded-md border border-transparent data-[state=active]:border-primary/30 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <div className="grid w-full grid-cols-3 h-11 gap-1 bg-muted/50 p-1 rounded-lg">
+            <button 
+              onClick={() => handleTabChange('strength')}
+              className={`flex items-center justify-center text-xs gap-1.5 rounded-md border transition-all ${
+                activeTab === 'strength' 
+                  ? 'border-primary/30 bg-background shadow-sm font-medium' 
+                  : 'border-transparent hover:bg-muted'
+              }`}
+            >
               <Dumbbell className="w-4 h-4" />
-              <span className="hidden sm:inline font-medium">Styrka</span>
-            </TabsTrigger>
-            <TabsTrigger value="crossfit" className="text-xs gap-1.5 rounded-md border border-transparent data-[state=active]:border-primary/30 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <span className="hidden sm:inline">Styrka</span>
+            </button>
+            <button 
+              onClick={() => handleTabChange('crossfit')}
+              className="flex items-center justify-center text-xs gap-1.5 rounded-md border border-transparent hover:bg-muted transition-all"
+            >
               <Zap className="w-4 h-4" />
-              <span className="hidden sm:inline font-medium">CrossFit</span>
-            </TabsTrigger>
-            <TabsTrigger value="cardio" className="text-xs gap-1.5 rounded-md border border-transparent data-[state=active]:border-primary/30 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <span className="hidden sm:inline">CrossFit</span>
+            </button>
+            <button 
+              onClick={() => handleTabChange('cardio')}
+              className="flex items-center justify-center text-xs gap-1.5 rounded-md border border-transparent hover:bg-muted transition-all"
+            >
               <Footprints className="w-4 h-4" />
-              <span className="hidden sm:inline font-medium">Kondition</span>
-            </TabsTrigger>
-          </TabsList>
+              <span className="hidden sm:inline">Kondition</span>
+            </button>
+          </div>
 
           <TabsContent value="strength" className="mt-3">
             <StrengthBentoGrid />
