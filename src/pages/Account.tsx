@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import WeightLogDialog from '@/components/WeightLogDialog';
 import WeightHistoryChart from '@/components/WeightHistoryChart';
+import AdBanner from '@/components/AdBanner';
 import { motion } from 'framer-motion';
 
 interface Profile {
@@ -344,8 +345,14 @@ export default function Account() {
         </header>
 
         {/* Scrollable content */}
-        <main className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 pb-20 md:pb-4">
+        <main className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 pb-20 md:pb-4 space-y-4">
+          {/* Top Ad Banner */}
+          <AdBanner format="horizontal" placement="account_section_top" />
+          
           {renderSectionContent()}
+          
+          {/* Bottom Ad Banner */}
+          <AdBanner format="horizontal" placement="account_section_bottom" />
         </main>
       </div>
     );
@@ -392,6 +399,11 @@ export default function Account() {
 
       {/* Main content - fixed height, no scroll */}
       <main className="flex-1 flex flex-col px-3 py-3 md:px-4 md:py-4 pb-16 md:pb-4 overflow-hidden">
+        {/* Top Ad Banner */}
+        <div className="shrink-0 mb-3">
+          <AdBanner format="mobile_banner" placement="account_top" showPremiumPrompt={false} />
+        </div>
+        
         {/* User Profile Card - compact */}
         <Card className="shrink-0 mb-3">
           <CardContent className="p-3 flex items-center gap-3">
@@ -439,8 +451,13 @@ export default function Account() {
           ))}
         </div>
 
+        {/* Bottom Ad Banner */}
+        <div className="shrink-0 mt-3">
+          <AdBanner format="mobile_banner" placement="account_bottom" showPremiumPrompt={false} />
+        </div>
+
         {/* Version info */}
-        <div className="shrink-0 mt-3 text-center">
+        <div className="shrink-0 mt-1 text-center">
           <p className="text-[10px] text-muted-foreground">Version {APP_VERSION}</p>
         </div>
       </main>

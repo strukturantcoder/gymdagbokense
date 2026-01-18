@@ -105,7 +105,9 @@ export default function Statistics() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 px-3 py-3 md:px-4 md:py-4 space-y-4">
+      <main className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 space-y-4">
+        {/* Top Ad Banner */}
+        <AdBanner format="horizontal" placement="statistics_top" />
         {/* Quick Stats Row */}
         <div className="grid grid-cols-4 gap-2">
           {quickStatCards.map((stat) => (
@@ -191,7 +193,10 @@ export default function Statistics() {
           </TabsContent>
         </Tabs>
 
-        {/* Ad Banner */}
+        {/* Middle Ad Banner */}
+        <AdBanner format="horizontal" placement="statistics_middle" />
+        
+        {/* Bottom Ad Banner */}
         <AdBanner format="horizontal" placement="statistics_bottom" />
       </main>
     </div>

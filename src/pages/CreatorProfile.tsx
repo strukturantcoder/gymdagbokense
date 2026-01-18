@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PublicProgramCard } from '@/components/training/PublicProgramCard';
 import { ProgramDetailDialog } from '@/components/training/ProgramDetailDialog';
 import { FollowButton } from '@/components/training/FollowButton';
+import AdBanner from '@/components/AdBanner';
 
 interface CreatorStats {
   followers_count: number;
@@ -152,6 +153,11 @@ const CreatorProfile = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {/* Top Ad Banner */}
+      <div className="px-4 py-3">
+        <AdBanner format="horizontal" placement="creator_profile_top" />
+      </div>
+      
       {/* Cover Image */}
       <div className="relative h-32 sm:h-48 bg-gradient-to-br from-primary/20 to-primary/5">
         {creator.cover_image_url && (
@@ -307,7 +313,15 @@ const CreatorProfile = () => {
               ))}
             </div>
           )}
+          
+          {/* Middle Ad Banner */}
+          <div className="mt-6">
+            <AdBanner format="horizontal" placement="creator_profile_middle" />
+          </div>
         </div>
+        
+        {/* Bottom Ad Banner */}
+        <AdBanner className="mt-6" format="horizontal" placement="creator_profile_bottom" />
       </div>
 
       {/* Program Detail Dialog */}
