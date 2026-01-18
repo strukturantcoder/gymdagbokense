@@ -4,41 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Dumbbell, Footprints, ArrowLeft, Zap, Loader2, Calendar, Bell, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import AdBanner from '@/components/AdBanner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CalendarSyncDialog from '@/components/CalendarSyncDialog';
 import WorkoutReminderSettings from '@/components/WorkoutReminderSettings';
+import StrengthBentoGrid from '@/components/training/StrengthBentoGrid';
 import { motion } from 'framer-motion';
-
-const trainingTypes = [
-  { 
-    id: 'strength', 
-    label: 'Styrka', 
-    icon: Dumbbell, 
-    gradient: 'from-orange-500/20 to-red-500/20',
-    border: 'border-orange-500/30 hover:border-orange-500/60',
-    iconColor: 'text-orange-500',
-    description: 'Logga styrkepass'
-  },
-  { 
-    id: 'crossfit', 
-    label: 'CrossFit', 
-    icon: Zap, 
-    gradient: 'from-green-500/20 to-emerald-500/20',
-    border: 'border-green-500/30 hover:border-green-500/60',
-    iconColor: 'text-green-500',
-    description: 'WOD & funktionell träning'
-  },
-  { 
-    id: 'cardio', 
-    label: 'Kondition', 
-    icon: Footprints, 
-    gradient: 'from-pink-500/20 to-rose-500/20',
-    border: 'border-pink-500/30 hover:border-pink-500/60',
-    iconColor: 'text-pink-500',
-    description: 'Löpning, cykling, simning'
-  },
-];
 
 export default function Training() {
   const { user, loading } = useAuth();
@@ -46,6 +16,7 @@ export default function Training() {
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam || 'strength');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -53,10 +24,15 @@ export default function Training() {
     }
   }, [user, loading, navigate]);
 
-  // If a tab is specified, go directly to the workout session
   useEffect(() => {
     if (tabParam) {
-      navigate(`/workout-session?type=${tabParam}`);
+      if (tabParam === 'cardio') {
+        navigate('/cardio-log');
+      } else if (tabParam === 'crossfit') {
+        navigate('/training/session?type=crossfit');
+      } else {
+        setActiveTab(tabParam);
+      }
     }
   }, [tabParam, navigate]);
 
@@ -68,18 +44,18 @@ export default function Training() {
     );
   }
 
-  const handleTrainingSelect = (type: string) => {
-    if (type === 'strength') {
-      navigate('/workout-log');
-    } else if (type === 'crossfit') {
-      navigate('/training/session?type=crossfit');
-    } else if (type === 'cardio') {
+  const handleTabChange = (tab: string) => {
+    if (tab === 'cardio') {
       navigate('/cardio-log');
+    } else if (tab === 'crossfit') {
+      navigate('/training/session?type=crossfit');
+    } else {
+      setActiveTab(tab);
     }
   };
 
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="min-h-[100dvh] bg-background flex flex-col pb-20 md:pb-4">
       {/* Compact Header */}
       <header className="border-b border-border bg-card shrink-0">
         <div className="px-3 py-2 md:px-4 md:py-3">
@@ -120,48 +96,37 @@ export default function Training() {
         </div>
       </header>
 
-      {/* Main content - fixed height, no scroll */}
-      <main className="flex-1 flex flex-col px-3 py-3 md:px-4 md:py-4 pb-16 md:pb-4 overflow-hidden">
-        {/* Title */}
-        <div className="shrink-0 mb-3">
-          <h1 className="text-lg font-display font-bold">Välj träningstyp</h1>
-          <p className="text-xs text-muted-foreground">Vad vill du träna idag?</p>
-        </div>
+      {/* Tabs for training types */}
+      <div className="px-3 py-2 md:px-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 h-10">
+            <TabsTrigger value="strength" className="text-xs gap-1">
+              <Dumbbell className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Styrka</span>
+            </TabsTrigger>
+            <TabsTrigger value="crossfit" className="text-xs gap-1">
+              <Zap className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">CrossFit</span>
+            </TabsTrigger>
+            <TabsTrigger value="cardio" className="text-xs gap-1">
+              <Footprints className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Kondition</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Training type cards - takes remaining space */}
-        <div className="flex-1 grid grid-cols-1 gap-3 min-h-0 content-start">
-          {trainingTypes.map((type, index) => (
-            <motion.div
-              key={type.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Card 
-                className={`cursor-pointer bg-gradient-to-br ${type.gradient} ${type.border} transition-all h-full`}
-                onClick={() => handleTrainingSelect(type.id)}
-              >
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl bg-background/50 flex items-center justify-center`}>
-                    <type.icon className={`w-6 h-6 ${type.iconColor}`} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-base">{type.label}</h3>
-                    <p className="text-xs text-muted-foreground">{type.description}</p>
-                  </div>
-                  <Play className="w-5 h-5 text-muted-foreground" />
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+          <TabsContent value="strength" className="mt-3">
+            <StrengthBentoGrid />
+          </TabsContent>
 
-        {/* Ad Banner at bottom */}
-        <div className="shrink-0 mt-3">
-          <AdBanner format="mobile_banner" placement="training_bottom" showPremiumPrompt={false} />
-        </div>
-      </main>
+          <TabsContent value="crossfit" className="mt-3">
+            {/* Redirect handled above */}
+          </TabsContent>
+
+          <TabsContent value="cardio" className="mt-3">
+            {/* Redirect handled above */}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
