@@ -129,6 +129,7 @@ export default function WorkoutLogContent() {
   const [hasDraft, setHasDraft] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [showDeleteDraftDialog, setShowDeleteDraftDialog] = useState(false);
+  const [showCancelWorkoutDialog, setShowCancelWorkoutDialog] = useState(false);
   const [selectedLog, setSelectedLog] = useState<WorkoutLogEntry | null>(null);
   const [showLogDetails, setShowLogDetails] = useState(false);
   const [showDeleteLogDialog, setShowDeleteLogDialog] = useState(false);
@@ -1417,7 +1418,12 @@ export default function WorkoutLogContent() {
                   )}
                   Spara Pass
                 </Button>
-                <Button variant="outline" onClick={() => { setIsLogging(false); resetForm(); }}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowCancelWorkoutDialog(true)}
+                  className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
                   Avbryt
                 </Button>
               </div>
@@ -1462,7 +1468,7 @@ export default function WorkoutLogContent() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right flex items-center gap-3">
+                    <div className="text-right flex items-center gap-2">
                       <div>
                         {log.duration_minutes && (
                           <p className="text-sm text-muted-foreground flex items-center gap-1 justify-end">
@@ -1476,6 +1482,18 @@ export default function WorkoutLogContent() {
                           </p>
                         )}
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedLog(log);
+                          setShowDeleteLogDialog(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                       <ChevronDown className="w-4 h-4 text-muted-foreground" />
                     </div>
                   </div>
@@ -1620,6 +1638,33 @@ export default function WorkoutLogContent() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Ta bort
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel active workout confirmation dialog */}
+      <AlertDialog open={showCancelWorkoutDialog} onOpenChange={setShowCancelWorkoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Avbryt träningspass?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill avbryta detta pass? All data som du har loggat kommer att försvinna.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Fortsätt träna</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setIsLogging(false);
+                resetForm();
+                setShowCancelWorkoutDialog(false);
+                toast.success('Träningspass avbrutet');
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Avbryt pass
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
