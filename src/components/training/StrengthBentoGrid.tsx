@@ -398,7 +398,7 @@ export default function StrengthBentoGrid() {
           <div className="col-span-2 md:col-span-3 pt-4">
             <div className="flex items-center justify-between border-l-4 border-primary bg-primary/5 rounded-r-lg px-3 py-2">
               <h3 className="font-display font-bold text-sm text-foreground">Mina program</h3>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/public-programs')} className="text-xs h-7 text-primary hover:text-primary">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/programs')} className="text-xs h-7 text-primary hover:text-primary">
                 Utforska fler <ChevronRight className="w-3 h-3 ml-1" />
               </Button>
             </div>

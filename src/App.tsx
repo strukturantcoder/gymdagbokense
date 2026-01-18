@@ -99,6 +99,7 @@ const AppContent = () => {
             <Route path="/join-team/:code" element={<JoinTeam />} />
             <Route path="/email-help" element={<EmailHelp />} />
             <Route path="/programs" element={<PublicPrograms />} />
+            <Route path="/public-programs" element={<PublicPrograms />} />
             <Route path="/creator/:creatorId" element={<CreatorProfile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
