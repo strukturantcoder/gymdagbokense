@@ -194,7 +194,7 @@ export default function AdminUsers() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/challenges")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>

@@ -30,7 +30,7 @@ const AdminInstagramImages = () => {
     <div className="container mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Instagram Bildgenerator</h1>
-        <Button variant="outline" onClick={() => navigate("/admin/challenges")}>
+        <Button variant="outline" onClick={() => navigate("/admin")}>
           ← Tillbaka
         </Button>
       </div>
