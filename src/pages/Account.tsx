@@ -23,6 +23,7 @@ import {
 import WeightLogDialog from '@/components/WeightLogDialog';
 import WeightHistoryChart from '@/components/WeightHistoryChart';
 import WeightGoalCard from '@/components/WeightGoalCard';
+import WeightLogsList from '@/components/WeightLogsList';
 import AdBanner from '@/components/AdBanner';
 import { motion } from 'framer-motion';
 
@@ -308,12 +309,14 @@ export default function Account() {
             {/* Weight history chart */}
             <WeightHistoryChart />
             
+            {/* Weight logs list with edit/delete */}
+            <WeightLogsList onDataChange={() => window.location.reload()} />
+            
             <WeightLogDialog
               open={showWeightDialog}
               onOpenChange={setShowWeightDialog}
               onSuccess={() => {
                 toast.success('Vikt loggad!');
-                // Force refetch by remounting the component
                 window.location.reload();
               }}
             />
