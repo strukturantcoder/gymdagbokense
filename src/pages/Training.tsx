@@ -30,7 +30,7 @@ export default function Training() {
       if (tabParam === 'cardio') {
         navigate('/cardio-log');
       } else if (tabParam === 'crossfit') {
-        navigate('/training/session?type=crossfit');
+        navigate('/training/crossfit');
       } else {
         setActiveTab(tabParam);
       }
@@ -49,7 +49,7 @@ export default function Training() {
     if (tab === 'cardio') {
       navigate('/cardio-log');
     } else if (tab === 'crossfit') {
-      navigate('/training/session?type=crossfit');
+      navigate('/training/crossfit');
     } else {
       setActiveTab(tab);
     }
