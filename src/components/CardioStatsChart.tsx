@@ -3,8 +3,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Footprints, Timer, Flame, TrendingUp } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  PieChart, Pie, Cell, LineChart, Line, ReferenceLine 
+} from 'recharts';
+import { format, subDays, startOfDay, endOfDay, parseISO, eachDayOfInterval } from 'date-fns';
 import { sv } from 'date-fns/locale';
 
 interface CardioLog {
@@ -23,6 +26,8 @@ interface CardioStats {
   totalCalories: number;
   weeklyData: { day: string; minutes: number; distance: number }[];
   activityBreakdown: { name: string; value: number }[];
+  trendData: { date: string; fullDate: string; minutes: number; cumulativeMinutes: number }[];
+  averageMinutesPerSession: number;
 }
 
 const ACTIVITY_COLORS: Record<string, string> = {
@@ -41,6 +46,22 @@ const ACTIVITY_LABELS: Record<string, string> = {
   swimming: 'Simning',
   intervals: 'Intervaller',
   other: 'Övrigt',
+};
+
+// Calculate linear regression for trendline
+const calculateTrendline = (data: { x: number; y: number }[]) => {
+  const n = data.length;
+  if (n < 2) return { slope: 0, intercept: 0 };
+  
+  const sumX = data.reduce((acc, d) => acc + d.x, 0);
+  const sumY = data.reduce((acc, d) => acc + d.y, 0);
+  const sumXY = data.reduce((acc, d) => acc + d.x * d.y, 0);
+  const sumXX = data.reduce((acc, d) => acc + d.x * d.x, 0);
+  
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  
+  return { slope, intercept };
 };
 
 export function CardioStatsChart() {
@@ -118,6 +139,52 @@ export function CardioStatsChart() {
       color: ACTIVITY_COLORS[name] || '#8b5cf6',
     }));
 
+    // Trend data for the last 30 days
+    const allDays = eachDayOfInterval({
+      start: thirtyDaysAgo,
+      end: new Date()
+    });
+
+    let cumulativeMinutes = 0;
+    const trendData = allDays.map((date, index) => {
+      const dayStart = startOfDay(date);
+      const dayEnd = endOfDay(date);
+      
+      const dayLogs = logs.filter(log => {
+        const logDate = new Date(log.completed_at);
+        return logDate >= dayStart && logDate <= dayEnd;
+      });
+      
+      const dayMinutes = dayLogs.reduce((sum, log) => sum + (log.duration_minutes || 0), 0);
+      cumulativeMinutes += dayMinutes;
+      
+      return {
+        date: format(date, 'd/M', { locale: sv }),
+        fullDate: format(date, 'yyyy-MM-dd'),
+        minutes: dayMinutes,
+        cumulativeMinutes,
+        dayIndex: index
+      };
+    });
+
+    // Calculate trendline
+    const dataWithActivity = trendData.filter(d => d.minutes > 0);
+    const trendlineData = dataWithActivity.map((d, i) => ({ x: i, y: d.minutes }));
+    const { slope, intercept } = calculateTrendline(trendlineData);
+    
+    // Add trendline values to trendData
+    let trendIndex = 0;
+    const trendDataWithLine = trendData.map(d => {
+      if (d.minutes > 0) {
+        const trendValue = intercept + slope * trendIndex;
+        trendIndex++;
+        return { ...d, trend: Math.max(0, trendValue) };
+      }
+      return { ...d, trend: null };
+    });
+
+    const averageMinutesPerSession = totalSessions > 0 ? totalMinutes / totalSessions : 0;
+
     setStats({
       totalSessions,
       totalMinutes,
@@ -125,6 +192,8 @@ export function CardioStatsChart() {
       totalCalories,
       weeklyData,
       activityBreakdown,
+      trendData: trendDataWithLine,
+      averageMinutesPerSession,
     });
 
     setIsLoading(false);
@@ -223,6 +292,106 @@ export function CardioStatsChart() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Trend chart - development over time */}
+      {stats.trendData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2 pt-3 px-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-green-500" />
+                Utveckling över tid
+              </CardTitle>
+              <span className="text-xs text-muted-foreground">
+                Snitt: {Math.round(stats.averageMinutesPerSession)} min/pass
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="px-3 pb-3">
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={stats.trendData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 10 }} 
+                    className="text-muted-foreground"
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 10 }} 
+                    className="text-muted-foreground"
+                    width={30}
+                    label={{ 
+                      value: 'min', 
+                      angle: -90, 
+                      position: 'insideLeft',
+                      style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' }
+                    }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                    }}
+                    formatter={(value: number, name: string) => {
+                      if (name === 'minutes') return [`${value} min`, 'Aktivitet'];
+                      if (name === 'trend') return [`${Math.round(value)} min`, 'Trend'];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => `Datum: ${label}`}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="minutes" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 3 }}
+                    activeDot={{ r: 5, fill: 'hsl(var(--primary))' }}
+                    connectNulls={false}
+                  />
+                  <Line 
+                    type="linear" 
+                    dataKey="trend" 
+                    stroke="#22c55e" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    connectNulls
+                    name="trend"
+                  />
+                  <ReferenceLine 
+                    y={stats.averageMinutesPerSession} 
+                    stroke="#f59e0b" 
+                    strokeDasharray="3 3"
+                    label={{ 
+                      value: 'Snitt', 
+                      position: 'right',
+                      style: { fontSize: 10, fill: '#f59e0b' }
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex justify-center gap-4 mt-2 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-0.5 bg-primary rounded" />
+                <span className="text-muted-foreground">Aktivitet</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-0.5 bg-green-500 rounded" style={{ borderStyle: 'dashed' }} />
+                <span className="text-muted-foreground">Trendlinje</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-0.5 bg-amber-500 rounded" />
+                <span className="text-muted-foreground">Snitt</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Activity breakdown */}
       {stats.activityBreakdown.length > 1 && (
