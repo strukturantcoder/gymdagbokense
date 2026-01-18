@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import { Scale, Watch, Shield } from 'lucide-react';
+import { Scale, Watch, Shield, Lock } from 'lucide-react';
 import { GarminConnectSettings } from '@/components/GarminConnectSettings';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,6 +25,7 @@ import WeightHistoryChart from '@/components/WeightHistoryChart';
 import WeightGoalCard from '@/components/WeightGoalCard';
 import WeightLogsList from '@/components/WeightLogsList';
 import AdBanner from '@/components/AdBanner';
+import PasswordChangeSection from '@/components/PasswordChangeSection';
 import { motion } from 'framer-motion';
 
 interface Profile {
@@ -82,6 +83,16 @@ const accountSections = [
     border: 'border-orange-500/30 hover:border-orange-500/60',
     iconColor: 'text-orange-500',
     description: 'Ljust / Mörkt läge',
+    adminOnly: false
+  },
+  { 
+    id: 'password', 
+    label: 'Lösenord', 
+    icon: Lock, 
+    gradient: 'from-rose-500/20 to-pink-500/20',
+    border: 'border-rose-500/30 hover:border-rose-500/60',
+    iconColor: 'text-rose-500',
+    description: 'Ändra lösenord',
     adminOnly: false
   },
   { 
@@ -326,6 +337,8 @@ export default function Account() {
         return <PushNotificationSettings />;
       case 'garmin':
         return <GarminConnectSettings />;
+      case 'password':
+        return <PasswordChangeSection />;
       default:
         return null;
     }
