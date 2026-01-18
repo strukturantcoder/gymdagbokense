@@ -16,8 +16,11 @@ import { toast } from 'sonner';
 import { 
   Dumbbell, Plus, Trash2, Loader2,
   Bike, Footprints, Waves, Flag, Timer, Flame, MapPin, Target, Sparkles,
-  ClipboardList, BarChart3, Users, Home, Map
+  ArrowLeft, Bell, Calendar, Zap, Map
 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CalendarSyncDialog from '@/components/CalendarSyncDialog';
+import WorkoutReminderSettings from '@/components/WorkoutReminderSettings';
 import ActiveCardioPlanSession from '@/components/ActiveCardioPlanSession';
 import QuickStartCardio from '@/components/QuickStartCardio';
 import GenerateCardioPlanDialog from '@/components/GenerateCardioPlanDialog';
@@ -507,148 +510,147 @@ export default function CardioLog() {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container px-4 py-3 overflow-hidden">
-          <div className="flex items-center justify-between mb-3 md:mb-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
-                <Dumbbell className="w-6 h-6 text-primary-foreground" />
+    <div className="min-h-[100dvh] bg-background flex flex-col pb-20 md:pb-4">
+      {/* Compact Header */}
+      <header className="border-b border-border bg-card shrink-0">
+        <div className="px-3 py-2 md:px-4 md:py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate('/dashboard')}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
+                  <Footprints className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <span className="font-display text-base font-bold">TRÄNING</span>
               </div>
-              <span className="font-display text-xl font-bold hidden sm:block">Konditionspass</span>
             </div>
-            <div className="hidden md:flex items-center gap-2">
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                <Home className="w-4 h-4 mr-2" />
-                Dashboard
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/log')}>
-                <ClipboardList className="w-4 h-4 mr-2" />
-                Träningslogg
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/stats')}>
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Statistik
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/social')}>
-                <Users className="w-4 h-4 mr-2" />
-                Socialt
-              </Button>
-              <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Target className="w-4 h-4 mr-2" />
-                    Sätt mål
+            <div className="flex items-center gap-1">
+              <WorkoutReminderSettings
+                trigger={
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Bell className="h-4 w-4" />
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Sätt konditionsmål</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label>Aktivitet</Label>
-                      <Select value={goalActivityType} onValueChange={setGoalActivityType}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Alla aktiviteter</SelectItem>
-                          {activityTypes.map(type => (
-                            <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Måltyp</Label>
-                      <Select value={goalTargetType} onValueChange={setGoalTargetType}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="distance_km">Distans (km)</SelectItem>
-                          <SelectItem value="duration_minutes">Tid (minuter)</SelectItem>
-                          <SelectItem value="sessions">Antal pass</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Målvärde</Label>
-                      <Input
-                        type="number"
-                        placeholder="10"
-                        value={goalTargetValue}
-                        onChange={(e) => setGoalTargetValue(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Period</Label>
-                      <Select value={goalPeriod} onValueChange={setGoalPeriod}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="weekly">Per vecka</SelectItem>
-                          <SelectItem value="monthly">Per månad</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button onClick={handleSaveGoal} className="w-full">Spara mål</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              <GenerateCardioPlanDialog />
-              <Button variant="hero" onClick={() => setShowForm(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Logga pass
-              </Button>
+                }
+              />
+              <CalendarSyncDialog
+                trigger={
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Calendar className="h-4 w-4" />
+                  </Button>
+                }
+              />
             </div>
-          </div>
-          
-          {/* Mobile scrollable navigation */}
-          <div className="md:hidden relative">
-            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-              <div className="flex items-center gap-2 pb-1 min-w-max">
-                <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
-                  <Home className="w-4 h-4 mr-1.5" />
-                  Hem
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate('/log')}>
-                  <ClipboardList className="w-4 h-4 mr-1.5" />
-                  Logg
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate('/stats')}>
-                  <BarChart3 className="w-4 h-4 mr-1.5" />
-                  Stats
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate('/social')}>
-                  <Users className="w-4 h-4 mr-1.5" />
-                  Socialt
-                </Button>
-                <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Target className="w-4 h-4 mr-1.5" />
-                      Mål
-                    </Button>
-                  </DialogTrigger>
-                </Dialog>
-                <GenerateCardioPlanDialog />
-                <Button variant="hero" size="sm" onClick={() => setShowForm(true)}>
-                  <Plus className="w-4 h-4 mr-1.5" />
-                  Logga
-                </Button>
-              </div>
-            </div>
-            {/* Scroll indicator gradient */}
-            <div className="absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none" />
           </div>
         </div>
       </header>
 
-      <main className="container px-4 py-8">
+      {/* Tabs for training types */}
+      <div className="px-3 py-2 md:px-4 border-b border-border bg-card">
+        <Tabs value="cardio" onValueChange={(tab) => {
+          if (tab === 'strength') {
+            navigate('/training');
+          } else if (tab === 'crossfit') {
+            navigate('/training/session?type=crossfit');
+          }
+        }} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 h-10">
+            <TabsTrigger value="strength" className="text-xs gap-1">
+              <Dumbbell className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Styrka</span>
+            </TabsTrigger>
+            <TabsTrigger value="crossfit" className="text-xs gap-1">
+              <Zap className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">CrossFit</span>
+            </TabsTrigger>
+            <TabsTrigger value="cardio" className="text-xs gap-1">
+              <Footprints className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Kondition</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* Action bar */}
+      <div className="px-3 py-2 md:px-4 flex items-center gap-2 overflow-x-auto">
+        <Button variant="hero" size="sm" onClick={() => setShowForm(true)}>
+          <Plus className="w-4 h-4 mr-1" />
+          Logga pass
+        </Button>
+        <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Target className="w-4 h-4 mr-1" />
+              Sätt mål
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Sätt konditionsmål</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label>Aktivitet</Label>
+                <Select value={goalActivityType} onValueChange={setGoalActivityType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alla aktiviteter</SelectItem>
+                    {activityTypes.map(type => (
+                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Måltyp</Label>
+                <Select value={goalTargetType} onValueChange={setGoalTargetType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="distance_km">Distans (km)</SelectItem>
+                    <SelectItem value="duration_minutes">Tid (minuter)</SelectItem>
+                    <SelectItem value="sessions">Antal pass</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Målvärde</Label>
+                <Input
+                  type="number"
+                  placeholder="10"
+                  value={goalTargetValue}
+                  onChange={(e) => setGoalTargetValue(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Period</Label>
+                <Select value={goalPeriod} onValueChange={setGoalPeriod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Per vecka</SelectItem>
+                    <SelectItem value="monthly">Per månad</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleSaveGoal} className="w-full">Spara mål</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <GenerateCardioPlanDialog />
+      </div>
+
+      <main className="flex-1 overflow-y-auto px-3 py-4 md:px-4">
         {/* Ad Banner */}
         <AdBanner className="mb-6" />
         
