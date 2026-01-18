@@ -152,11 +152,13 @@ const CreatorProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Top Ad Banner */}
-      <div className="px-4 py-3">
-        <AdBanner format="horizontal" placement="creator_profile_top" />
-      </div>
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+      {/* Scrollable content */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-4">
+        {/* Top Ad Banner */}
+        <div className="px-4 py-3">
+          <AdBanner format="horizontal" placement="creator_profile_top" />
+        </div>
       
       {/* Cover Image */}
       <div className="relative h-32 sm:h-48 bg-gradient-to-br from-primary/20 to-primary/5">
@@ -322,7 +324,8 @@ const CreatorProfile = () => {
         
         {/* Bottom Ad Banner */}
         <AdBanner className="mt-6" format="horizontal" placement="creator_profile_bottom" />
-      </div>
+        </div>
+      </main>
 
       {/* Program Detail Dialog */}
       <ProgramDetailDialog

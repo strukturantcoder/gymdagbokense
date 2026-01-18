@@ -153,7 +153,7 @@ export default function Admin() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-4">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-3 flex items-center gap-3">
@@ -172,7 +172,7 @@ export default function Admin() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-4 space-y-6">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden container mx-auto px-4 py-4 pb-20 md:pb-4 space-y-6">
         {/* Bento Grid Navigation */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {adminSections.map((section, index) => (

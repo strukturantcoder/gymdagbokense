@@ -437,7 +437,7 @@ export default function Blog() {
           <link rel="canonical" href={`https://gymdagboken.se/blogg/${post.slug}`} />
         </Helmet>
 
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background overflow-x-hidden">
           <header className="border-b border-border bg-card">
             <div className="container px-4 py-4 flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={() => navigate('/blogg')}>
@@ -516,7 +516,7 @@ export default function Blog() {
         <link rel="canonical" href="https://gymdagboken.se/blogg" />
       </Helmet>
 
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background overflow-x-hidden">
         <header className="border-b border-border bg-card">
           <div className="container px-4 py-4 flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate('/')}>

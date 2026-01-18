@@ -125,7 +125,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-x-hidden">
       <div className="absolute top-4 right-4"><LanguageSelector /></div>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
         <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl">

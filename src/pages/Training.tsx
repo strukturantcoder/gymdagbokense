@@ -56,7 +56,7 @@ export default function Training() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col pb-20 md:pb-4">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Compact Header */}
       <header className="border-b border-border bg-card shrink-0">
         <div className="px-3 py-2 md:px-4 md:py-3">
@@ -102,9 +102,11 @@ export default function Training() {
         <AdBanner format="horizontal" placement="training_top" />
       </div>
 
-      {/* Tabs for training types */}
-      <div className="px-3 py-2 md:px-4">
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+      {/* Main scrollable content */}
+      <main className="flex-1 overflow-y-auto pb-20 md:pb-4">
+        {/* Tabs for training types */}
+        <div className="px-3 py-2 md:px-4">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div className="grid w-full grid-cols-3 h-11 gap-1 bg-muted/50 p-1 rounded-lg">
             <button 
               onClick={() => handleTabChange('strength')}
@@ -144,13 +146,14 @@ export default function Training() {
           <TabsContent value="cardio" className="mt-3">
             {/* Redirect handled above */}
           </TabsContent>
-        </Tabs>
-      </div>
+          </Tabs>
+        </div>
 
-      {/* Bottom Ad Banner */}
-      <div className="px-3 pb-4 md:px-4">
-        <AdBanner format="horizontal" placement="training_bottom" />
-      </div>
+        {/* Bottom Ad Banner */}
+        <div className="px-3 pb-4 md:px-4">
+          <AdBanner format="horizontal" placement="training_bottom" />
+        </div>
+      </main>
     </div>
   );
 }
