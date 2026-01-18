@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import WeightLogDialog from '@/components/WeightLogDialog';
 import WeightHistoryChart from '@/components/WeightHistoryChart';
+import WeightGoalCard from '@/components/WeightGoalCard';
 import AdBanner from '@/components/AdBanner';
 import { motion } from 'framer-motion';
 
@@ -291,19 +292,30 @@ export default function Account() {
       case 'weight':
         return (
           <div className="space-y-4">
+            {/* Weight Goal Card */}
+            <WeightGoalCard />
+            
+            {/* Log weight button */}
             <Card>
               <CardContent className="p-4">
-                <Button onClick={() => setShowWeightDialog(true)} className="w-full">
+                <Button onClick={() => setShowWeightDialog(true)} className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90">
                   <Scale className="h-4 w-4 mr-2" />
                   Logga ny vikt
                 </Button>
               </CardContent>
             </Card>
+            
+            {/* Weight history chart */}
             <WeightHistoryChart />
+            
             <WeightLogDialog
               open={showWeightDialog}
               onOpenChange={setShowWeightDialog}
-              onSuccess={() => toast.success('Vikt loggad!')}
+              onSuccess={() => {
+                toast.success('Vikt loggad!');
+                // Force refetch by remounting the component
+                window.location.reload();
+              }}
             />
           </div>
         );

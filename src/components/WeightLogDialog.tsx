@@ -91,10 +91,13 @@ export default function WeightLogDialog({ open, onOpenChange, onSuccess }: Weigh
     if (!firstWeightLog) return;
 
     const startWeight = firstWeightLog.weight_kg;
-    const weightLost = startWeight - currentWeight;
 
-    // Update current_value to track weight lost (not current weight)
+    // Update each weight goal
     for (const goal of goals) {
+      // target_value now stores the TARGET WEIGHT (e.g., 88 kg)
+      // current_value stores kg lost from start
+      const weightLost = startWeight - currentWeight;
+      
       await supabase
         .from('user_goals')
         .update({ 
