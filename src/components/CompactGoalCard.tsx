@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Target, Plus, Edit2, Dumbbell, Heart, Scale, Calendar, Trophy, ChevronRight } from 'lucide-react';
+import { Target, Plus, Dumbbell, Heart, Scale, Calendar, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { differenceInDays, parseISO } from 'date-fns';
 import EditGoalDialog from './EditGoalDialog';
@@ -31,11 +31,11 @@ interface CompactGoalCardProps {
 }
 
 const goalTypeIcons: Record<string, React.ReactNode> = {
-  strength: <Dumbbell className="w-4 h-4" />,
-  cardio: <Heart className="w-4 h-4" />,
-  weight: <Scale className="w-4 h-4" />,
-  habit: <Calendar className="w-4 h-4" />,
-  custom: <Target className="w-4 h-4" />,
+  strength: <Dumbbell className="w-3 h-3" />,
+  cardio: <Heart className="w-3 h-3" />,
+  weight: <Scale className="w-3 h-3" />,
+  habit: <Calendar className="w-3 h-3" />,
+  custom: <Target className="w-3 h-3" />,
 };
 
 const goalTypeColors: Record<string, string> = {
@@ -66,7 +66,7 @@ export default function CompactGoalCard({ onAddGoal, refreshTrigger }: CompactGo
         .select('*')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(2);
+        .limit(1);
 
       if (error) throw error;
       setGoals((data as UserGoal[]) || []);
@@ -81,7 +81,6 @@ export default function CompactGoalCard({ onAddGoal, refreshTrigger }: CompactGo
     if (!goal.target_value || goal.target_value === 0) return 0;
     const current = goal.current_value || 0;
     
-    // For weight loss goals, progress is inverted
     if (goal.goal_type === 'weight' && goal.target_value < current) {
       const startValue = goal.current_value || current;
       const targetValue = goal.target_value;
@@ -90,15 +89,6 @@ export default function CompactGoalCard({ onAddGoal, refreshTrigger }: CompactGo
     }
     
     return Math.min(100, Math.round((current / goal.target_value) * 100));
-  };
-
-  const getDaysRemaining = (goal: UserGoal): string | null => {
-    if (!goal.target_date) return null;
-    const days = differenceInDays(parseISO(goal.target_date), new Date());
-    if (days < 0) return 'Förfallen';
-    if (days === 0) return 'Idag';
-    if (days === 1) return '1 dag';
-    return `${days} dagar`;
   };
 
   const handleGoalClick = (goal: UserGoal) => {
@@ -111,9 +101,9 @@ export default function CompactGoalCard({ onAddGoal, refreshTrigger }: CompactGo
 
   if (loading) {
     return (
-      <Card className="h-full animate-pulse">
-        <CardContent className="p-4 h-full flex items-center justify-center">
-          <div className="h-6 bg-muted rounded w-1/2" />
+      <Card className="h-full overflow-hidden animate-pulse">
+        <CardContent className="p-2 h-full flex items-center justify-center">
+          <div className="h-4 bg-muted rounded w-1/2" />
         </CardContent>
       </Card>
     );
@@ -123,18 +113,15 @@ export default function CompactGoalCard({ onAddGoal, refreshTrigger }: CompactGo
     return (
       <>
         <Card 
-          className="h-full cursor-pointer hover:border-primary/50 transition-colors bg-gradient-to-br from-primary/5 to-primary/10"
+          className="h-full overflow-hidden cursor-pointer hover:border-primary/50 transition-colors bg-gradient-to-br from-primary/5 to-primary/10"
           onClick={onAddGoal}
         >
-          <CardContent className="p-4 h-full flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gym-orange to-gym-amber flex items-center justify-center mb-2">
-              <Target className="w-6 h-6 text-primary-foreground" />
+          <CardContent className="p-2 h-full flex flex-col items-center justify-center text-center">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gym-orange to-gym-amber flex items-center justify-center mb-1">
+              <Target className="w-4 h-4 text-primary-foreground" />
             </div>
-            <p className="text-sm font-medium">Sätt ditt första mål</p>
-            <Button variant="link" size="sm" className="mt-1 p-0 h-auto">
-              <Plus className="w-3 h-3 mr-1" />
-              Skapa mål
-            </Button>
+            <p className="text-[11px] font-medium">Sätt mål</p>
+            <Plus className="w-3 h-3 text-muted-foreground mt-0.5" />
           </CardContent>
         </Card>
         <WeightLogDialog 
@@ -146,55 +133,43 @@ export default function CompactGoalCard({ onAddGoal, refreshTrigger }: CompactGo
     );
   }
 
+  const goal = goals[0];
+  const progress = calculateProgress(goal);
+  const gradientClass = goalTypeColors[goal.goal_type] || goalTypeColors.custom;
+
   return (
     <>
-      <Card className="h-full">
-        <CardContent className="p-3 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <Target className="w-4 h-4 text-primary" />
-              <span className="text-xs font-semibold">Mål</span>
+      <Card className="h-full overflow-hidden">
+        <CardContent className="p-2 h-full flex flex-col">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-1">
+              <Target className="w-3 h-3 text-primary" />
+              <span className="text-[10px] font-semibold">Mål</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={onAddGoal} className="h-6 px-2">
+            <Button variant="ghost" size="sm" onClick={onAddGoal} className="h-5 w-5 p-0">
               <Plus className="w-3 h-3" />
             </Button>
           </div>
 
-          <div className="flex-1 space-y-2">
-            {goals.map((goal) => {
-              const progress = calculateProgress(goal);
-              const gradientClass = goalTypeColors[goal.goal_type] || goalTypeColors.custom;
-              const daysRemaining = getDaysRemaining(goal);
-
-              return (
-                <motion.div
-                  key={goal.id}
-                  className="p-2 rounded-lg bg-muted/50 hover:bg-muted/80 cursor-pointer transition-colors"
-                  onClick={() => handleGoalClick(goal)}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-6 h-6 rounded bg-gradient-to-br ${gradientClass} flex items-center justify-center text-white flex-shrink-0`}>
-                      {goalTypeIcons[goal.goal_type] || goalTypeIcons.custom}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-medium truncate">{goal.title}</p>
-                        <div className="flex items-center gap-1">
-                          {progress >= 100 && <Trophy className="w-3 h-3 text-yellow-500" />}
-                          <span className="text-xs font-bold">{progress}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <Progress value={progress} className="h-1.5" />
-                  {daysRemaining && (
-                    <p className="text-[10px] text-muted-foreground mt-1">{daysRemaining} kvar</p>
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
+          <motion.div
+            className="flex-1 p-1.5 rounded-md bg-muted/50 hover:bg-muted/80 cursor-pointer transition-colors overflow-hidden"
+            onClick={() => handleGoalClick(goal)}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className={`w-5 h-5 rounded bg-gradient-to-br ${gradientClass} flex items-center justify-center text-white flex-shrink-0`}>
+                {goalTypeIcons[goal.goal_type] || goalTypeIcons.custom}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-medium truncate leading-tight">{goal.title}</p>
+              </div>
+              <div className="flex items-center gap-0.5 shrink-0">
+                {progress >= 100 && <Trophy className="w-3 h-3 text-yellow-500" />}
+                <span className="text-[10px] font-bold">{progress}%</span>
+              </div>
+            </div>
+            <Progress value={progress} className="h-1" />
+          </motion.div>
         </CardContent>
       </Card>
 
