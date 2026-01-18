@@ -72,18 +72,35 @@ export default function WeightLogDialog({ open, onOpenChange, onSuccess }: Weigh
     // Get active weight goals
     const { data: goals } = await supabase
       .from('user_goals')
-      .select('id, target_value')
+      .select('id, target_value, start_date')
       .eq('user_id', user.id)
       .eq('goal_type', 'weight')
       .eq('status', 'active');
 
     if (!goals?.length) return;
 
-    // Update current_value for weight goals
+    // Get the first weight log (starting weight) for the user
+    const { data: firstWeightLog } = await supabase
+      .from('weight_logs')
+      .select('weight_kg')
+      .eq('user_id', user.id)
+      .order('logged_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (!firstWeightLog) return;
+
+    const startWeight = firstWeightLog.weight_kg;
+    const weightLost = startWeight - currentWeight;
+
+    // Update current_value to track weight lost (not current weight)
     for (const goal of goals) {
       await supabase
         .from('user_goals')
-        .update({ current_value: currentWeight, updated_at: new Date().toISOString() })
+        .update({ 
+          current_value: Math.max(0, weightLost), 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', goal.id);
     }
   };
