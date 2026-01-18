@@ -438,10 +438,10 @@ export default function Account() {
           </CardContent>
         </Card>
 
-        {/* Account section cards - 2x3 grid */}
+        {/* Account section cards - 2x3 grid (excluding admin) */}
         <div className="flex-1 grid grid-cols-2 gap-2 min-h-0 content-start">
           {accountSections
-            .filter(sec => !sec.adminOnly || isAdmin)
+            .filter(sec => !sec.adminOnly)
             .map((sec, index) => (
             <motion.div
               key={sec.id}
@@ -465,6 +465,29 @@ export default function Account() {
             </motion.div>
           ))}
         </div>
+
+        {/* Admin button - separate from grid, only for admins */}
+        {isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="shrink-0 mt-3"
+          >
+            <Card 
+              className="cursor-pointer bg-gradient-to-br from-red-500/20 to-rose-500/20 border-red-500/30 hover:border-red-500/60 transition-all"
+              onClick={() => navigate('/admin')}
+            >
+              <CardContent className="p-3 flex items-center gap-3">
+                <Shield className="w-5 h-5 text-red-500" />
+                <div>
+                  <p className="text-sm font-semibold">Admin</p>
+                  <p className="text-[10px] text-muted-foreground">Adminpanel</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Update Button */}
         <div className="shrink-0 mt-3">
