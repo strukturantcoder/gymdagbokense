@@ -466,11 +466,6 @@ export default function Account() {
           ))}
         </div>
 
-        {/* Bottom Ad Banner */}
-        <div className="shrink-0 mt-3">
-          <AdBanner format="mobile_banner" placement="account_bottom" showPremiumPrompt={false} />
-        </div>
-
         {/* Update Button */}
         <div className="shrink-0 mt-3">
           <Button 
@@ -486,6 +481,11 @@ export default function Account() {
             )}
             {isClearing ? 'Uppdaterar...' : 'Rensa cache & uppdatera'}
           </Button>
+        </div>
+
+        {/* Bottom Ad Banner - after cache button */}
+        <div className="shrink-0 mt-3">
+          <AdBanner format="mobile_banner" placement="account_bottom" showPremiumPrompt={false} />
         </div>
 
         {/* Version info */}
