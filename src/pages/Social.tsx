@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useSocial } from '@/hooks/useSocial';
@@ -7,10 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Users, Swords, Trophy, Loader2, ArrowLeft, Sparkles, Globe, Target, UserPlus
+  Users, Swords, Trophy, Loader2, ArrowLeft, Sparkles, Globe, Target
 } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
 import XPProgress from '@/components/XPProgress';
+import FriendsLeaderboard from '@/components/FriendsLeaderboard';
+import ChallengeCard from '@/components/ChallengeCard';
+import { PoolChallenges } from '@/components/PoolChallenges';
+import { CommunityChallenges } from '@/components/CommunityChallenges';
+import AchievementsList from '@/components/AchievementsList';
+import { TeamsSection } from '@/components/teams/TeamsSection';
 
 const socialCategories = [
   { 
@@ -72,11 +78,16 @@ const socialCategories = [
 export default function Social() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { category } = useParams<{ category?: string }>();
   const { 
     pendingRequests, 
     challenges, 
-    userStats, 
+    userStats,
+    achievements,
+    userAchievements,
     loading: socialLoading,
+    respondToChallenge,
+    cancelChallenge,
   } = useSocial();
 
   useEffect(() => {
@@ -107,6 +118,99 @@ export default function Social() {
     navigate(`/social/${id}`);
   };
 
+  const handleBack = () => {
+    if (category) {
+      navigate('/social');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
+  const currentCategory = socialCategories.find(c => c.id === category);
+  const CurrentIcon = currentCategory?.icon || Users;
+
+  // Render category content
+  const renderCategoryContent = () => {
+    switch (category) {
+      case 'friends':
+        return <FriendsLeaderboard />;
+      case 'teams':
+        return <TeamsSection />;
+      case 'challenges':
+        return (
+          <div className="space-y-4">
+            {challenges.length === 0 ? (
+              <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                  Inga utmaningar än. Utmana en vän!
+                </CardContent>
+              </Card>
+            ) : (
+              challenges.map(challenge => (
+                <ChallengeCard
+                  key={challenge.id}
+                  challenge={challenge}
+                  onAccept={() => respondToChallenge(challenge.id, true)}
+                  onDecline={() => respondToChallenge(challenge.id, false)}
+                  onCancel={() => cancelChallenge(challenge.id)}
+                />
+              ))
+            )}
+          </div>
+        );
+      case 'pool':
+        return <PoolChallenges />;
+      case 'community':
+        return <CommunityChallenges />;
+      case 'achievements':
+        return <AchievementsList achievements={achievements} userAchievements={userAchievements} />;
+      default:
+        return null;
+    }
+  };
+
+  // If a category is selected, show that content
+  if (category) {
+    return (
+      <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="border-b border-border bg-card shrink-0">
+          <div className="px-3 py-2 md:px-4 md:py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleBack}
+                  className="h-8 w-8"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 bg-gradient-to-br ${currentCategory?.gradient || 'from-gym-orange to-gym-amber'} rounded-lg flex items-center justify-center`}>
+                    <CurrentIcon className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <span className="font-display text-base font-bold uppercase">{currentCategory?.label || 'Socialt'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Scrollable content */}
+        <main className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 pb-20 md:pb-4">
+          {renderCategoryContent()}
+        </main>
+
+        {/* Ad Banner at bottom */}
+        <div className="shrink-0 px-3 pb-16 md:pb-3">
+          <AdBanner format="mobile_banner" placement="social_bottom" showPremiumPrompt={false} />
+        </div>
+      </div>
+    );
+  }
+
+  // Main category selection view
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Compact Header */}
@@ -149,19 +253,19 @@ export default function Social() {
 
         {/* Social category cards - 2x3 grid */}
         <div className="flex-1 grid grid-cols-2 gap-2 min-h-0 content-start">
-          {socialCategories.map((category, index) => {
-            const badgeCount = getBadgeCount(category.id);
+          {socialCategories.map((cat, index) => {
+            const badgeCount = getBadgeCount(cat.id);
             return (
               <motion.div
-                key={category.id}
+                key={cat.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
                 whileTap={{ scale: 0.97 }}
               >
                 <Card 
-                  className={`cursor-pointer bg-gradient-to-br ${category.gradient} ${category.border} transition-all h-full relative`}
-                  onClick={() => handleCategorySelect(category.id)}
+                  className={`cursor-pointer bg-gradient-to-br ${cat.gradient} ${cat.border} transition-all h-full relative`}
+                  onClick={() => handleCategorySelect(cat.id)}
                 >
                   {badgeCount > 0 && (
                     <Badge 
@@ -172,10 +276,10 @@ export default function Social() {
                     </Badge>
                   )}
                   <CardContent className="p-3 flex flex-col justify-between h-full min-h-[80px]">
-                    <category.icon className={`w-5 h-5 ${category.iconColor}`} />
+                    <cat.icon className={`w-5 h-5 ${cat.iconColor}`} />
                     <div>
-                      <p className="text-sm font-semibold">{category.label}</p>
-                      <p className="text-[10px] text-muted-foreground line-clamp-1">{category.description}</p>
+                      <p className="text-sm font-semibold">{cat.label}</p>
+                      <p className="text-[10px] text-muted-foreground line-clamp-1">{cat.description}</p>
                     </div>
                   </CardContent>
                 </Card>
