@@ -10,6 +10,7 @@ import AdBanner from '@/components/AdBanner';
 import { StrengthProgressChart } from '@/components/StrengthProgressChart';
 import { WorkoutHistoryChart } from '@/components/WorkoutHistoryChart';
 import WeightHistoryChart from '@/components/WeightHistoryChart';
+import { CardioStatsChart } from '@/components/CardioStatsChart';
 
 interface QuickStats {
   totalWorkouts: number;
@@ -176,16 +177,7 @@ export default function Statistics() {
           </TabsContent>
 
           <TabsContent value="cardio" className="mt-3">
-            <Card>
-              <CardContent className="p-6 text-center text-muted-foreground">
-                <Footprints className="w-12 h-12 mx-auto mb-4 text-pink-500" />
-                <p className="font-medium">Konditionsstatistik</p>
-                <p className="text-sm mb-4">Logga konditionspass för att se din statistik här.</p>
-                <Button onClick={() => navigate('/cardio-log')}>
-                  Logga kondition
-                </Button>
-              </CardContent>
-            </Card>
+            <CardioStatsChart />
           </TabsContent>
 
           <TabsContent value="weight" className="mt-3">
