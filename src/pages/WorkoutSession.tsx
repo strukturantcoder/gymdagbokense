@@ -64,6 +64,7 @@ import {
 import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
 import SharePRToInstagramDialog from '@/components/SharePRToInstagramDialog';
 import AdBanner from '@/components/AdBanner';
+import PostWorkoutAdPopup from '@/components/PostWorkoutAdPopup';
 import { SupersetGroup } from '@/components/training/SupersetGroup';
 import { CreateSupersetDialog } from '@/components/training/CreateSupersetDialog';
 
@@ -169,6 +170,7 @@ export default function WorkoutSession() {
   const [exerciseGoals, setExerciseGoals] = useState<Map<string, ExerciseGoal>>(new Map());
   const [lastUsedWeights, setLastUsedWeights] = useState<Map<string, LastUsedWeight>>(new Map());
   const [showSummary, setShowSummary] = useState(false);
+  const [showAdPopup, setShowAdPopup] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showPRShareDialog, setShowPRShareDialog] = useState(false);
   const [prShareData, setPRShareData] = useState<{
@@ -1083,7 +1085,9 @@ export default function WorkoutSession() {
       // Save session name for sharing and clear session
       setSavedSessionName(sessionData.dayName);
       localStorage.removeItem(SESSION_STORAGE_KEY);
-      setShowSummary(true);
+      
+      // Show ad popup before summary (non-premium users)
+      setShowAdPopup(true);
       
     } catch (error) {
       console.error('Error saving workout:', error);
@@ -1098,11 +1102,28 @@ export default function WorkoutSession() {
     navigate('/training');
   };
 
-  if (!sessionData && !showSummary) {
+  if (!sessionData && !showSummary && !showAdPopup) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Laddar...</div>
       </div>
+    );
+  }
+
+  // Show ad popup before summary
+  if (showAdPopup && !showSummary) {
+    return (
+      <PostWorkoutAdPopup 
+        isOpen={showAdPopup} 
+        onClose={() => {
+          setShowAdPopup(false);
+          setShowSummary(true);
+        }}
+        onComplete={() => {
+          setShowAdPopup(false);
+          setShowSummary(true);
+        }}
+      />
     );
   }
 
@@ -1118,7 +1139,7 @@ export default function WorkoutSession() {
 
         {/* Ad at top of summary */}
         <div className="p-4 pb-0">
-          <AdBanner format="horizontal" />
+          <AdBanner format="horizontal" placement="post_workout_summary" />
         </div>
 
         <main className="flex-1 p-4 flex flex-col items-center justify-center">
