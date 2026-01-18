@@ -269,7 +269,7 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
         );
       case 'level':
         return (
-          <Card className="h-full overflow-hidden">
+          <Card className="h-full overflow-hidden bg-gradient-to-br from-amber-500/10 to-yellow-500/10 border-amber-500/20 hover:border-amber-500/40 transition-all">
             <CardContent className="p-2 h-full flex flex-col justify-between">
               <div className="flex items-center gap-1.5">
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gym-orange to-gym-amber flex items-center justify-center shadow-lg shrink-0">
@@ -291,7 +291,7 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
         );
       case 'streak':
         return (
-          <Card className="h-full overflow-hidden">
+          <Card className="h-full overflow-hidden bg-gradient-to-br from-orange-500/10 to-amber-500/10 border-orange-500/20 hover:border-orange-500/40 transition-all">
             <CardContent className="p-2 h-full flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <Flame className="w-4 h-4 text-orange-500" />
@@ -352,7 +352,7 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
       case 'stats':
         return (
           <Card 
-            className="h-full overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors"
+            className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border-blue-500/20 hover:border-blue-500/40 transition-all"
             onClick={() => !isEditing && navigate('/stats')}
           >
             <CardContent className="p-2 h-full flex items-center gap-2">
@@ -364,7 +364,7 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
       case 'social':
         return (
           <Card 
-            className="h-full overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors"
+            className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-yellow-500/10 to-amber-500/10 border-yellow-500/20 hover:border-yellow-500/40 transition-all"
             onClick={() => !isEditing && navigate('/social')}
           >
             <CardContent className="p-2 h-full flex items-center gap-2">
@@ -376,11 +376,11 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
       case 'account':
         return (
           <Card 
-            className="h-full overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors"
+            className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-slate-500/10 to-gray-500/10 border-slate-500/20 hover:border-slate-500/40 transition-all"
             onClick={() => !isEditing && navigate('/account')}
           >
             <CardContent className="p-2 h-full flex items-center gap-2">
-              <User className="w-4 h-4 text-gray-500" />
+              <User className="w-4 h-4 text-slate-500" />
               <span className="text-xs font-medium">Konto</span>
             </CardContent>
           </Card>
