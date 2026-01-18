@@ -99,18 +99,18 @@ export default function Training() {
       {/* Tabs for training types */}
       <div className="px-3 py-2 md:px-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-10">
-            <TabsTrigger value="strength" className="text-xs gap-1">
-              <Dumbbell className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Styrka</span>
+          <TabsList className="grid w-full grid-cols-3 h-11 gap-1 bg-muted/50 p-1">
+            <TabsTrigger value="strength" className="text-xs gap-1.5 rounded-md border border-transparent data-[state=active]:border-primary/30 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Dumbbell className="w-4 h-4" />
+              <span className="hidden sm:inline font-medium">Styrka</span>
             </TabsTrigger>
-            <TabsTrigger value="crossfit" className="text-xs gap-1">
-              <Zap className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">CrossFit</span>
+            <TabsTrigger value="crossfit" className="text-xs gap-1.5 rounded-md border border-transparent data-[state=active]:border-primary/30 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Zap className="w-4 h-4" />
+              <span className="hidden sm:inline font-medium">CrossFit</span>
             </TabsTrigger>
-            <TabsTrigger value="cardio" className="text-xs gap-1">
-              <Footprints className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Kondition</span>
+            <TabsTrigger value="cardio" className="text-xs gap-1.5 rounded-md border border-transparent data-[state=active]:border-primary/30 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Footprints className="w-4 h-4" />
+              <span className="hidden sm:inline font-medium">Kondition</span>
             </TabsTrigger>
           </TabsList>
 
