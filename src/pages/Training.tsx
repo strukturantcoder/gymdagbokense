@@ -1,24 +1,51 @@
 import { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dumbbell, Footprints, ArrowLeft, Zap, Loader2, Calendar, Bell, Trophy } from 'lucide-react';
-import WorkoutLogContent from '@/components/training/WorkoutLogContent';
-import CardioLogContent from '@/components/training/CardioLogContent';
-import CrossFitWOD from '@/components/CrossFitWOD';
-import TrainingOnboardingGuide from '@/components/TrainingOnboardingGuide';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Dumbbell, Footprints, ArrowLeft, Zap, Loader2, Calendar, Bell, Play } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import AdBanner from '@/components/AdBanner';
 import CalendarSyncDialog from '@/components/CalendarSyncDialog';
 import WorkoutReminderSettings from '@/components/WorkoutReminderSettings';
-import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { motion } from 'framer-motion';
+
+const trainingTypes = [
+  { 
+    id: 'strength', 
+    label: 'Styrka', 
+    icon: Dumbbell, 
+    gradient: 'from-orange-500/20 to-red-500/20',
+    border: 'border-orange-500/30 hover:border-orange-500/60',
+    iconColor: 'text-orange-500',
+    description: 'Logga styrkepass'
+  },
+  { 
+    id: 'crossfit', 
+    label: 'CrossFit', 
+    icon: Zap, 
+    gradient: 'from-green-500/20 to-emerald-500/20',
+    border: 'border-green-500/30 hover:border-green-500/60',
+    iconColor: 'text-green-500',
+    description: 'WOD & funktionell träning'
+  },
+  { 
+    id: 'cardio', 
+    label: 'Kondition', 
+    icon: Footprints, 
+    gradient: 'from-pink-500/20 to-rose-500/20',
+    border: 'border-pink-500/30 hover:border-pink-500/60',
+    iconColor: 'text-pink-500',
+    description: 'Löpning, cykling, simning'
+  },
+];
+
 export default function Training() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(tabParam === 'cardio' ? 'cardio' : tabParam === 'crossfit' ? 'crossfit' : 'strength');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -26,105 +53,115 @@ export default function Training() {
     }
   }, [user, loading, navigate]);
 
+  // If a tab is specified, go directly to the workout session
   useEffect(() => {
-    if (tabParam === 'cardio') setActiveTab('cardio');
-    else if (tabParam === 'crossfit') setActiveTab('crossfit');
-    else if (tabParam === 'strength') setActiveTab('strength');
-  }, [tabParam]);
+    if (tabParam) {
+      navigate(`/workout-session?type=${tabParam}`);
+    }
+  }, [tabParam, navigate]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="h-[100dvh] bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <TrainingOnboardingGuide />
-      <div className="container px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => navigate('/dashboard')}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-display font-bold">Träning</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => navigate('/programs')}
-            >
-              <Trophy className="h-4 w-4" />
-              <span className="hidden sm:inline">Topplista</span>
-            </Button>
-            <WorkoutReminderSettings
-              trigger={
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Bell className="h-4 w-4" />
-                </Button>
-              }
-            />
-            <CalendarSyncDialog
-              trigger={
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span className="hidden sm:inline">Kalender</span>
-                </Button>
-              }
-            />
-          </div>
-        </div>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="strength" className="flex items-center gap-2">
-              <Dumbbell className="w-4 h-4" />
-              Styrka
-            </TabsTrigger>
-            <TabsTrigger value="crossfit" className="flex items-center gap-2">
-              <Zap className="w-4 h-4" />
-              CrossFit
-            </TabsTrigger>
-            <TabsTrigger value="cardio" className="flex items-center gap-2">
-              <Footprints className="w-4 h-4" />
-              Kondition
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="strength" className="mt-0">
-            <WorkoutLogContent />
-          </TabsContent>
+  const handleTrainingSelect = (type: string) => {
+    if (type === 'strength') {
+      navigate('/workout-log');
+    } else if (type === 'crossfit') {
+      navigate('/workout-session?type=crossfit');
+    } else if (type === 'cardio') {
+      navigate('/cardio-log');
+    }
+  };
 
-          <TabsContent value="crossfit" className="mt-0">
-            <CrossFitWOD />
-          </TabsContent>
-          
-          <TabsContent value="cardio" className="mt-0">
-            <CardioLogContent />
-          </TabsContent>
-        </Tabs>
-        
-        {/* Mobile banner ad - only on mobile */}
-        {isMobile && (
-          <div className="mt-6">
-            <AdBanner format="mobile_banner" placement="training_mobile" />
+  return (
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+      {/* Compact Header */}
+      <header className="border-b border-border bg-card shrink-0">
+        <div className="px-3 py-2 md:px-4 md:py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate('/dashboard')}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
+                  <Dumbbell className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <span className="font-display text-base font-bold">TRÄNING</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <WorkoutReminderSettings
+                trigger={
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Bell className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              <CalendarSyncDialog
+                trigger={
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Calendar className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            </div>
           </div>
-        )}
-        
-        {/* Square medium ad */}
-        <div className="flex justify-center my-8">
-          <AdBanner format="square_medium" placement="training_square" showPremiumPrompt={false} />
         </div>
-      </div>
+      </header>
+
+      {/* Main content - fixed height, no scroll */}
+      <main className="flex-1 flex flex-col px-3 py-3 md:px-4 md:py-4 pb-16 md:pb-4 overflow-hidden">
+        {/* Title */}
+        <div className="shrink-0 mb-3">
+          <h1 className="text-lg font-display font-bold">Välj träningstyp</h1>
+          <p className="text-xs text-muted-foreground">Vad vill du träna idag?</p>
+        </div>
+
+        {/* Training type cards - takes remaining space */}
+        <div className="flex-1 grid grid-cols-1 gap-3 min-h-0 content-start">
+          {trainingTypes.map((type, index) => (
+            <motion.div
+              key={type.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Card 
+                className={`cursor-pointer bg-gradient-to-br ${type.gradient} ${type.border} transition-all h-full`}
+                onClick={() => handleTrainingSelect(type.id)}
+              >
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl bg-background/50 flex items-center justify-center`}>
+                    <type.icon className={`w-6 h-6 ${type.iconColor}`} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base">{type.label}</h3>
+                    <p className="text-xs text-muted-foreground">{type.description}</p>
+                  </div>
+                  <Play className="w-5 h-5 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Ad Banner at bottom */}
+        <div className="shrink-0 mt-3">
+          <AdBanner format="mobile_banner" placement="training_bottom" showPremiumPrompt={false} />
+        </div>
+      </main>
     </div>
   );
 }

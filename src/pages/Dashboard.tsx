@@ -14,6 +14,7 @@ import DailyStreakBonus from '@/components/DailyStreakBonus';
 import WelcomeGuide from '@/components/WelcomeGuide';
 import { NewChallengePopup } from '@/components/NewChallengePopup';
 import { PendingInvitationsPopup } from '@/components/PendingInvitationsPopup';
+import AdBanner from '@/components/AdBanner';
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
@@ -33,14 +34,14 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-[100dvh] bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Welcome Guide for new users */}
       {user && <WelcomeGuide userId={user.id} />}
       
@@ -49,13 +50,13 @@ export default function Dashboard() {
       
       {/* Minimal Header - only on desktop */}
       <header className="hidden md:block border-b border-border bg-card shrink-0">
-        <div className="container px-4 py-3">
+        <div className="container px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
-                <Dumbbell className="w-6 h-6 text-primary-foreground" />
+              <div className="w-8 h-8 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
+                <Dumbbell className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="font-display text-xl font-bold">GYMDAGBOKEN</span>
+              <span className="font-display text-lg font-bold">GYMDAGBOKEN</span>
             </div>
             <div className="flex items-center gap-2">
               <InstallAppButton />
@@ -63,17 +64,17 @@ export default function Dashboard() {
               <SubscriptionButton variant="compact" />
               {isAdmin && (
                 <Button variant="outline" size="sm" onClick={() => navigate('/admin/challenges')}>
-                  <Shield className="w-4 h-4 mr-2" />
+                  <Shield className="w-4 h-4 mr-1" />
                   Admin
                 </Button>
               )}
               <NotificationBell />
               <Button variant="outline" size="sm" onClick={() => navigate('/account')}>
-                <UserCircle className="w-4 h-4 mr-2" />
+                <UserCircle className="w-4 h-4 mr-1" />
                 Konto
               </Button>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut className="w-4 h-4 mr-2" />
+                <LogOut className="w-4 h-4 mr-1" />
                 Logga ut
               </Button>
             </div>
@@ -83,13 +84,13 @@ export default function Dashboard() {
 
       {/* Mobile Header - compact */}
       <header className="md:hidden border-b border-border bg-card shrink-0">
-        <div className="px-4 py-3">
+        <div className="px-3 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
-                <Dumbbell className="w-5 h-5 text-primary-foreground" />
+              <div className="w-7 h-7 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
+                <Dumbbell className="w-4 h-4 text-primary-foreground" />
               </div>
-              <span className="font-display text-lg font-bold">GYMDAGBOKEN</span>
+              <span className="font-display text-base font-bold">GYMDAGBOKEN</span>
             </div>
             <div className="flex items-center gap-1">
               <SubscriptionButton variant="compact" />
@@ -99,15 +100,22 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Main content - fills remaining space without scroll */}
-      <main className="flex-1 container px-3 py-3 md:px-4 md:py-4 pb-20 md:pb-4 flex flex-col">
-        {/* Daily Streak Bonus - compact */}
-        <div className="mb-3 shrink-0">
+      {/* Main content - fixed height, no scroll */}
+      <main className="flex-1 flex flex-col px-2 py-2 md:px-4 md:py-3 pb-16 md:pb-3 overflow-hidden">
+        {/* Daily Streak Bonus - very compact */}
+        <div className="shrink-0 mb-2">
           <DailyStreakBonus />
         </div>
 
-        {/* Bento Grid - main content */}
-        <DashboardBentoGrid className="flex-1" />
+        {/* Bento Grid - takes remaining space */}
+        <div className="flex-1 min-h-0">
+          <DashboardBentoGrid className="h-full" />
+        </div>
+
+        {/* Ad Banner at bottom - fixed height */}
+        <div className="shrink-0 mt-2">
+          <AdBanner format="mobile_banner" placement="dashboard_bottom" showPremiumPrompt={false} />
+        </div>
       </main>
 
       {/* New Challenge Popup */}

@@ -1,81 +1,82 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useSocial } from '@/hooks/useSocial';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Dumbbell, LogOut, Users, Swords, Trophy, UserPlus, 
-  Check, X, Loader2, ArrowLeft, Bell, Gift, Sparkles, Globe, Target, Archive, ChevronDown, ChevronUp
+  Users, Swords, Trophy, Loader2, ArrowLeft, Sparkles, Globe, Target, UserPlus
 } from 'lucide-react';
-import UserSearch from '@/components/UserSearch';
-import ChallengeCard from '@/components/ChallengeCard';
-import CreateChallengeDialog from '@/components/CreateChallengeDialog';
-import XPProgress from '@/components/XPProgress';
-import AchievementsList from '@/components/AchievementsList';
-import InviteFriends from '@/components/InviteFriends';
 import AdBanner from '@/components/AdBanner';
-import { CommunityChallenges } from '@/components/CommunityChallenges';
-import { PoolChallenges } from '@/components/PoolChallenges';
-import FriendsLeaderboard from '@/components/FriendsLeaderboard';
-import { StreakLeaderboard } from '@/components/StreakLeaderboard';
-import { TeamsSection } from '@/components/teams/TeamsSection';
+import XPProgress from '@/components/XPProgress';
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 100
-    }
-  }
-};
-
-const cardHoverVariants = {
-  rest: { scale: 1 },
-  hover: { 
-    scale: 1.02,
-    transition: {
-      type: "spring" as const,
-      stiffness: 400,
-      damping: 10
-    }
-  }
-};
+const socialCategories = [
+  { 
+    id: 'friends', 
+    label: 'Vänner', 
+    icon: Users, 
+    gradient: 'from-blue-500/20 to-indigo-500/20',
+    border: 'border-blue-500/30 hover:border-blue-500/60',
+    iconColor: 'text-blue-500',
+    description: 'Hantera vänner & sök användare'
+  },
+  { 
+    id: 'teams', 
+    label: 'Lag', 
+    icon: Trophy, 
+    gradient: 'from-yellow-500/20 to-amber-500/20',
+    border: 'border-yellow-500/30 hover:border-yellow-500/60',
+    iconColor: 'text-yellow-500',
+    description: 'Skapa & gå med i lag'
+  },
+  { 
+    id: 'challenges', 
+    label: 'Utmaningar', 
+    icon: Swords, 
+    gradient: 'from-red-500/20 to-orange-500/20',
+    border: 'border-red-500/30 hover:border-red-500/60',
+    iconColor: 'text-red-500',
+    description: 'Utmana dina vänner'
+  },
+  { 
+    id: 'pool', 
+    label: 'Matchning', 
+    icon: Target, 
+    gradient: 'from-purple-500/20 to-pink-500/20',
+    border: 'border-purple-500/30 hover:border-purple-500/60',
+    iconColor: 'text-purple-500',
+    description: 'Automatisk matchmaking'
+  },
+  { 
+    id: 'community', 
+    label: 'Tävlingar', 
+    icon: Globe, 
+    gradient: 'from-green-500/20 to-emerald-500/20',
+    border: 'border-green-500/30 hover:border-green-500/60',
+    iconColor: 'text-green-500',
+    description: 'Community-tävlingar'
+  },
+  { 
+    id: 'achievements', 
+    label: 'Prestationer', 
+    icon: Sparkles, 
+    gradient: 'from-cyan-500/20 to-teal-500/20',
+    border: 'border-cyan-500/30 hover:border-cyan-500/60',
+    iconColor: 'text-cyan-500',
+    description: 'Dina achievements'
+  },
+];
 
 export default function Social() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("friends");
-  const [showArchive, setShowArchive] = useState(false);
   const { 
-    friends, 
     pendingRequests, 
     challenges, 
     userStats, 
-    achievements, 
-    userAchievements,
     loading: socialLoading,
-    respondToFriendRequest,
-    removeFriend,
-    respondToChallenge,
-    cancelChallenge
   } = useSocial();
 
   useEffect(() => {
@@ -84,742 +85,109 @@ export default function Social() {
     }
   }, [user, loading, navigate]);
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
-
   if (loading || socialLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
-          <Loader2 className="h-8 w-8 text-primary" />
-        </motion.div>
+      <div className="h-[100dvh] bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  const activeChallenges = challenges.filter(c => c.status === 'active');
   const pendingChallenges = challenges.filter(c => c.status === 'pending');
-  const completedChallenges = challenges.filter(c => c.status === 'completed' || c.status === 'declined');
-  const recentCompleted = completedChallenges.slice(0, 3);
-  const archivedChallenges = completedChallenges.slice(3);
+
+  const getBadgeCount = (id: string) => {
+    switch (id) {
+      case 'friends': return pendingRequests.length;
+      case 'challenges': return pendingChallenges.filter(c => c.challenged_id === user?.id).length;
+      default: return 0;
+    }
+  };
+
+  const handleCategorySelect = (id: string) => {
+    navigate(`/social/${id}`);
+  };
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
-      {/* Animated background elements */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <motion.div
-          className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gym-orange/5 rounded-full blur-3xl"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        />
-      </div>
-
-      {/* Header */}
-      <motion.header 
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 100 }}
-        className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50"
-      >
-        <div className="container px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
-                <ArrowLeft className="w-5 h-5" />
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+      {/* Compact Header */}
+      <header className="border-b border-border bg-card shrink-0">
+        <div className="px-3 py-2 md:px-4 md:py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate('/dashboard')}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
               </Button>
-            </motion.div>
-            <motion.div 
-              className="w-10 h-10 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center"
-              whileHover={{ rotate: [0, -10, 10, 0] }}
-              transition={{ duration: 0.5 }}
-            >
-              <Dumbbell className="w-6 h-6 text-primary-foreground" />
-            </motion.div>
-            <motion.span 
-              className="font-display text-xl font-bold"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              SOCIALT
-            </motion.span>
-          </div>
-          <div className="flex items-center gap-2">
-            <AnimatePresence>
-              {pendingRequests.length > 0 && (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                >
-                  <Badge variant="destructive" className="animate-pulse">
-                    {pendingRequests.length} nya
-                  </Badge>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="ghost" onClick={handleSignOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logga ut
-              </Button>
-            </motion.div>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-gradient-to-br from-gym-orange to-gym-amber rounded-lg flex items-center justify-center">
+                  <Users className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <span className="font-display text-base font-bold">SOCIALT</span>
+              </div>
+            </div>
+            {(pendingRequests.length > 0 || pendingChallenges.length > 0) && (
+              <Badge variant="destructive" className="text-xs">
+                {pendingRequests.length + pendingChallenges.filter(c => c.challenged_id === user?.id).length} nya
+              </Badge>
+            )}
           </div>
         </div>
-      </motion.header>
+      </header>
 
-      <main className="container px-4 py-8 relative z-10">
-        {/* Ad Banner - horizontal */}
-        <AdBanner format="horizontal" placement="social_top" className="mb-6" />
-        
-        {/* XP Card */}
-        <motion.div
-          initial={{ opacity: 0, y: -20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ type: "spring", stiffness: 100 }}
-          className="mb-8"
-        >
-          <motion.div
-            animate={{
-              boxShadow: [
-                "0 0 20px rgba(249, 115, 22, 0.2)",
-                "0 0 40px rgba(249, 115, 22, 0.4)",
-                "0 0 20px rgba(249, 115, 22, 0.2)"
-              ]
-            }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="rounded-xl"
-          >
-            <Card className="border-primary/50 bg-gradient-to-b from-primary/10 to-card overflow-hidden relative">
-              {/* Sparkle effects */}
+      {/* Main content - fixed height, no scroll */}
+      <main className="flex-1 flex flex-col px-3 py-3 md:px-4 md:py-4 pb-16 md:pb-4 overflow-hidden">
+        {/* XP Progress - compact */}
+        <Card className="shrink-0 mb-3 border-primary/30">
+          <CardContent className="p-3">
+            <XPProgress stats={userStats} />
+          </CardContent>
+        </Card>
+
+        {/* Social category cards - 2x3 grid */}
+        <div className="flex-1 grid grid-cols-2 gap-2 min-h-0 content-start">
+          {socialCategories.map((category, index) => {
+            const badgeCount = getBadgeCount(category.id);
+            return (
               <motion.div
-                className="absolute top-4 right-4"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                key={category.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+                whileTap={{ scale: 0.97 }}
               >
-                <Sparkles className="w-6 h-6 text-gym-orange/50" />
-              </motion.div>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Trophy className="w-5 h-5 text-gym-orange" />
-                  </motion.div>
-                  Din framgång
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <XPProgress stats={userStats} />
-              </CardContent>
-            </Card>
-          </motion.div>
-        </motion.div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-          <TabsList className="flex flex-wrap justify-center gap-1 sm:grid sm:grid-cols-6 w-full bg-secondary/50 backdrop-blur-sm p-1 h-auto">
-              {[
-                { value: "friends", label: "Vänner", badge: pendingRequests.length, icon: Users },
-                { value: "teams", label: "Lag", badge: 0, icon: Trophy },
-                { value: "challenges", label: "Utmaningar", badge: pendingChallenges.filter(c => c.challenged_id === user?.id).length, icon: Swords },
-                { value: "pool", label: "Matchning", badge: 0, icon: Target },
-                { value: "community", label: "Tävlingar", badge: 0, icon: Globe },
-                { value: "achievements", label: "Prestationer", badge: 0, icon: Sparkles }
-              ].map((tab) => (
-                <TabsTrigger 
-                  key={tab.value}
-                  value={tab.value} 
-                  className="relative text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 flex items-center gap-1.5"
+                <Card 
+                  className={`cursor-pointer bg-gradient-to-br ${category.gradient} ${category.border} transition-all h-full relative`}
+                  onClick={() => handleCategorySelect(category.id)}
                 >
-                  <tab.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <AnimatePresence>
-                    {tab.badge > 0 && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
-                        className="absolute -top-1 -right-1"
-                      >
-                        <Badge variant="destructive" className="h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[10px] sm:text-xs">
-                          {tab.badge}
-                        </Badge>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </motion.div>
-
-          {/* Teams Tab */}
-          <TabsContent value="teams" className="space-y-6">
-            <TeamsSection />
-          </TabsContent>
-
-          {/* Friends Tab */}
-          <TabsContent value="friends" className="space-y-6">
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-6"
-            >
-              {/* Leaderboard */}
-              <motion.div variants={itemVariants}>
-                <FriendsLeaderboard />
-              </motion.div>
-
-              {/* Streak Leaderboard */}
-              <motion.div variants={itemVariants}>
-                <StreakLeaderboard />
-              </motion.div>
-
-              {/* Invite Friends Card */}
-              {user && (
-                <motion.div variants={itemVariants}>
-                  <InviteFriends userId={user.id} />
-                </motion.div>
-              )}
-
-              <motion.div variants={itemVariants} whileHover="hover" initial="rest">
-                <motion.div variants={cardHoverVariants}>
-                  <Card className="transition-shadow duration-300 hover:shadow-lg hover:shadow-primary/10">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <motion.div
-                          animate={{ y: [0, -3, 0] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <UserPlus className="w-5 h-5" />
-                        </motion.div>
-                        Sök användare
-                      </CardTitle>
-                      <CardDescription>
-                        Sök efter vänner via namn eller e-post
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <UserSearch />
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </motion.div>
-
-              {/* Pending Requests */}
-              <AnimatePresence>
-                {pendingRequests.length > 0 && (
-                  <motion.div
-                    variants={itemVariants}
-                    initial={{ opacity: 0, x: -50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 50 }}
-                  >
-                    <Card className="border-gym-orange/50 bg-gradient-to-r from-gym-orange/5 to-transparent">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <motion.div
-                            animate={{ rotate: [0, 15, -15, 0] }}
-                            transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}
-                          >
-                            <Bell className="w-5 h-5 text-gym-orange" />
-                          </motion.div>
-                          Vänförfrågningar
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {pendingRequests.map((request, index) => (
-                          <motion.div 
-                            key={request.id} 
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            whileHover={{ scale: 1.02, backgroundColor: "rgba(249, 115, 22, 0.1)" }}
-                            className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <motion.div
-                                whileHover={{ scale: 1.1 }}
-                                transition={{ type: "spring", stiffness: 400 }}
-                              >
-                                <Avatar className="ring-2 ring-gym-orange/50">
-                                  <AvatarImage src={request.user_profile?.avatar_url || undefined} />
-                                  <AvatarFallback className="bg-gym-orange/20">
-                                    {request.user_profile?.display_name?.slice(0, 2).toUpperCase() || '??'}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </motion.div>
-                              <span className="font-medium">{request.user_profile?.display_name || 'Anonym'}</span>
-                            </div>
-                            <div className="flex gap-2">
-                              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                                <Button size="sm" variant="hero" onClick={() => respondToFriendRequest(request.id, true)}>
-                                  <Check className="w-4 h-4" />
-                                </Button>
-                              </motion.div>
-                              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                                <Button size="sm" variant="outline" onClick={() => respondToFriendRequest(request.id, false)}>
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </motion.div>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Friends List */}
-              <motion.div variants={itemVariants}>
-                <Card className="overflow-hidden">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      Mina vänner 
-                      <motion.span
-                        key={friends.length}
-                        initial={{ scale: 1.5, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="text-primary"
-                      >
-                        ({friends.length})
-                      </motion.span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {friends.length === 0 ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-8"
-                      >
-                        <motion.div
-                          animate={{ y: [0, -10, 0] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                        </motion.div>
-                        <p className="text-muted-foreground">
-                          Du har inga vänner än. Sök efter användare ovan!
-                        </p>
-                      </motion.div>
-                    ) : (
-                      <motion.div 
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="space-y-3"
-                      >
-                        {friends.map((friend, index) => (
-                          <motion.div 
-                            key={friend.id}
-                            variants={itemVariants}
-                            whileHover={{ scale: 1.02, x: 5 }}
-                            className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg transition-all duration-300 hover:bg-secondary/80 hover:shadow-md"
-                          >
-                            <div className="flex items-center gap-3">
-                              <motion.div
-                                whileHover={{ scale: 1.15, rotate: 5 }}
-                                transition={{ type: "spring", stiffness: 400 }}
-                              >
-                                <Avatar className="ring-2 ring-transparent hover:ring-primary/50 transition-all">
-                                  <AvatarImage src={friend.friend_profile?.avatar_url || undefined} />
-                                  <AvatarFallback>
-                                    {friend.friend_profile?.display_name?.slice(0, 2).toUpperCase() || '??'}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </motion.div>
-                              <span className="font-medium">{friend.friend_profile?.display_name || 'Anonym'}</span>
-                            </div>
-                            <div className="flex gap-2">
-                              <CreateChallengeDialog 
-                                friends={[friend]} 
-                                trigger={
-                                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                    <Button size="sm" variant="outline" className="group">
-                                      <motion.div
-                                        className="mr-2"
-                                        animate={{ rotate: [0, 10, -10, 0] }}
-                                        transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
-                                      >
-                                        <Swords className="w-4 h-4 group-hover:text-primary transition-colors" />
-                                      </motion.div>
-                                      Utmana
-                                    </Button>
-                                  </motion.div>
-                                }
-                              />
-                              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="text-destructive hover:bg-destructive/10"
-                                  onClick={() => removeFriend(friend.id)}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </motion.div>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </motion.div>
-                    )}
+                  {badgeCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+                    >
+                      {badgeCount}
+                    </Badge>
+                  )}
+                  <CardContent className="p-3 flex flex-col justify-between h-full min-h-[80px]">
+                    <category.icon className={`w-5 h-5 ${category.iconColor}`} />
+                    <div>
+                      <p className="text-sm font-semibold">{category.label}</p>
+                      <p className="text-[10px] text-muted-foreground line-clamp-1">{category.description}</p>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
-            </motion.div>
-          </TabsContent>
-
-          {/* Challenges Tab */}
-          <TabsContent value="challenges" className="space-y-6">
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-6"
-            >
-              <motion.div 
-                variants={itemVariants}
-                className="flex justify-between items-center"
-              >
-                <h2 className="text-xl font-display font-bold flex items-center gap-2">
-                  <motion.div
-                    animate={{ rotate: [0, 15, -15, 0] }}
-                    transition={{ duration: 1, repeat: Infinity, repeatDelay: 4 }}
-                  >
-                    <Swords className="w-6 h-6 text-primary" />
-                  </motion.div>
-                  Utmaningar
-                </h2>
-                {friends.length > 0 && (
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <CreateChallengeDialog friends={friends} />
-                  </motion.div>
-                )}
-              </motion.div>
-
-              <AnimatePresence>
-                {friends.length === 0 && (
-                  <motion.div
-                    variants={itemVariants}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                  >
-                    <Card className="border-dashed">
-                      <CardContent className="py-8 text-center">
-                        <motion.div
-                          animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
-                          transition={{ duration: 3, repeat: Infinity }}
-                        >
-                          <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                        </motion.div>
-                        <p className="text-muted-foreground">
-                          Lägg till vänner för att kunna utmana dem!
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Pending Challenges */}
-              <AnimatePresence>
-                {pendingChallenges.length > 0 && (
-                  <motion.div 
-                    variants={itemVariants}
-                    className="space-y-4"
-                  >
-                    <h3 className="font-medium text-muted-foreground flex items-center gap-2">
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        <div className="w-2 h-2 bg-gym-orange rounded-full" />
-                      </motion.div>
-                      Väntar på svar
-                    </h3>
-                    {pendingChallenges.map((challenge, index) => (
-                      <motion.div
-                        key={challenge.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ scale: 1.01 }}
-                      >
-                        <ChallengeCard
-                          challenge={challenge}
-                          onAccept={() => respondToChallenge(challenge.id, true)}
-                          onDecline={() => respondToChallenge(challenge.id, false)}
-                          onCancel={() => cancelChallenge(challenge.id)}
-                        />
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Active Challenges */}
-              <AnimatePresence>
-                {activeChallenges.length > 0 && (
-                  <motion.div 
-                    variants={itemVariants}
-                    className="space-y-4"
-                  >
-                    <h3 className="font-medium text-muted-foreground flex items-center gap-2">
-                      <motion.div
-                        animate={{ scale: [1, 1.3, 1] }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                        className="w-2 h-2 bg-green-500 rounded-full"
-                      />
-                      Aktiva utmaningar
-                    </h3>
-                    {activeChallenges.map((challenge, index) => (
-                      <motion.div
-                        key={challenge.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ scale: 1.01 }}
-                      >
-                        <ChallengeCard 
-                          challenge={challenge} 
-                          onCancel={() => cancelChallenge(challenge.id)}
-                        />
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Completed Challenges - Recent */}
-              <AnimatePresence>
-                {recentCompleted.length > 0 && (
-                  <motion.div 
-                    variants={itemVariants}
-                    className="space-y-4"
-                  >
-                    <h3 className="font-medium text-muted-foreground flex items-center gap-2">
-                      <Trophy className="w-4 h-4 text-gym-amber" />
-                      Nyligen avslutade
-                    </h3>
-                    {recentCompleted.map((challenge, index) => (
-                      <motion.div
-                        key={challenge.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.05 }}
-                        whileHover={{ scale: 1.01 }}
-                      >
-                        <ChallengeCard challenge={challenge} />
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Archive Section */}
-              <AnimatePresence>
-                {archivedChallenges.length > 0 && (
-                  <motion.div 
-                    variants={itemVariants}
-                    className="space-y-4"
-                  >
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between text-muted-foreground hover:text-foreground"
-                      onClick={() => setShowArchive(!showArchive)}
-                    >
-                      <span className="flex items-center gap-2">
-                        <Archive className="w-4 h-4" />
-                        Arkiv ({archivedChallenges.length} äldre utmaningar)
-                      </span>
-                      {showArchive ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </Button>
-                    
-                    <AnimatePresence>
-                      {showArchive && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="space-y-4 overflow-hidden"
-                        >
-                          {archivedChallenges.map((challenge, index) => (
-                            <motion.div
-                              key={challenge.id}
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.05 }}
-                              whileHover={{ scale: 1.01 }}
-                            >
-                              <ChallengeCard challenge={challenge} />
-                            </motion.div>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {challenges.length === 0 && friends.length > 0 && (
-                <motion.div variants={itemVariants}>
-                  <Card className="border-dashed">
-                    <CardContent className="py-8 text-center">
-                      <motion.div
-                        animate={{ rotate: [0, 10, -10, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
-                        <Swords className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                      </motion.div>
-                      <p className="text-muted-foreground">
-                        Inga utmaningar än. Utmana en vän!
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          {/* Achievements Tab */}
-          <TabsContent value="achievements" className="space-y-6">
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-6"
-            >
-              <motion.div 
-                variants={itemVariants}
-                className="flex justify-between items-center"
-              >
-                <div>
-                  <h2 className="text-xl font-display font-bold flex items-center gap-2">
-                    <motion.div
-                      animate={{ 
-                        rotate: [0, 10, -10, 0],
-                        scale: [1, 1.1, 1]
-                      }}
-                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                    >
-                      <Trophy className="w-6 h-6 text-gym-amber" />
-                    </motion.div>
-                    Prestationer
-                  </h2>
-                  <motion.p 
-                    className="text-sm text-muted-foreground"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <motion.span
-                      key={userAchievements.length}
-                      initial={{ scale: 1.5, color: "rgb(249, 115, 22)" }}
-                      animate={{ scale: 1, color: "inherit" }}
-                      className="font-bold"
-                    >
-                      {userAchievements.length}
-                    </motion.span>
-                    {" / "}
-                    {achievements.length} upplåsta
-                  </motion.p>
-                </div>
-              </motion.div>
-              <motion.div variants={itemVariants}>
-                <AchievementsList achievements={achievements} userAchievements={userAchievements} />
-              </motion.div>
-            </motion.div>
-          </TabsContent>
-
-          {/* Community Challenges Tab */}
-          <TabsContent value="community" className="space-y-6">
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-6"
-            >
-              <motion.div variants={itemVariants}>
-                <div className="flex items-center gap-3 mb-4">
-                  <motion.div
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                  >
-                    <Globe className="w-6 h-6 text-primary" />
-                  </motion.div>
-                  <h2 className="text-xl font-bold text-foreground">Community-tävlingar</h2>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Delta i öppna tävlingar och tävla mot andra användare!
-                </p>
-              </motion.div>
-              <motion.div variants={itemVariants}>
-                <CommunityChallenges />
-              </motion.div>
-            </motion.div>
-          </TabsContent>
-
-          {/* Pool Challenges Tab */}
-          <TabsContent value="pool" className="space-y-6">
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-6"
-            >
-              <motion.div variants={itemVariants}>
-                <div className="flex items-center gap-3 mb-2">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Target className="w-6 h-6 text-primary" />
-                  </motion.div>
-                  <h2 className="text-xl font-bold text-foreground">Hitta motståndare</h2>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Tävla mot okända motståndare och vinn XP!
-                </p>
-              </motion.div>
-              <motion.div variants={itemVariants}>
-                <PoolChallenges />
-              </motion.div>
-            </motion.div>
-          </TabsContent>
-        </Tabs>
-        
-        {/* Square medium ad */}
-        <div className="flex justify-center my-8">
-          <AdBanner format="square_medium" placement="social_square" showPremiumPrompt={false} />
+            );
+          })}
         </div>
-        
-        {/* Bottom Ad Banner - horizontal */}
-        <AdBanner format="horizontal" placement="social_bottom" className="mt-8" />
+
+        {/* Ad Banner at bottom */}
+        <div className="shrink-0 mt-3">
+          <AdBanner format="mobile_banner" placement="social_bottom" showPremiumPrompt={false} />
+        </div>
       </main>
     </div>
   );
