@@ -78,7 +78,7 @@ const AdminEmails = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/admin")}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>

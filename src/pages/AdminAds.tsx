@@ -328,7 +328,7 @@ const AdminAds = () => {
     <div className="min-h-screen bg-background p-4 pb-24">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/challenges")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-bold text-foreground">Annonshantering</h1>
