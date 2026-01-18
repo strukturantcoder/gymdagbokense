@@ -129,9 +129,9 @@ export default function DailyStreakBonus() {
 
   if (loading) {
     return (
-      <Card className="mb-4 animate-pulse">
-        <CardContent className="py-4">
-          <div className="h-16 bg-muted rounded-lg" />
+      <Card className="animate-pulse">
+        <CardContent className="py-2.5">
+          <div className="h-10 bg-muted rounded-lg" />
         </CardContent>
       </Card>
     );
@@ -146,7 +146,6 @@ export default function DailyStreakBonus() {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-4"
     >
       <Card
         className={`overflow-hidden transition-all duration-500 ${
@@ -157,8 +156,8 @@ export default function DailyStreakBonus() {
             : "border-border"
         }`}
       >
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between gap-3">
+        <CardContent className="py-2.5">
+          <div className="flex items-center justify-between gap-2">
             {/* Streak info */}
             <div className="flex items-center gap-3">
               <motion.div

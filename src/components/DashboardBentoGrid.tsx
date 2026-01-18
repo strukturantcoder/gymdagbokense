@@ -9,25 +9,18 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Dumbbell, 
   Footprints, 
-  Zap, 
   Flame, 
   TrendingUp,
-  Calendar,
-  ChevronRight,
-  Trophy
+  Scale,
+  Trophy,
+  Target,
+  Plus,
+  Zap
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import GoalProgressCard from './GoalProgressCard';
 import GoalOnboardingDialog from './GoalOnboardingDialog';
-import XPProgress from './XPProgress';
-
-interface DashboardStats {
-  weeklyWorkouts: number;
-  weeklyCardio: number;
-  currentStreak: number;
-  totalXP: number;
-  level: number;
-}
+import CompactGoalCard from './CompactGoalCard';
+import WeightLogDialog from './WeightLogDialog';
 
 interface DashboardBentoGridProps {
   className?: string;
@@ -37,35 +30,19 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
   const { user } = useAuth();
   const navigate = useNavigate();
   const { userStats, getLevelFromXP, getXPForNextLevel } = useSocial();
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
-    weeklyWorkouts: 0,
-    weeklyCardio: 0,
-    currentStreak: 0,
-    totalXP: 0,
-    level: 1,
-  });
+  const [weeklyWorkouts, setWeeklyWorkouts] = useState(0);
+  const [weeklyCardio, setWeeklyCardio] = useState(0);
   const [showGoalDialog, setShowGoalDialog] = useState(false);
+  const [showWeightDialog, setShowWeightDialog] = useState(false);
   const [needsGoalOnboarding, setNeedsGoalOnboarding] = useState(false);
   const [goalRefreshTrigger, setGoalRefreshTrigger] = useState(0);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      fetchDashboardData();
+      fetchWeeklyStats();
       checkGoalOnboarding();
     }
   }, [user]);
-
-  useEffect(() => {
-    if (userStats) {
-      setDashboardStats(prev => ({
-        ...prev,
-        currentStreak: (userStats as any).current_streak || 0,
-        totalXP: userStats.total_xp,
-        level: userStats.level,
-      }));
-    }
-  }, [userStats]);
 
   const checkGoalOnboarding = async () => {
     if (!user) return;
@@ -78,7 +55,6 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
         .single();
       
       if (profile && !profile.has_set_initial_goals) {
-        // Small delay to let the page load first
         setTimeout(() => setNeedsGoalOnboarding(true), 1000);
       }
     } catch (error) {
@@ -86,11 +62,10 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchWeeklyStats = async () => {
     if (!user) return;
     
     try {
-      // Get start of current week (Monday)
       const now = new Date();
       const dayOfWeek = now.getDay();
       const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -98,29 +73,23 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
       weekStart.setDate(now.getDate() - diff);
       weekStart.setHours(0, 0, 0, 0);
 
-      // Fetch weekly workouts
-      const { count: workoutCount } = await supabase
-        .from('workout_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('completed_at', weekStart.toISOString());
+      const [workoutRes, cardioRes] = await Promise.all([
+        supabase
+          .from('workout_logs')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('completed_at', weekStart.toISOString()),
+        supabase
+          .from('cardio_logs')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('completed_at', weekStart.toISOString())
+      ]);
 
-      // Fetch weekly cardio
-      const { count: cardioCount } = await supabase
-        .from('cardio_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('completed_at', weekStart.toISOString());
-
-      setDashboardStats(prev => ({
-        ...prev,
-        weeklyWorkouts: workoutCount || 0,
-        weeklyCardio: cardioCount || 0,
-      }));
+      setWeeklyWorkouts(workoutRes.count || 0);
+      setWeeklyCardio(cardioRes.count || 0);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching weekly stats:', error);
     }
   };
 
@@ -135,6 +104,7 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
   const progressXP = userStats ? userStats.total_xp - currentLevelXP : 0;
   const neededXP = nextLevelXP - currentLevelXP;
   const levelProgress = Math.min(100, (progressXP / neededXP) * 100);
+  const currentStreak = (userStats as any)?.current_streak || 0;
 
   return (
     <>
@@ -150,125 +120,132 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
         onComplete={handleGoalComplete}
       />
 
-      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 ${className}`}>
-        {/* Goals Card - Spans 2 columns */}
-        <GoalProgressCard 
+      <WeightLogDialog
+        open={showWeightDialog}
+        onOpenChange={setShowWeightDialog}
+        onSuccess={() => setGoalRefreshTrigger(prev => prev + 1)}
+      />
+
+      {/* Compact 2x3 grid - fits on screen without scroll */}
+      <div className={`grid grid-cols-3 gap-2 md:gap-3 ${className}`}>
+        {/* Row 1: Goals + Level + Streak */}
+        <CompactGoalCard 
           onAddGoal={() => setShowGoalDialog(true)}
           refreshTrigger={goalRefreshTrigger}
         />
 
-        {/* Level & XP Card */}
-        <Card className="col-span-1 overflow-hidden">
-          <CardContent className="p-4 h-full flex flex-col">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gym-orange to-gym-amber flex items-center justify-center shadow-lg">
-                <span className="text-lg font-bold text-primary-foreground">{currentLevel}</span>
+        <Card className="h-24 overflow-hidden">
+          <CardContent className="p-3 h-full flex flex-col justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gym-orange to-gym-amber flex items-center justify-center shadow-lg">
+                <span className="text-sm font-bold text-primary-foreground">{currentLevel}</span>
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Nivå</p>
-                <p className="font-semibold text-sm truncate">{userStats?.total_xp || 0} XP</p>
+                <p className="text-[10px] text-muted-foreground">Nivå</p>
+                <p className="text-xs font-semibold">{userStats?.total_xp || 0} XP</p>
               </div>
             </div>
-            <div className="mt-auto">
-              <Progress value={levelProgress} className="h-2 mb-1" />
-              <p className="text-xs text-muted-foreground text-right">
-                {progressXP}/{neededXP} till nästa
+            <div>
+              <Progress value={levelProgress} className="h-1.5" />
+              <p className="text-[10px] text-muted-foreground text-right mt-0.5">
+                {progressXP}/{neededXP}
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Streak Card */}
-        <Card className="col-span-1 overflow-hidden">
-          <CardContent className="p-4 h-full flex flex-col justify-between">
+        <Card className="h-24 overflow-hidden">
+          <CardContent className="p-3 h-full flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <Flame className="w-6 h-6 text-orange-500" />
-              {dashboardStats.currentStreak >= 7 && (
-                <Trophy className="w-4 h-4 text-yellow-500" />
-              )}
+              <Flame className="w-5 h-5 text-orange-500" />
+              {currentStreak >= 7 && <Trophy className="w-4 h-4 text-yellow-500" />}
             </div>
             <div>
-              <p className="text-3xl font-bold">{dashboardStats.currentStreak}</p>
-              <p className="text-xs text-muted-foreground">dagars streak</p>
+              <p className="text-2xl font-bold leading-none">{currentStreak}</p>
+              <p className="text-[10px] text-muted-foreground">dagars streak</p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Quick Actions Row */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="col-span-1"
-        >
+        {/* Row 2: Quick actions - Styrka, Kondition, Vikt */}
+        <motion.div whileTap={{ scale: 0.97 }}>
           <Card 
-            className="h-full cursor-pointer bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20 hover:border-orange-500/40 transition-colors"
+            className="h-24 cursor-pointer bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20 hover:border-orange-500/40 transition-all"
             onClick={() => navigate('/training')}
           >
-            <CardContent className="p-4 h-full flex flex-col justify-between">
-              <Dumbbell className="w-6 h-6 text-orange-500" />
+            <CardContent className="p-3 h-full flex flex-col justify-between">
+              <Dumbbell className="w-5 h-5 text-orange-500" />
               <div>
-                <p className="text-2xl font-bold">{dashboardStats.weeklyWorkouts}</p>
-                <p className="text-xs text-muted-foreground">styrkepass denna vecka</p>
+                <p className="text-xl font-bold leading-none">{weeklyWorkouts}</p>
+                <p className="text-[10px] text-muted-foreground">styrkepass</p>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="col-span-1"
-        >
+        <motion.div whileTap={{ scale: 0.97 }}>
           <Card 
-            className="h-full cursor-pointer bg-gradient-to-br from-pink-500/10 to-rose-500/10 border-pink-500/20 hover:border-pink-500/40 transition-colors"
-            onClick={() => navigate('/cardio')}
+            className="h-24 cursor-pointer bg-gradient-to-br from-pink-500/10 to-rose-500/10 border-pink-500/20 hover:border-pink-500/40 transition-all"
+            onClick={() => navigate('/training?tab=cardio')}
           >
-            <CardContent className="p-4 h-full flex flex-col justify-between">
-              <Footprints className="w-6 h-6 text-pink-500" />
+            <CardContent className="p-3 h-full flex flex-col justify-between">
+              <Footprints className="w-5 h-5 text-pink-500" />
               <div>
-                <p className="text-2xl font-bold">{dashboardStats.weeklyCardio}</p>
-                <p className="text-xs text-muted-foreground">konditionspass denna vecka</p>
+                <p className="text-xl font-bold leading-none">{weeklyCardio}</p>
+                <p className="text-[10px] text-muted-foreground">kondition</p>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Stats shortcut */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="col-span-1"
-        >
+        <motion.div whileTap={{ scale: 0.97 }}>
           <Card 
-            className="h-full cursor-pointer hover:bg-muted/50 transition-colors"
+            className="h-24 cursor-pointer bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 hover:border-blue-500/40 transition-all"
+            onClick={() => setShowWeightDialog(true)}
+          >
+            <CardContent className="p-3 h-full flex flex-col justify-between">
+              <Scale className="w-5 h-5 text-blue-500" />
+              <div>
+                <p className="text-sm font-medium leading-none">Logga</p>
+                <p className="text-[10px] text-muted-foreground">vikt</p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Row 3: Stats + Social + Plan */}
+        <motion.div whileTap={{ scale: 0.97 }}>
+          <Card 
+            className="h-20 cursor-pointer hover:bg-muted/50 transition-colors"
             onClick={() => navigate('/stats')}
           >
-            <CardContent className="p-4 h-full flex flex-col justify-between">
-              <TrendingUp className="w-6 h-6 text-blue-500" />
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Se statistik</p>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              </div>
+            <CardContent className="p-3 h-full flex items-center gap-3">
+              <TrendingUp className="w-5 h-5 text-blue-500" />
+              <span className="text-xs font-medium">Statistik</span>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Calendar shortcut */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="col-span-1"
-        >
+        <motion.div whileTap={{ scale: 0.97 }}>
           <Card 
-            className="h-full cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => navigate('/training')}
+            className="h-20 cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => navigate('/social')}
           >
-            <CardContent className="p-4 h-full flex flex-col justify-between">
-              <Calendar className="w-6 h-6 text-green-500" />
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Planera träning</p>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              </div>
+            <CardContent className="p-3 h-full flex items-center gap-3">
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              <span className="text-xs font-medium">Tävlingar</span>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div whileTap={{ scale: 0.97 }}>
+          <Card 
+            className="h-20 cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => navigate('/training?tab=crossfit')}
+          >
+            <CardContent className="p-3 h-full flex items-center gap-3">
+              <Zap className="w-5 h-5 text-green-500" />
+              <span className="text-xs font-medium">CrossFit</span>
             </CardContent>
           </Card>
         </motion.div>

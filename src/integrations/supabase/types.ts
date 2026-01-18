@@ -1703,6 +1703,9 @@ export type Database = {
           description: string | null
           goal_type: string
           id: string
+          last_reminder_sent: string | null
+          reminder_enabled: boolean | null
+          reminder_frequency: string | null
           start_date: string
           status: string
           target_date: string | null
@@ -1719,6 +1722,9 @@ export type Database = {
           description?: string | null
           goal_type: string
           id?: string
+          last_reminder_sent?: string | null
+          reminder_enabled?: boolean | null
+          reminder_frequency?: string | null
           start_date?: string
           status?: string
           target_date?: string | null
@@ -1735,6 +1741,9 @@ export type Database = {
           description?: string | null
           goal_type?: string
           id?: string
+          last_reminder_sent?: string | null
+          reminder_enabled?: boolean | null
+          reminder_frequency?: string | null
           start_date?: string
           status?: string
           target_date?: string | null
@@ -1821,6 +1830,33 @@ export type Database = {
           total_xp?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      weight_logs: {
+        Row: {
+          created_at: string
+          id: string
+          logged_at: string
+          notes: string | null
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          user_id?: string
+          weight_kg?: number
         }
         Relationships: []
       }
