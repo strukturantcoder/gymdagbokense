@@ -61,13 +61,11 @@ const AdBanner = ({
   useEffect(() => {
     const fetchAds = async () => {
       try {
+        // First try to get ads matching the specific format
         let query = supabase
           .from("ads")
           .select("id, name, image_url, link, alt_text, format, placement")
           .eq("is_active", true);
-
-        // Filter by format
-        query = query.eq("format", format);
 
         // Filter by placement if specified
         if (placement) {
@@ -78,16 +76,22 @@ const AdBanner = ({
 
         if (error) {
           console.error("Error fetching ads:", error);
-          setAds(fallbackAds.filter(ad => ad.format === format));
+          setAds(fallbackAds);
         } else if (data && data.length > 0) {
-          setAds(data);
+          // Prefer ads matching the format, but fall back to any ad if none match
+          const matchingAds = data.filter(ad => ad.format === format);
+          if (matchingAds.length > 0) {
+            setAds(matchingAds);
+          } else {
+            // Use any available ad
+            setAds(data);
+          }
         } else {
-          // Use fallback ads matching the format
-          setAds(fallbackAds.filter(ad => ad.format === format));
+          setAds(fallbackAds);
         }
       } catch (err) {
         console.error("Error fetching ads:", err);
-        setAds(fallbackAds.filter(ad => ad.format === format));
+        setAds(fallbackAds);
       } finally {
         setLoading(false);
       }
