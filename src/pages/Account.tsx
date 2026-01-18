@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import { Youtube, Music, Watch } from 'lucide-react';
+import { Youtube, Music, Watch, Scale } from 'lucide-react';
 import { GarminConnectSettings } from '@/components/GarminConnectSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,8 @@ import {
   Calendar, UserCircle, LogOut, Settings, Shield, Sun, Moon, Monitor,
   Bell, Users, Trophy, Target, Dumbbell, Instagram, Facebook, Link, RefreshCw, Info, FileText, Twitter
 } from 'lucide-react';
+import WeightLogDialog from '@/components/WeightLogDialog';
+import WeightHistoryChart from '@/components/WeightHistoryChart';
 
 interface Profile {
   display_name: string | null;
@@ -79,6 +81,8 @@ export default function Account() {
   const [clearingProgress, setClearingProgress] = useState(0);
   const [clearingMessage, setClearingMessage] = useState('');
   const [isRefreshingSubscription, setIsRefreshingSubscription] = useState(false);
+  const [showWeightDialog, setShowWeightDialog] = useState(false);
+  const [weightRefreshTrigger, setWeightRefreshTrigger] = useState(0);
   
   // Form state
   const [displayName, setDisplayName] = useState('');
@@ -430,8 +434,35 @@ export default function Account() {
         </div>
       </header>
 
+      <WeightLogDialog
+        open={showWeightDialog}
+        onOpenChange={setShowWeightDialog}
+        onSuccess={() => setWeightRefreshTrigger(prev => prev + 1)}
+      />
+
       <main className="container px-4 py-6 max-w-2xl mx-auto space-y-6">
-        {/* App Maintenance - Moved to top */}
+        {/* Weight Tracking Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Scale className="h-5 w-5" />
+                Viktkontroll
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setShowWeightDialog(true)}>
+                Logga vikt
+              </Button>
+            </div>
+            <CardDescription>
+              Spåra din viktförändring över tid
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WeightHistoryChart compact key={weightRefreshTrigger} />
+          </CardContent>
+        </Card>
+
+        {/* App Maintenance */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

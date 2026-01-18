@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dumbbell, ArrowLeft, Loader2, TrendingUp, TrendingDown, Calendar, Flame, Weight, Footprints, MapPin, Timer, Zap, Sparkles, Minus, Watch } from 'lucide-react';
+import { Dumbbell, ArrowLeft, Loader2, TrendingUp, TrendingDown, Calendar, Flame, Weight, Footprints, MapPin, Timer, Zap, Sparkles, Minus, Watch, Scale } from 'lucide-react';
 import GarminActivitiesSection from '@/components/GarminActivitiesSection';
+import WeightHistoryChart from '@/components/WeightHistoryChart';
 import AdBanner from '@/components/AdBanner';
 import TrainingAIAnalysis from '@/components/TrainingAIAnalysis';
 import {
@@ -416,20 +417,29 @@ export default function Statistics() {
         </div>
 
         <Tabs defaultValue="strength" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-lg grid-cols-4">
             <TabsTrigger value="strength" className="flex items-center gap-2">
               <Dumbbell className="w-4 h-4" />
-              Styrka
+              <span className="hidden sm:inline">Styrka</span>
             </TabsTrigger>
             <TabsTrigger value="cardio" className="flex items-center gap-2">
               <Footprints className="w-4 h-4" />
-              Kondition
+              <span className="hidden sm:inline">Kondition</span>
             </TabsTrigger>
             <TabsTrigger value="crossfit" className="flex items-center gap-2">
               <Zap className="w-4 h-4" />
-              CrossFit
+              <span className="hidden sm:inline">CrossFit</span>
+            </TabsTrigger>
+            <TabsTrigger value="weight" className="flex items-center gap-2">
+              <Scale className="w-4 h-4" />
+              <span className="hidden sm:inline">Vikt</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Weight Tab */}
+          <TabsContent value="weight" className="space-y-6">
+            <WeightHistoryChart />
+          </TabsContent>
 
           {/* Strength Tab */}
           <TabsContent value="strength" className="space-y-6">
