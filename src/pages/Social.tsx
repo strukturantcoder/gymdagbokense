@@ -172,7 +172,7 @@ export default function Social() {
   // If a category is selected, show that content
   if (category) {
     return (
-      <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+      <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
         {/* Header */}
         <header className="border-b border-border bg-card shrink-0">
           <div className="px-3 py-2 md:px-4 md:py-3">
@@ -212,7 +212,7 @@ export default function Social() {
 
   // Main category selection view
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
       {/* Compact Header */}
       <header className="border-b border-border bg-card shrink-0">
         <div className="px-3 py-2 md:px-4 md:py-3">
@@ -243,7 +243,7 @@ export default function Social() {
       </header>
 
       {/* Main content - fixed height, no scroll */}
-      <main className="flex-1 flex flex-col px-3 py-3 md:px-4 md:py-4 pb-16 md:pb-4 overflow-hidden">
+      <main className="flex-1 flex flex-col px-3 py-3 md:px-4 md:py-4 pb-16 md:pb-4 overflow-y-auto overflow-x-hidden">
         {/* XP Progress - compact */}
         <Card className="shrink-0 mb-3 border-primary/30">
           <CardContent className="p-3">

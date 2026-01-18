@@ -190,7 +190,7 @@ export default function AdminUsers() {
   if (!isAdmin) return null;
 
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10 shrink-0">
         <div className="container mx-auto px-4 py-3 flex items-center gap-3">

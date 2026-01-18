@@ -794,7 +794,7 @@ export default function WorkoutLog() {
   }
 
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
       {/* Header */}
       <header className="border-b border-border bg-card shrink-0">
         <div className="container px-4 py-4 flex items-center justify-between">
