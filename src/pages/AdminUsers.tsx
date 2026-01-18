@@ -191,17 +191,25 @@ export default function AdminUsers() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
-            <ArrowLeft className="h-5 w-5" />
+      {/* Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Användarhantering</h1>
-            <p className="text-muted-foreground">Hantera användare och skicka lösenordsåterställning</p>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-lg flex items-center justify-center">
+              <Users className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">Användare</h1>
+              <p className="text-xs text-muted-foreground">Hantera användare</p>
+            </div>
           </div>
         </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-6 max-w-7xl">
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -468,7 +476,7 @@ export default function AdminUsers() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

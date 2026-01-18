@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -22,7 +21,6 @@ import { ChallengeEngagementStats } from "@/components/admin/ChallengeEngagement
 import { ShareChallengeInstagramDialog } from "@/components/admin/ShareChallengeInstagramDialog";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
-
 interface CommunityChallenge {
   id: string;
   title: string;
@@ -50,6 +48,9 @@ interface LotteryQualified {
 
 export default function AdminChallenges() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'stats';
+  
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [challenges, setChallenges] = useState<CommunityChallenge[]>([]);
@@ -82,6 +83,20 @@ export default function AdminChallenges() {
   // Instagram dialog state
   const [showInstagramDialog, setShowInstagramDialog] = useState(false);
   const [instagramChallengeData, setInstagramChallengeData] = useState<CommunityChallenge | null>(null);
+
+  // Get page title based on active tab
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case 'stats': return { title: 'Statistik', description: 'Användarstatistik', icon: BarChart3 };
+      case 'engagement': return { title: 'Engagemang', description: 'Tävlingsengagemang', icon: TrendingUp };
+      case 'challenges': return { title: 'Tävlingar', description: 'Hantera tävlingar', icon: Trophy };
+      case 'teams': return { title: 'Lag', description: 'Hantera lag', icon: UsersRound };
+      case 'notifications': return { title: 'Notiser', description: 'Push-notiser', icon: Bell };
+      default: return { title: 'Statistik', description: 'Användarstatistik', icon: BarChart3 };
+    }
+  };
+
+  const pageInfo = getPageTitle();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -522,75 +537,33 @@ export default function AdminChallenges() {
       />
 
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
-            <ArrowLeft className="h-5 w-5" />
+        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Statistik och tävlingshantering</p>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center">
+              <pageInfo.icon className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">{pageInfo.title}</h1>
+              <p className="text-xs text-muted-foreground">{pageInfo.description}</p>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <Tabs defaultValue="stats" className="w-full">
-          <TabsList className="grid w-full grid-cols-9 max-w-6xl">
-            <TabsTrigger value="stats" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Statistik</span>
-            </TabsTrigger>
-            <TabsTrigger value="engagement" className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Engagemang</span>
-            </TabsTrigger>
-            <TabsTrigger value="teams" className="gap-2">
-              <UsersRound className="h-4 w-4" />
-              <span className="hidden sm:inline">Lag</span>
-            </TabsTrigger>
-            <TabsTrigger value="challenges" className="gap-2">
-              <Trophy className="h-4 w-4" />
-              <span className="hidden sm:inline">Tävlingar</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2" onClick={() => navigate("/admin/users")}>
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Användare</span>
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-2">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Notiser</span>
-            </TabsTrigger>
-            <TabsTrigger value="emails" className="gap-2" onClick={() => navigate("/admin/emails")}>
-              <Mail className="h-4 w-4" />
-              <span className="hidden sm:inline">Mejl</span>
-            </TabsTrigger>
-            <TabsTrigger value="ads" className="gap-2" onClick={() => navigate("/admin/ads")}>
-              <Megaphone className="h-4 w-4" />
-              <span className="hidden sm:inline">Annonser</span>
-            </TabsTrigger>
-            <TabsTrigger value="instagram" className="gap-2" onClick={() => navigate("/admin/instagram")}>
-              <Image className="h-4 w-4" />
-              <span className="hidden sm:inline">Instagram</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="stats" className="mt-6">
-            <AdminStats />
-          </TabsContent>
-
-          <TabsContent value="engagement" className="mt-6">
-            <ChallengeEngagementStats />
-          </TabsContent>
-
-          <TabsContent value="teams" className="mt-6">
-            <AdminTeamsSection />
-          </TabsContent>
-
-          <TabsContent value="notifications" className="mt-6">
-            <AdminPushNotification />
-          </TabsContent>
-
-          <TabsContent value="challenges" className="mt-6 space-y-6">
+        {activeTab === 'stats' && <AdminStats />}
+        
+        {activeTab === 'engagement' && <ChallengeEngagementStats />}
+        
+        {activeTab === 'teams' && <AdminTeamsSection />}
+        
+        {activeTab === 'notifications' && <AdminPushNotification />}
+        
+        {activeTab === 'challenges' && (
+          <div className="space-y-6">
         {/* Create/Edit challenge form */}
         <Card>
           <CardHeader>
@@ -871,9 +844,9 @@ export default function AdminChallenges() {
               ))}
             </div>
           )}
+          </div>
         </div>
-          </TabsContent>
-        </Tabs>
+        )}
       </main>
 
       {/* Lottery Dialog */}
