@@ -1129,6 +1129,7 @@ export type Database = {
           display_name: string | null
           facebook_url: string | null
           gender: string | null
+          has_seen_welcome_guide: boolean | null
           has_set_initial_goals: boolean | null
           id: string
           instagram_username: string | null
@@ -1152,6 +1153,7 @@ export type Database = {
           display_name?: string | null
           facebook_url?: string | null
           gender?: string | null
+          has_seen_welcome_guide?: boolean | null
           has_set_initial_goals?: boolean | null
           id?: string
           instagram_username?: string | null
@@ -1175,6 +1177,7 @@ export type Database = {
           display_name?: string | null
           facebook_url?: string | null
           gender?: string | null
+          has_seen_welcome_guide?: boolean | null
           has_set_initial_goals?: boolean | null
           id?: string
           instagram_username?: string | null
