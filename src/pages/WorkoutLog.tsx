@@ -10,9 +10,19 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, Link2 } from 'lucide-react';
+import { Dumbbell, Plus, Save, Loader2, ArrowLeft, Calendar, Clock, Weight, Timer, Target, Trophy, Star, Sparkles, ChevronDown, ChevronUp, Link2, Trash2 } from 'lucide-react';
 import { CreateSupersetDialog } from '@/components/training/CreateSupersetDialog';
 import { SupersetGroup } from '@/components/training/SupersetGroup';
 import RestTimer from '@/components/RestTimer';
@@ -129,6 +139,11 @@ export default function WorkoutLog() {
     programName?: string;
   } | null>(null);
 
+  // Delete workout log
+  const [selectedLog, setSelectedLog] = useState<WorkoutLogEntry | null>(null);
+  const [showDeleteLogDialog, setShowDeleteLogDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
@@ -180,6 +195,40 @@ export default function WorkoutLog() {
     
     if (!error && data) {
       setRecentLogs(data as WorkoutLogEntry[]);
+    }
+  };
+
+  const handleDeleteLog = async () => {
+    if (!selectedLog) return;
+
+    setIsDeleting(true);
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error('Not authenticated');
+
+      const { error } = await supabase.functions.invoke('delete-workout-log', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: {
+          workoutLogId: selectedLog.id,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Träningspass borttaget');
+      setShowDeleteLogDialog(false);
+      setSelectedLog(null);
+      fetchRecentLogs();
+    } catch (err) {
+      console.error('Error deleting workout:', err);
+      toast.error('Kunde inte ta bort passet');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1227,11 +1276,28 @@ export default function WorkoutLog() {
                 >
                   <Card>
                     <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{log.workout_day}</CardTitle>
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(log.completed_at), 'd MMM', { locale: sv })}
-                        </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <CardTitle className="text-lg">{log.workout_day}</CardTitle>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(log.completed_at), 'd MMM', { locale: sv })}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedLog(log);
+                              setShowDeleteLogDialog(true);
+                            }}
+                            aria-label="Ta bort pass"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                       {log.duration_minutes && (
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -1275,6 +1341,33 @@ export default function WorkoutLog() {
         {/* Bottom Ad Banner */}
         <AdBanner className="mt-8" />
       </main>
+
+      {/* Delete log confirmation dialog */}
+      <AlertDialog open={showDeleteLogDialog} onOpenChange={setShowDeleteLogDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ta bort träningspass?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill ta bort detta träningspass? Detta kan inte ångras.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteLog}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Ta bort
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Share to Instagram Dialog */}
       {shareData && (
