@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Dumbbell, 
   ClipboardList, 
@@ -63,29 +64,56 @@ const steps = [
   },
 ];
 
-const STORAGE_KEY = 'welcome_guide_seen';
-
 export default function WelcomeGuide({ userId }: WelcomeGuideProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Don't run if userId is not available yet
     if (!userId) return;
-    
-    const hasSeenGuide = localStorage.getItem(`${STORAGE_KEY}_${userId}`);
-    if (!hasSeenGuide) {
-      // Small delay to let the dashboard load first
-      const timer = setTimeout(() => setIsOpen(true), 500);
-      return () => clearTimeout(timer);
-    }
+
+    const checkIfSeen = async () => {
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('has_seen_welcome_guide')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking welcome guide status:', error);
+          setIsLoading(false);
+          return;
+        }
+
+        // Show guide if user hasn't seen it yet
+        if (!profile?.has_seen_welcome_guide) {
+          // Small delay to let the dashboard load first
+          setTimeout(() => setIsOpen(true), 500);
+        }
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error checking welcome guide:', err);
+        setIsLoading(false);
+      }
+    };
+
+    checkIfSeen();
   }, [userId]);
 
-  const handleClose = () => {
-    if (userId) {
-      localStorage.setItem(`${STORAGE_KEY}_${userId}`, 'true');
-    }
+  const handleClose = async () => {
     setIsOpen(false);
+    if (userId) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ has_seen_welcome_guide: true })
+          .eq('user_id', userId);
+      } catch (err) {
+        console.error('Error saving welcome guide status:', err);
+      }
+    }
   };
 
   const handleNext = () => {
