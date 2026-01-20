@@ -437,6 +437,31 @@ Deno.serve(async (req) => {
                 total_minutes: durationMinutes,
               });
           }
+
+          // Try to fetch detailed exercises from FIT file
+          try {
+            const fetchExercisesUrl = `${supabaseUrl}/functions/v1/garmin-fetch-strength-exercises`;
+            const exerciseResponse = await fetch(fetchExercisesUrl, {
+              method: "POST",
+              headers: {
+                "Authorization": authHeader,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                garminActivityId,
+                workoutLogId: newWorkoutLog.id,
+              }),
+            });
+            
+            if (exerciseResponse.ok) {
+              const exerciseData = await exerciseResponse.json();
+              console.log(`Synced ${exerciseData.exercisesCreated || 0} exercises for ${activityName}`);
+            } else {
+              console.log("Could not fetch detailed exercises (this is normal for some activities)");
+            }
+          } catch (fetchError) {
+            console.log("Error fetching exercises (non-critical):", fetchError);
+          }
         } else if (workoutError) {
           console.error(`Failed to create workout_log for ${activityName}:`, workoutError);
         }
