@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Crown, X, Timer } from "lucide-react";
+import { Crown, X, Timer, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import AdBanner from "./AdBanner";
+
+const AD_CLICKED_KEY = "post_workout_ad_clicked";
 
 interface PostWorkoutAdPopupProps {
   isOpen: boolean;
@@ -17,6 +19,37 @@ export default function PostWorkoutAdPopup({ isOpen, onClose, onComplete }: Post
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(15);
   const [canSkip, setCanSkip] = useState(false);
+
+  // Check if user clicked ad and returned - if so, auto-close
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const adClicked = sessionStorage.getItem(AD_CLICKED_KEY);
+    if (adClicked) {
+      sessionStorage.removeItem(AD_CLICKED_KEY);
+      onComplete?.();
+      onClose();
+    }
+  }, [isOpen, onClose, onComplete]);
+
+  useEffect(() => {
+    if (!isOpen || isPremium) return;
+
+    // Check again on visibility change (when user returns from ad)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const adClicked = sessionStorage.getItem(AD_CLICKED_KEY);
+        if (adClicked) {
+          sessionStorage.removeItem(AD_CLICKED_KEY);
+          onComplete?.();
+          onClose();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isOpen, isPremium, onClose, onComplete]);
 
   useEffect(() => {
     if (!isOpen || isPremium) return;
@@ -37,6 +70,11 @@ export default function PostWorkoutAdPopup({ isOpen, onClose, onComplete }: Post
 
     return () => clearInterval(timer);
   }, [isOpen, isPremium]);
+
+  const handleAdClick = useCallback(() => {
+    // Mark that user clicked the ad - when they return, popup will auto-close
+    sessionStorage.setItem(AD_CLICKED_KEY, "true");
+  }, []);
 
   // Don't show for premium users
   if (isPremium) {
@@ -89,12 +127,20 @@ export default function PostWorkoutAdPopup({ isOpen, onClose, onComplete }: Post
 
             {/* Ad content */}
             <div className="p-4 space-y-4">
-              <p className="text-center text-sm text-muted-foreground">
-                Sponsrat innehåll
-              </p>
+              <div className="text-center space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Sponsrat innehåll
+                </p>
+                <p className="text-xs text-primary flex items-center justify-center gap-1">
+                  <ExternalLink className="w-3 h-3" />
+                  Klicka på annonsen för att fortsätta direkt, eller vänta {countdown > 0 ? `${countdown}s` : ''}
+                </p>
+              </div>
               
-              <AdBanner format="square_large" placement="post_workout" showPremiumPrompt={false} />
-
+              {/* Wrap AdBanner in a clickable div to track clicks */}
+              <div onClick={handleAdClick}>
+                <AdBanner format="square_large" placement="post_workout" showPremiumPrompt={false} />
+              </div>
               {/* Premium nudge */}
               <div className="bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-3">
