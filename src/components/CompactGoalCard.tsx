@@ -116,12 +116,12 @@ export default function CompactGoalCard({ onAddGoal, refreshTrigger }: CompactGo
           className="h-full overflow-hidden cursor-pointer hover:border-primary/50 transition-colors bg-gradient-to-br from-primary/5 to-primary/10"
           onClick={onAddGoal}
         >
-          <CardContent className="p-2 h-full flex flex-col items-center justify-center text-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gym-orange to-gym-amber flex items-center justify-center mb-1">
-              <Target className="w-4 h-4 text-primary-foreground" />
+          <CardContent className="p-2.5 h-full flex flex-col items-center justify-center text-center">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gym-orange to-gym-amber flex items-center justify-center mb-1.5">
+              <Target className="w-5 h-5 text-primary-foreground" />
             </div>
-            <p className="text-[11px] font-medium">Sätt mål</p>
-            <Plus className="w-3 h-3 text-muted-foreground mt-0.5" />
+            <p className="text-sm font-medium">Sätt mål</p>
+            <Plus className="w-4 h-4 text-muted-foreground mt-0.5" />
           </CardContent>
         </Card>
         <WeightLogDialog 
@@ -140,35 +140,35 @@ export default function CompactGoalCard({ onAddGoal, refreshTrigger }: CompactGo
   return (
     <>
       <Card className="h-full overflow-hidden">
-        <CardContent className="p-2 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-1">
-              <Target className="w-3 h-3 text-primary" />
-              <span className="text-[10px] font-semibold">Mål</span>
+        <CardContent className="p-2.5 h-full flex flex-col">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <Target className="w-4 h-4 text-primary" />
+              <span className="text-xs font-semibold">Mål</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={onAddGoal} className="h-5 w-5 p-0">
-              <Plus className="w-3 h-3" />
+            <Button variant="ghost" size="sm" onClick={onAddGoal} className="h-6 w-6 p-0">
+              <Plus className="w-4 h-4" />
             </Button>
           </div>
 
           <motion.div
-            className="flex-1 p-1.5 rounded-md bg-muted/50 hover:bg-muted/80 cursor-pointer transition-colors overflow-hidden"
+            className="flex-1 p-2 rounded-md bg-muted/50 hover:bg-muted/80 cursor-pointer transition-colors overflow-hidden"
             onClick={() => handleGoalClick(goal)}
             whileTap={{ scale: 0.98 }}
           >
-            <div className="flex items-center gap-1.5 mb-1">
-              <div className={`w-5 h-5 rounded bg-gradient-to-br ${gradientClass} flex items-center justify-center text-white flex-shrink-0`}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className={`w-6 h-6 rounded bg-gradient-to-br ${gradientClass} flex items-center justify-center text-white flex-shrink-0`}>
                 {goalTypeIcons[goal.goal_type] || goalTypeIcons.custom}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-medium truncate leading-tight">{goal.title}</p>
+                <p className="text-xs font-medium truncate leading-tight">{goal.title}</p>
               </div>
-              <div className="flex items-center gap-0.5 shrink-0">
-                {progress >= 100 && <Trophy className="w-3 h-3 text-yellow-500" />}
-                <span className="text-[10px] font-bold">{progress}%</span>
+              <div className="flex items-center gap-1 shrink-0">
+                {progress >= 100 && <Trophy className="w-4 h-4 text-yellow-500" />}
+                <span className="text-xs font-bold">{progress}%</span>
               </div>
             </div>
-            <Progress value={progress} className="h-1" />
+            <Progress value={progress} className="h-1.5" />
           </motion.div>
         </CardContent>
       </Card>
