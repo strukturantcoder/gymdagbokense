@@ -270,19 +270,19 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
       case 'level':
         return (
           <Card className="h-full overflow-hidden bg-gradient-to-br from-amber-500/10 to-yellow-500/10 border-amber-500/20 hover:border-amber-500/40 transition-all">
-            <CardContent className="p-2 h-full flex flex-col justify-between">
-              <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gym-orange to-gym-amber flex items-center justify-center shadow-lg shrink-0">
-                  <span className="text-[10px] font-bold text-primary-foreground">{currentLevel}</span>
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gym-orange to-gym-amber flex items-center justify-center shadow-lg shrink-0">
+                  <span className="text-xs font-bold text-primary-foreground">{currentLevel}</span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[9px] text-muted-foreground leading-tight">Nivå</p>
-                  <p className="text-[10px] font-semibold">{userStats?.total_xp || 0} XP</p>
+                  <p className="text-xs text-muted-foreground leading-tight">Nivå</p>
+                  <p className="text-sm font-semibold">{userStats?.total_xp || 0} XP</p>
                 </div>
               </div>
               <div>
-                <Progress value={levelProgress} className="h-1" />
-                <p className="text-[8px] text-muted-foreground text-right mt-0.5">
+                <Progress value={levelProgress} className="h-1.5" />
+                <p className="text-xs text-muted-foreground text-right mt-0.5">
                   {progressXP}/{neededXP}
                 </p>
               </div>
@@ -292,14 +292,14 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
       case 'streak':
         return (
           <Card className="h-full overflow-hidden bg-gradient-to-br from-orange-500/10 to-amber-500/10 border-orange-500/20 hover:border-orange-500/40 transition-all">
-            <CardContent className="p-2 h-full flex flex-col justify-between">
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <Flame className="w-4 h-4 text-orange-500" />
-                {currentStreak >= 7 && <Trophy className="w-3 h-3 text-yellow-500" />}
+                <Flame className="w-5 h-5 text-orange-500" />
+                {currentStreak >= 7 && <Trophy className="w-4 h-4 text-yellow-500" />}
               </div>
               <div>
-                <p className="text-lg font-bold leading-none">{currentStreak}</p>
-                <p className="text-[9px] text-muted-foreground">dagars streak</p>
+                <p className="text-xl font-bold leading-none">{currentStreak}</p>
+                <p className="text-xs text-muted-foreground">dagars streak</p>
               </div>
             </CardContent>
           </Card>
@@ -310,11 +310,11 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
             className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20 hover:border-orange-500/40 transition-all"
             onClick={() => !isEditing && navigate('/training')}
           >
-            <CardContent className="p-2 h-full flex flex-col justify-between">
-              <Dumbbell className="w-4 h-4 text-orange-500" />
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
+              <Dumbbell className="w-5 h-5 text-orange-500" />
               <div>
-                <p className="text-lg font-bold leading-none">{weeklyWorkouts}</p>
-                <p className="text-[9px] text-muted-foreground">styrkepass</p>
+                <p className="text-xl font-bold leading-none">{weeklyWorkouts}</p>
+                <p className="text-xs text-muted-foreground">styrkepass</p>
               </div>
             </CardContent>
           </Card>
@@ -325,11 +325,11 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
             className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-pink-500/10 to-rose-500/10 border-pink-500/20 hover:border-pink-500/40 transition-all"
             onClick={() => !isEditing && navigate('/training?tab=cardio')}
           >
-            <CardContent className="p-2 h-full flex flex-col justify-between">
-              <Footprints className="w-4 h-4 text-pink-500" />
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
+              <Footprints className="w-5 h-5 text-pink-500" />
               <div>
-                <p className="text-lg font-bold leading-none">{weeklyCardio}</p>
-                <p className="text-[9px] text-muted-foreground">kondition</p>
+                <p className="text-xl font-bold leading-none">{weeklyCardio}</p>
+                <p className="text-xs text-muted-foreground">kondition</p>
               </div>
             </CardContent>
           </Card>
@@ -340,11 +340,11 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
             className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20 hover:border-green-500/40 transition-all"
             onClick={() => !isEditing && navigate('/training?tab=crossfit')}
           >
-            <CardContent className="p-2 h-full flex flex-col justify-between">
-              <Zap className="w-4 h-4 text-green-500" />
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
+              <Zap className="w-5 h-5 text-green-500" />
               <div>
-                <p className="text-sm font-medium leading-none">WOD</p>
-                <p className="text-[9px] text-muted-foreground">CrossFit</p>
+                <p className="text-base font-semibold leading-none">WOD</p>
+                <p className="text-xs text-muted-foreground">CrossFit</p>
               </div>
             </CardContent>
           </Card>
@@ -355,9 +355,9 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
             className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border-blue-500/20 hover:border-blue-500/40 transition-all"
             onClick={() => !isEditing && navigate('/stats')}
           >
-            <CardContent className="p-2 h-full flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-500" />
-              <span className="text-xs font-medium">Statistik</span>
+            <CardContent className="p-2.5 h-full flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-500" />
+              <span className="text-sm font-medium">Statistik</span>
             </CardContent>
           </Card>
         );
@@ -367,9 +367,9 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
             className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-yellow-500/10 to-amber-500/10 border-yellow-500/20 hover:border-yellow-500/40 transition-all"
             onClick={() => !isEditing && navigate('/social')}
           >
-            <CardContent className="p-2 h-full flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-yellow-500" />
-              <span className="text-xs font-medium">Tävlingar</span>
+            <CardContent className="p-2.5 h-full flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              <span className="text-sm font-medium">Tävlingar</span>
             </CardContent>
           </Card>
         );
@@ -379,9 +379,9 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
             className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-slate-500/10 to-gray-500/10 border-slate-500/20 hover:border-slate-500/40 transition-all"
             onClick={() => !isEditing && navigate('/account')}
           >
-            <CardContent className="p-2 h-full flex items-center gap-2">
-              <User className="w-4 h-4 text-slate-500" />
-              <span className="text-xs font-medium">Konto</span>
+            <CardContent className="p-2.5 h-full flex items-center gap-2">
+              <User className="w-5 h-5 text-slate-500" />
+              <span className="text-sm font-medium">Konto</span>
             </CardContent>
           </Card>
         );
@@ -391,9 +391,9 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
             className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-purple-500/10 to-violet-500/10 border-purple-500/20 hover:border-purple-500/40 transition-all"
             onClick={() => !isEditing && navigate('/account?section=weight')}
           >
-            <CardContent className="p-2 h-full flex items-center gap-2">
-              <Scale className="w-4 h-4 text-purple-500" />
-              <span className="text-xs font-medium">Vikt</span>
+            <CardContent className="p-2.5 h-full flex items-center gap-2">
+              <Scale className="w-5 h-5 text-purple-500" />
+              <span className="text-sm font-medium">Vikt</span>
             </CardContent>
           </Card>
         );
@@ -403,9 +403,9 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
             className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 hover:border-blue-500/40 transition-all"
             onClick={() => !isEditing && navigate('/training?tab=calendar')}
           >
-            <CardContent className="p-2 h-full flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-blue-500" />
-              <span className="text-xs font-medium">Kalender</span>
+            <CardContent className="p-2.5 h-full flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-500" />
+              <span className="text-sm font-medium">Kalender</span>
             </CardContent>
           </Card>
         );

@@ -341,8 +341,8 @@ export default function StrengthBentoGrid() {
                 <Plus className="w-4 h-4 text-muted-foreground" />
               </div>
               <div>
-                <p className="font-semibold text-sm">Skapa program</p>
-                <p className="text-[10px] text-muted-foreground">AI-genererat</p>
+                <p className="font-semibold text-base">Skapa program</p>
+                <p className="text-xs text-muted-foreground">AI-genererat</p>
               </div>
             </CardContent>
           </Card>
@@ -365,8 +365,8 @@ export default function StrengthBentoGrid() {
                 <Dumbbell className="w-4 h-4 text-muted-foreground" />
               </div>
               <div>
-                <p className="font-semibold text-sm">Starta pass</p>
-                <p className="text-[10px] text-muted-foreground">Välj program & dag</p>
+                <p className="font-semibold text-base">Starta pass</p>
+                <p className="text-xs text-muted-foreground">Välj program & dag</p>
               </div>
             </CardContent>
           </Card>
@@ -386,8 +386,8 @@ export default function StrengthBentoGrid() {
             <CardContent className="p-3 h-full flex flex-col justify-between">
               <Trophy className="w-5 h-5 text-yellow-500" />
               <div>
-                <p className="text-xl font-bold leading-none">{thisWeekWorkouts}</p>
-                <p className="text-[10px] text-muted-foreground">pass denna vecka</p>
+                <p className="text-2xl font-bold leading-none">{thisWeekWorkouts}</p>
+                <p className="text-xs text-muted-foreground">pass denna vecka</p>
               </div>
             </CardContent>
           </Card>
@@ -421,8 +421,8 @@ export default function StrengthBentoGrid() {
               <CardContent className="p-3 h-full flex flex-col justify-between">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{program.name}</p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="font-semibold text-base truncate">{program.name}</p>
+                    <p className="text-xs text-muted-foreground">
                       {program.program_data.days?.length || 0} dagar
                     </p>
                   </div>
@@ -432,12 +432,12 @@ export default function StrengthBentoGrid() {
                 </div>
                 <div className="space-y-1">
                   {program.program_data.days?.slice(0, 2).map((day, idx) => (
-                    <p key={idx} className="text-[10px] text-muted-foreground truncate">
+                    <p key={idx} className="text-xs text-muted-foreground truncate">
                       {day.day}: {day.focus}
                     </p>
                   ))}
                   {(program.program_data.days?.length || 0) > 2 && (
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       +{program.program_data.days.length - 2} dagar till
                     </p>
                   )}
@@ -463,13 +463,13 @@ export default function StrengthBentoGrid() {
             <Card className="h-32 border-dashed">
               <CardContent className="p-4 h-full flex flex-col items-center justify-center text-center">
                 <Dumbbell className="w-8 h-8 text-muted-foreground/50 mb-2" />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-base text-muted-foreground">
                   Inga program än
                 </p>
                 <Button 
                   variant="link" 
                   size="sm" 
-                  className="text-xs mt-1"
+                  className="text-sm mt-1"
                   onClick={() => navigate('/workout-log', { state: { createProgram: true } })}
                 >
                   Skapa ditt första program
@@ -506,21 +506,21 @@ export default function StrengthBentoGrid() {
                 >
                   <CardContent className="p-3 h-full flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-[10px] h-5">
+                      <Badge variant="secondary" className="text-xs h-6">
                         {log.workout_day}
                       </Badge>
                       {log.duration_minutes && (
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
                           {log.duration_minutes}m
                         </span>
                       )}
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         {format(new Date(log.completed_at), 'd MMM', { locale: sv })}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {log.exercise_logs?.length || 0} övningar
                       </p>
                     </div>
@@ -545,8 +545,8 @@ export default function StrengthBentoGrid() {
             <CardContent className="p-3 h-full flex flex-col justify-between">
               <Clock className={`w-5 h-5 ${showRestTimer ? 'text-primary' : 'text-blue-500'}`} />
               <div>
-                <p className="text-sm font-medium">Vilotimer</p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-base font-medium">Vilotimer</p>
+                <p className="text-xs text-muted-foreground">
                   {showRestTimer ? 'Aktiv' : 'Tryck för timer'}
                 </p>
               </div>
