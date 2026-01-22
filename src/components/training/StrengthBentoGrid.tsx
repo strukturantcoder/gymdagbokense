@@ -91,6 +91,7 @@ export default function StrengthBentoGrid() {
   const [startingWorkout, setStartingWorkout] = useState(false);
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+  const [suggestedNextWorkout, setSuggestedNextWorkout] = useState<{ programId: string; dayIndex: number; dayName: string; programName: string } | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -98,6 +99,13 @@ export default function StrengthBentoGrid() {
       checkForDraft();
     }
   }, [user]);
+
+  // Auto-suggest next workout when programs and logs are loaded
+  useEffect(() => {
+    if (programs.length > 0) {
+      suggestNextWorkout();
+    }
+  }, [programs, recentLogs]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -161,6 +169,52 @@ export default function StrengthBentoGrid() {
         localStorage.removeItem('active_workout_session');
       }
     }
+  };
+
+  const suggestNextWorkout = async () => {
+    if (!user || programs.length === 0) return;
+
+    // Get the most recently used program from workout logs
+    const lastLogWithProgram = recentLogs.find(log => log.program_id);
+    
+    // If we have a recent workout with a program, use that program
+    let targetProgram = lastLogWithProgram 
+      ? programs.find(p => p.id === lastLogWithProgram.program_id)
+      : programs[0]; // Fall back to first program
+    
+    if (!targetProgram) {
+      targetProgram = programs[0];
+    }
+
+    if (!targetProgram || !targetProgram.program_data.days?.length) return;
+
+    // Find the last workout day for this program
+    const programLogs = recentLogs.filter(log => log.program_id === targetProgram!.id);
+    
+    let nextDayIndex = 0;
+    
+    if (programLogs.length > 0) {
+      const lastDayName = programLogs[0].workout_day;
+      const lastDayIndex = targetProgram.program_data.days.findIndex(d => d.day === lastDayName);
+      
+      if (lastDayIndex !== -1) {
+        // Move to next day in cycle
+        nextDayIndex = (lastDayIndex + 1) % targetProgram.program_data.days.length;
+      }
+    }
+
+    const nextDay = targetProgram.program_data.days[nextDayIndex];
+    
+    setSuggestedNextWorkout({
+      programId: targetProgram.id,
+      dayIndex: nextDayIndex,
+      dayName: nextDay.day,
+      programName: targetProgram.name
+    });
+
+    // Auto-select in dialog
+    setSelectedProgramId(targetProgram.id);
+    setSelectedDayIndex(nextDayIndex.toString());
   };
 
   const startWorkout = async () => {
@@ -348,7 +402,7 @@ export default function StrengthBentoGrid() {
           </Card>
         </motion.div>
 
-        {/* Quick Start Card */}
+        {/* Quick Start Card - Now shows suggested next workout */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -366,7 +420,13 @@ export default function StrengthBentoGrid() {
               </div>
               <div>
                 <p className="font-semibold text-base">Starta pass</p>
-                <p className="text-xs text-muted-foreground">Välj program & dag</p>
+                {suggestedNextWorkout ? (
+                  <p className="text-xs text-muted-foreground truncate">
+                    Nästa: {suggestedNextWorkout.dayName}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Välj program & dag</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -569,6 +629,20 @@ export default function StrengthBentoGrid() {
               Välj träningspass
             </DialogTitle>
           </DialogHeader>
+          
+          {/* Show suggestion banner if we have one */}
+          {suggestedNextWorkout && selectedProgramId === suggestedNextWorkout.programId && selectedDayIndex === suggestedNextWorkout.dayIndex.toString() && (
+            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-green-500" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-green-700 dark:text-green-400">Föreslaget nästa pass</p>
+                <p className="text-xs text-muted-foreground">Baserat på din senaste träning</p>
+              </div>
+            </div>
+          )}
+          
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Träningsprogram</Label>
@@ -576,7 +650,13 @@ export default function StrengthBentoGrid() {
                 value={selectedProgramId} 
                 onValueChange={(v) => { 
                   setSelectedProgramId(v); 
-                  setSelectedDayIndex('0'); 
+                  // Auto-select next day for the chosen program
+                  const program = programs.find(p => p.id === v);
+                  if (program && suggestedNextWorkout?.programId === v) {
+                    setSelectedDayIndex(suggestedNextWorkout.dayIndex.toString());
+                  } else {
+                    setSelectedDayIndex('0'); 
+                  }
                 }}
               >
                 <SelectTrigger>
@@ -605,7 +685,12 @@ export default function StrengthBentoGrid() {
                   <SelectContent>
                     {selectedProgram.program_data.days.map((day, index) => (
                       <SelectItem key={index} value={index.toString()}>
-                        {day.day} - {day.focus}
+                        <div className="flex items-center gap-2">
+                          {day.day} - {day.focus}
+                          {suggestedNextWorkout?.programId === selectedProgramId && suggestedNextWorkout.dayIndex === index && (
+                            <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-green-500/10 text-green-600">Nästa</Badge>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
