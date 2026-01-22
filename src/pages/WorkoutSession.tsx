@@ -67,6 +67,7 @@ import AdBanner from '@/components/AdBanner';
 import PostWorkoutAdPopup from '@/components/PostWorkoutAdPopup';
 import { SupersetGroup } from '@/components/training/SupersetGroup';
 import { CreateSupersetDialog } from '@/components/training/CreateSupersetDialog';
+import { InterleavedSupersetView } from '@/components/training/InterleavedSupersetView';
 
 interface SetDetail {
   reps: number;
@@ -1397,257 +1398,308 @@ export default function WorkoutSession() {
       <main className="flex-1 p-4 overflow-auto">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentExerciseIndex}
+            key={currentExercise.superset_group_id || currentExerciseIndex}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
             className="space-y-4"
           >
-            {/* Exercise dropdown and badges */}
-            <div className="text-center space-y-3">
-              <Select
-                value={currentExerciseIndex.toString()}
-                onValueChange={(value) => setCurrentExerciseIndex(parseInt(value))}
-              >
-                <SelectTrigger className="mx-auto w-auto min-w-[200px] max-w-full text-center">
-                  <div className="flex items-center gap-2">
-                    <Dumbbell className="w-4 h-4 text-muted-foreground" />
-                    <SelectValue>
-                      <span className="text-lg font-display font-bold">{currentExercise.exercise_name}</span>
-                    </SelectValue>
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {sessionData.exercises.map((ex, idx) => {
-                    const exCompletedSets = ex.set_details.filter(s => s.completed).length;
-                    const exTotalSets = ex.set_details.length;
-                    const isComplete = exCompletedSets === exTotalSets && exTotalSets > 0;
+            {/* Check if current exercise is in a superset */}
+            {currentExercise.superset_group_id ? (
+              <>
+                {/* Superset interleaved view */}
+                <InterleavedSupersetView
+                  exercises={
+                    sessionData.exercises
+                      .map((ex, idx) => ({ exercise: ex, originalIndex: idx }))
+                      .filter(({ exercise }) => exercise.superset_group_id === currentExercise.superset_group_id)
+                  }
+                  personalBests={personalBests}
+                  exerciseGoals={exerciseGoals}
+                  onUpdateSetDetail={updateSetDetailByIndex}
+                  onToggleSetComplete={toggleSetCompleteByIndex}
+                  onAddSet={addSetByIndex}
+                  onRemoveSet={removeSetByIndex}
+                />
+                
+                {/* Quick navigation dots for superset */}
+                <div className="flex items-center justify-center gap-1.5 py-2">
+                  {groupedExercises.map((group, groupIdx) => {
+                    const isCurrentGroup = group.exercises.some(({ originalIndex }) => originalIndex === currentExerciseIndex);
+                    const groupComplete = group.exercises.every(({ exercise }) => 
+                      exercise.set_details.every(s => s.completed)
+                    );
                     return (
-                      <SelectItem key={idx} value={idx.toString()}>
-                        <div className="flex items-center gap-2">
-                          {isComplete ? (
-                            <Check className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <span className="w-4 h-4 flex items-center justify-center text-xs text-muted-foreground">
-                              {idx + 1}
-                            </span>
-                          )}
-                          <span className={isComplete ? 'text-muted-foreground' : ''}>{ex.exercise_name}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">
-                            ({exCompletedSets}/{exTotalSets})
-                          </span>
-                        </div>
-                      </SelectItem>
+                      <button
+                        key={groupIdx}
+                        onClick={() => setCurrentExerciseIndex(group.exercises[0].originalIndex)}
+                        className={`h-2 rounded-full transition-all ${
+                          group.type === 'superset' ? 'w-8' : 'w-2'
+                        } ${
+                          isCurrentGroup 
+                            ? 'bg-primary' 
+                            : groupComplete 
+                              ? 'bg-green-500' 
+                              : 'bg-muted'
+                        }`}
+                      />
                     );
                   })}
-                </SelectContent>
-              </Select>
-              
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                {/* Superset button */}
-                {!currentExercise.superset_group_id && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => setShowSupersetDialog(true)}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Single exercise view */}
+                {/* Exercise dropdown and badges */}
+                <div className="text-center space-y-3">
+                  <Select
+                    value={currentExerciseIndex.toString()}
+                    onValueChange={(value) => setCurrentExerciseIndex(parseInt(value))}
                   >
-                    <Link2 className="w-3 h-3" />
-                    Superset
-                  </Button>
-                )}
-                {currentExercise.superset_group_id && (
-                  <Badge variant="default" className="text-xs bg-primary/20 text-primary">
-                    <Link2 className="w-3 h-3 mr-1" />
-                    I superset
-                  </Badge>
-                )}
-                {currentExercise.programSets && currentExercise.programReps && (
-                  <Badge variant="outline" className="text-xs">
-                    Mål: {currentExercise.programSets} × {currentExercise.programReps}
-                  </Badge>
-                )}
-                {pb && (
-                  <Badge variant="secondary" className="text-xs">
-                    <Trophy className="w-3 h-3 mr-1 text-gym-orange" />
-                    PB: {pb.best_weight_kg} kg
-                  </Badge>
-                )}
-                {goal?.target_weight_kg && (
-                  <Badge variant="secondary" className="text-xs">
-                    <Target className="w-3 h-3 mr-1 text-green-500" />
-                    Mål: {goal.target_weight_kg} kg
-                  </Badge>
-                )}
-                {lastUsedWeights.get(currentExercise.exercise_name) && (
-                  <Badge 
-                    variant="secondary" 
-                    className="text-xs bg-primary/10 text-primary border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
-                    onClick={applySuggestedWeight}
-                  >
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    Förslag: {lastUsedWeights.get(currentExercise.exercise_name)!.suggested_weight_kg} kg
-                    <span className="ml-1 text-[10px] opacity-70">Tryck för att använda</span>
-                  </Badge>
-                )}
-              </div>
-              
-              {/* Previous workout details */}
-              {lastUsedWeights.get(currentExercise.exercise_name)?.previous_set_details && (
-                <div className="bg-secondary/30 rounded-lg p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <History className="w-3 h-3" />
-                      <span>
-                        Förra passet
-                        {lastUsedWeights.get(currentExercise.exercise_name)?.previous_date && (
-                          <span className="ml-1 opacity-70">
-                            ({format(new Date(lastUsedWeights.get(currentExercise.exercise_name)!.previous_date!), 'd MMM', { locale: sv })})
-                          </span>
-                        )}
-                      </span>
-                    </div>
+                    <SelectTrigger className="mx-auto w-auto min-w-[200px] max-w-full text-center">
+                      <div className="flex items-center gap-2">
+                        <Dumbbell className="w-4 h-4 text-muted-foreground" />
+                        <SelectValue>
+                          <span className="text-lg font-display font-bold">{currentExercise.exercise_name}</span>
+                        </SelectValue>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sessionData.exercises.map((ex, idx) => {
+                        const exCompletedSets = ex.set_details.filter(s => s.completed).length;
+                        const exTotalSets = ex.set_details.length;
+                        const isComplete = exCompletedSets === exTotalSets && exTotalSets > 0;
+                        return (
+                          <SelectItem key={idx} value={idx.toString()}>
+                            <div className="flex items-center gap-2">
+                              {isComplete ? (
+                                <Check className="w-4 h-4 text-green-500" />
+                              ) : (
+                                <span className="w-4 h-4 flex items-center justify-center text-xs text-muted-foreground">
+                                  {idx + 1}
+                                </span>
+                              )}
+                              <span className={isComplete ? 'text-muted-foreground' : ''}>{ex.exercise_name}</span>
+                              {ex.superset_group_id && (
+                                <Link2 className="w-3 h-3 text-primary" />
+                              )}
+                              <span className="text-xs text-muted-foreground ml-auto">
+                                ({exCompletedSets}/{exTotalSets})
+                              </span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    {/* Superset button */}
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       className="h-7 text-xs gap-1"
-                      onClick={copyPreviousWorkout}
+                      onClick={() => setShowSupersetDialog(true)}
                     >
-                      <Copy className="w-3 h-3" />
-                      Kopiera
+                      <Link2 className="w-3 h-3" />
+                      Superset
                     </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {lastUsedWeights.get(currentExercise.exercise_name)!.previous_set_details!.map((set, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs font-mono">
-                        {set.weight}kg × {set.reps}
+                    {currentExercise.programSets && currentExercise.programReps && (
+                      <Badge variant="outline" className="text-xs">
+                        Mål: {currentExercise.programSets} × {currentExercise.programReps}
                       </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {isNewPB && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="inline-flex items-center gap-1 text-gym-orange font-bold"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  NYTT PERSONBÄSTA!
-                </motion.div>
-              )}
-              {isGoalReached && !isNewPB && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="inline-flex items-center gap-1 text-green-500 font-bold"
-                >
-                  <Trophy className="w-4 h-4" />
-                  MÅL UPPNÅTT!
-                </motion.div>
-              )}
-            </div>
-
-            {/* Sets */}
-            <Card className={isNewPB ? 'border-gym-orange' : isGoalReached ? 'border-green-500' : ''}>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-sm flex items-center gap-2">
-                    <Repeat className="w-4 h-4" />
-                    Set ({completedSets}/{currentExercise.set_details.length})
-                  </h3>
-                  <Button variant="outline" size="sm" onClick={addSet}>
-                    + Lägg till set
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  {currentExercise.set_details.map((set, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                        set.completed 
-                          ? 'bg-green-500/10 border border-green-500/30' 
-                          : 'bg-secondary/50'
-                      }`}
-                    >
-                      <Button
-                        variant={set.completed ? "default" : "outline"}
-                        size="icon"
-                        className={`h-8 w-8 shrink-0 ${set.completed ? 'bg-green-500 hover:bg-green-600' : ''}`}
-                        onClick={() => toggleSetComplete(idx)}
+                    )}
+                    {pb && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Trophy className="w-3 h-3 mr-1 text-gym-orange" />
+                        PB: {pb.best_weight_kg} kg
+                      </Badge>
+                    )}
+                    {goal?.target_weight_kg && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Target className="w-3 h-3 mr-1 text-green-500" />
+                        Mål: {goal.target_weight_kg} kg
+                      </Badge>
+                    )}
+                    {lastUsedWeights.get(currentExercise.exercise_name) && (
+                      <Badge 
+                        variant="secondary" 
+                        className="text-xs bg-primary/10 text-primary border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
+                        onClick={applySuggestedWeight}
                       >
-                        {set.completed ? <Check className="h-4 w-4" /> : <span className="text-sm">{idx + 1}</span>}
-                      </Button>
-
-                      <div className="flex-1 grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Weight className="w-3 h-3" /> Vikt (kg)
-                          </label>
-                          <Input
-                            type="number"
-                            value={set.weight === 0 ? '' : (set.weight !== undefined && set.weight !== null ? set.weight : '')}
-                            onChange={(e) => updateSetDetail(idx, 'weight', parseFloat(e.target.value) || 0)}
-                            className="h-10 text-center font-mono text-lg"
-                            step="0.5"
-                            min="0"
-                            placeholder={
-                              lastUsedWeights.get(currentExercise.exercise_name)
-                                ? lastUsedWeights.get(currentExercise.exercise_name)!.suggested_weight_kg.toString()
-                                : "0"
-                            }
-                          />
+                        <TrendingUp className="w-3 h-3 mr-1" />
+                        Förslag: {lastUsedWeights.get(currentExercise.exercise_name)!.suggested_weight_kg} kg
+                        <span className="ml-1 text-[10px] opacity-70">Tryck för att använda</span>
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {/* Previous workout details */}
+                  {lastUsedWeights.get(currentExercise.exercise_name)?.previous_set_details && (
+                    <div className="bg-secondary/30 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <History className="w-3 h-3" />
+                          <span>
+                            Förra passet
+                            {lastUsedWeights.get(currentExercise.exercise_name)?.previous_date && (
+                              <span className="ml-1 opacity-70">
+                                ({format(new Date(lastUsedWeights.get(currentExercise.exercise_name)!.previous_date!), 'd MMM', { locale: sv })})
+                              </span>
+                            )}
+                          </span>
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Repeat className="w-3 h-3" /> Reps
-                          </label>
-                          <Input
-                            type="number"
-                            value={set.reps || ''}
-                            onChange={(e) => updateSetDetail(idx, 'reps', parseInt(e.target.value) || 0)}
-                            className="h-10 text-center font-mono text-lg"
-                          />
-                        </div>
-                      </div>
-
-                      {currentExercise.set_details.length > 1 && (
                         <Button
                           variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => removeSet(idx)}
+                          size="sm"
+                          className="h-7 text-xs gap-1"
+                          onClick={copyPreviousWorkout}
                         >
-                          <X className="h-4 w-4" />
+                          <Copy className="w-3 h-3" />
+                          Kopiera
                         </Button>
-                      )}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {lastUsedWeights.get(currentExercise.exercise_name)!.previous_set_details!.map((set, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs font-mono">
+                            {set.weight}kg × {set.reps}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {isNewPB && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="inline-flex items-center gap-1 text-gym-orange font-bold"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      NYTT PERSONBÄSTA!
                     </motion.div>
-                  ))}
+                  )}
+                  {isGoalReached && !isNewPB && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="inline-flex items-center gap-1 text-green-500 font-bold"
+                    >
+                      <Trophy className="w-4 h-4" />
+                      MÅL UPPNÅTT!
+                    </motion.div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Quick navigation dots */}
-            <div className="flex items-center justify-center gap-1.5 py-2">
-              {sessionData.exercises.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentExerciseIndex(idx)}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    idx === currentExerciseIndex 
-                      ? 'w-6 bg-primary' 
-                      : idx < currentExerciseIndex 
-                        ? 'bg-green-500' 
-                        : 'bg-muted'
-                  }`}
-                />
-              ))}
-            </div>
+                {/* Sets */}
+                <Card className={isNewPB ? 'border-gym-orange' : isGoalReached ? 'border-green-500' : ''}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-sm flex items-center gap-2">
+                        <Repeat className="w-4 h-4" />
+                        Set ({completedSets}/{currentExercise.set_details.length})
+                      </h3>
+                      <Button variant="outline" size="sm" onClick={addSet}>
+                        + Lägg till set
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {currentExercise.set_details.map((set, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                            set.completed 
+                              ? 'bg-green-500/10 border border-green-500/30' 
+                              : 'bg-secondary/50'
+                          }`}
+                        >
+                          <Button
+                            variant={set.completed ? "default" : "outline"}
+                            size="icon"
+                            className={`h-8 w-8 shrink-0 ${set.completed ? 'bg-green-500 hover:bg-green-600' : ''}`}
+                            onClick={() => toggleSetComplete(idx)}
+                          >
+                            {set.completed ? <Check className="h-4 w-4" /> : <span className="text-sm">{idx + 1}</span>}
+                          </Button>
+
+                          <div className="flex-1 grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Weight className="w-3 h-3" /> Vikt (kg)
+                              </label>
+                              <Input
+                                type="number"
+                                value={set.weight === 0 ? '' : (set.weight !== undefined && set.weight !== null ? set.weight : '')}
+                                onChange={(e) => updateSetDetail(idx, 'weight', parseFloat(e.target.value) || 0)}
+                                className="h-10 text-center font-mono text-lg"
+                                step="0.5"
+                                min="0"
+                                placeholder={
+                                  lastUsedWeights.get(currentExercise.exercise_name)
+                                    ? lastUsedWeights.get(currentExercise.exercise_name)!.suggested_weight_kg.toString()
+                                    : "0"
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Repeat className="w-3 h-3" /> Reps
+                              </label>
+                              <Input
+                                type="number"
+                                value={set.reps || ''}
+                                onChange={(e) => updateSetDetail(idx, 'reps', parseInt(e.target.value) || 0)}
+                                className="h-10 text-center font-mono text-lg"
+                              />
+                            </div>
+                          </div>
+
+                          {currentExercise.set_details.length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => removeSet(idx)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Quick navigation dots */}
+                <div className="flex items-center justify-center gap-1.5 py-2">
+                  {groupedExercises.map((group, groupIdx) => {
+                    const isCurrentGroup = group.exercises.some(({ originalIndex }) => originalIndex === currentExerciseIndex);
+                    const groupComplete = group.exercises.every(({ exercise }) => 
+                      exercise.set_details.every(s => s.completed)
+                    );
+                    return (
+                      <button
+                        key={groupIdx}
+                        onClick={() => setCurrentExerciseIndex(group.exercises[0].originalIndex)}
+                        className={`h-2 rounded-full transition-all ${
+                          group.type === 'superset' ? 'w-8' : 'w-2'
+                        } ${
+                          isCurrentGroup 
+                            ? 'bg-primary' 
+                            : groupComplete 
+                              ? 'bg-green-500' 
+                              : 'bg-muted'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -1658,14 +1710,20 @@ export default function WorkoutSession() {
           <Button
             variant="outline"
             className="flex-1"
-            disabled={currentExerciseIndex === 0}
-            onClick={() => setCurrentExerciseIndex(prev => prev - 1)}
+            disabled={currentGroupIndex <= 0}
+            onClick={() => {
+              // Navigate to previous group
+              if (currentGroupIndex > 0) {
+                const prevGroup = groupedExercises[currentGroupIndex - 1];
+                setCurrentExerciseIndex(prevGroup.exercises[0].originalIndex);
+              }
+            }}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Föregående
           </Button>
           
-          {currentExerciseIndex === sessionData.exercises.length - 1 ? (
+          {currentGroupIndex === groupedExercises.length - 1 ? (
             <Button
               variant="hero"
               className="flex-1"
@@ -1685,7 +1743,13 @@ export default function WorkoutSession() {
             <Button
               variant="default"
               className="flex-1"
-              onClick={() => setCurrentExerciseIndex(prev => prev + 1)}
+              onClick={() => {
+                // Navigate to next group
+                if (currentGroupIndex < groupedExercises.length - 1) {
+                  const nextGroup = groupedExercises[currentGroupIndex + 1];
+                  setCurrentExerciseIndex(nextGroup.exercises[0].originalIndex);
+                }
+              }}
             >
               Nästa
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -1693,8 +1757,8 @@ export default function WorkoutSession() {
           )}
         </div>
         
-        {/* Notes section on last exercise */}
-        {currentExerciseIndex === sessionData.exercises.length - 1 && (
+        {/* Notes section on last group */}
+        {currentGroupIndex === groupedExercises.length - 1 && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
