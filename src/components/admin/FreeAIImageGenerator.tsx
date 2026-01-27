@@ -43,6 +43,10 @@ export default function FreeAIImageGenerator() {
   const [showSaved, setShowSaved] = useState(false);
   const [includeBranding, setIncludeBranding] = useState(true);
   
+  // Text replacement
+  const [replaceOldText, setReplaceOldText] = useState("");
+  const [replaceNewText, setReplaceNewText] = useState("");
+  
   // Text generation
   const [generatedCaption, setGeneratedCaption] = useState("");
   const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
@@ -384,9 +388,18 @@ export default function FreeAIImageGenerator() {
 
     setIsEditing(true);
     try {
+      // Use a more specific and forceful prompt for text correction
       const { data, error } = await supabase.functions.invoke("generate-challenge-image", {
         body: {
-          prompt: "Fix any spelling errors, typos, or incorrect text in this image. Keep everything else exactly the same. Make sure all text is spelled correctly and is legible.",
+          prompt: `CRITICAL: This image contains text with spelling errors or typos. You MUST:
+1. Identify ALL text in the image
+2. Check each word for spelling errors
+3. Regenerate the image with CORRECTED spelling
+4. Keep the EXACT same visual style, colors, layout, and composition
+5. Only change the text to fix spelling mistakes
+
+If you see Swedish text, fix Swedish spelling. If English, fix English spelling.
+The corrected text must be clear, legible, and properly spelled.`,
           editImage: targetImage,
         },
       });
@@ -401,11 +414,46 @@ export default function FreeAIImageGenerator() {
       if (data.imageUrl) {
         setGeneratedImage(data.imageUrl);
         await saveImage(data.imageUrl, `${targetPrompt} (stavning korrigerad)`, image?.format || imageFormat);
-        toast.success("Stavfel korrigerade!");
+        toast.success("Bild uppdaterad - kolla om stavfelen är fixade!");
       }
     } catch (error) {
       console.error("Error fixing spelling:", error);
       toast.error("Kunde inte korrigera stavfel");
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const replaceTextInImage = async (oldText: string, newText: string) => {
+    if (!generatedImage) {
+      toast.error("Ingen bild att redigera");
+      return;
+    }
+
+    setIsEditing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-challenge-image", {
+        body: {
+          prompt: `Find the text "${oldText}" in this image and replace it with "${newText}". Keep everything else exactly the same - same style, colors, fonts, and layout. Only change that specific text.`,
+          editImage: generatedImage,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      if (data.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        await saveImage(data.imageUrl, `${prompt} (text ändrad: ${oldText} → ${newText})`, imageFormat);
+        toast.success(`Text ändrad från "${oldText}" till "${newText}"!`);
+      }
+    } catch (error) {
+      console.error("Error replacing text:", error);
+      toast.error("Kunde inte ändra texten");
     } finally {
       setIsEditing(false);
     }
@@ -816,30 +864,65 @@ export default function FreeAIImageGenerator() {
                   </Button>
                 </div>
                 
-                {/* Custom edit input */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Beskriv ändringen... T.ex. 'Ändra texten till TRÄNA HÅRT' eller 'Gör det mörkare'"
-                    value={editPrompt}
-                    onChange={(e) => setEditPrompt(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={editImage}
-                    disabled={isEditing || !editPrompt.trim()}
-                    variant="secondary"
-                  >
-                    {isEditing ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Wand2 className="h-4 w-4" />
-                    )}
-                  </Button>
+                {/* Direct text replacement */}
+                <div className="space-y-2 pt-3 border-t border-border/50">
+                  <Label className="text-sm font-medium">Byt ut specifik text</Label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      placeholder="Fel text (t.ex. 'TRÄNNA')"
+                      value={replaceOldText}
+                      onChange={(e) => setReplaceOldText(e.target.value)}
+                      className="flex-1"
+                    />
+                    <span className="text-muted-foreground">→</span>
+                    <Input
+                      placeholder="Rätt text (t.ex. 'TRÄNA')"
+                      value={replaceNewText}
+                      onChange={(e) => setReplaceNewText(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={() => {
+                        replaceTextInImage(replaceOldText, replaceNewText);
+                        setReplaceOldText("");
+                        setReplaceNewText("");
+                      }}
+                      disabled={isEditing || !replaceOldText.trim() || !replaceNewText.trim()}
+                      variant="secondary"
+                      size="icon"
+                    >
+                      {isEditing ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 
-                <p className="text-xs text-muted-foreground">
-                  💡 Tips: För att ändra specifik text, skriv t.ex. "Ändra texten från 'FIT' till 'FITNESS'"
-                </p>
+                {/* Custom edit input */}
+                <div className="space-y-2 pt-3 border-t border-border/50">
+                  <Label className="text-sm font-medium">Fri redigering</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Beskriv ändringen... T.ex. 'Gör bakgrunden mörkare' eller 'Lägg till fler vikter'"
+                      value={editPrompt}
+                      onChange={(e) => setEditPrompt(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={editImage}
+                      disabled={isEditing || !editPrompt.trim()}
+                      variant="secondary"
+                    >
+                      {isEditing ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               {/* Action buttons */}

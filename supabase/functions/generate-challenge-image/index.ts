@@ -39,7 +39,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Edit this fitness challenge image: ${prompt}. Keep the fitness/workout theme and maintain Instagram square format.`
+                text: prompt
               },
               {
                 type: "image_url",
