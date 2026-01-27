@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Download, Sparkles, Loader2, RefreshCw, Share2, Wand2, ImageIcon, Trash2, Clock, FolderOpen, Copy, FileText } from "lucide-react";
+import { Download, Sparkles, Loader2, RefreshCw, Share2, Wand2, ImageIcon, Trash2, Clock, FolderOpen, Copy, FileText, Type, Eraser, Edit3, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -307,13 +307,143 @@ export default function FreeAIImageGenerator() {
     }
   };
 
-  const loadSavedImage = (image: SavedImage) => {
+  const loadSavedImage = (image: SavedImage, closeGallery = true) => {
     setGeneratedImage(image.image_url);
     setPrompt(image.prompt);
     setImageFormat(image.format as typeof imageFormat);
-    setShowSaved(false);
+    if (closeGallery) {
+      setShowSaved(false);
+    }
     setGeneratedCaption(""); // Clear caption when loading saved image
-    toast.success("Bild laddad!");
+    toast.success("Bild laddad - redigera eller regenerera nedan!");
+  };
+
+  const regenerateSavedImage = async (image: SavedImage) => {
+    loadSavedImage(image, true);
+    // Wait for state to update then regenerate
+    setIsGenerating(true);
+    try {
+      let formatPrompt = "";
+      switch (image.format) {
+        case "square":
+          formatPrompt = "Instagram square format (1:1 aspect ratio)";
+          break;
+        case "portrait":
+          formatPrompt = "Instagram Story format (9:16 aspect ratio, vertical)";
+          break;
+        case "landscape":
+          formatPrompt = "Wide banner format (16:9 aspect ratio, horizontal)";
+          break;
+      }
+
+      const brandingPrompt = includeBranding 
+        ? " Include the Gymdagboken logo (a stylized orange/black dumbbell icon) and the text 'Gymdagboken.se' in a subtle but visible way, integrated naturally into the image design."
+        : "";
+
+      const fullPrompt = `${image.prompt}. ${formatPrompt}.${brandingPrompt} Ultra high resolution, professional quality.`;
+
+      const { data, error } = await supabase.functions.invoke("generate-challenge-image", {
+        body: {
+          prompt: fullPrompt,
+          challengeTitle: "Custom Image",
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      if (data.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        await saveImage(data.imageUrl, image.prompt, image.format);
+        
+        if (autoGenerateCaption) {
+          generateCaption(image.prompt);
+        }
+        toast.success("Ny version genererad!");
+      }
+    } catch (error) {
+      console.error("Error regenerating image:", error);
+      toast.error("Kunde inte regenerera bild");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const fixSpellingInImage = async (image?: SavedImage) => {
+    const targetImage = image?.image_url || generatedImage;
+    const targetPrompt = image?.prompt || prompt;
+    
+    if (!targetImage) {
+      toast.error("Ingen bild att redigera");
+      return;
+    }
+
+    setIsEditing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-challenge-image", {
+        body: {
+          prompt: "Fix any spelling errors, typos, or incorrect text in this image. Keep everything else exactly the same. Make sure all text is spelled correctly and is legible.",
+          editImage: targetImage,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      if (data.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        await saveImage(data.imageUrl, `${targetPrompt} (stavning korrigerad)`, image?.format || imageFormat);
+        toast.success("Stavfel korrigerade!");
+      }
+    } catch (error) {
+      console.error("Error fixing spelling:", error);
+      toast.error("Kunde inte korrigera stavfel");
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const removeTextFromImage = async () => {
+    if (!generatedImage) {
+      toast.error("Ingen bild att redigera");
+      return;
+    }
+
+    setIsEditing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-challenge-image", {
+        body: {
+          prompt: "Remove all text from this image completely. Keep the background and visual elements but remove any words, letters, or text overlays.",
+          editImage: generatedImage,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      if (data.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        await saveImage(data.imageUrl, `${prompt} (text borttagen)`, imageFormat);
+        toast.success("Text borttagen!");
+      }
+    } catch (error) {
+      console.error("Error removing text:", error);
+      toast.error("Kunde inte ta bort text");
+    } finally {
+      setIsEditing(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -378,9 +508,9 @@ export default function FreeAIImageGenerator() {
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {savedImages.map((image) => (
-                    <div key={image.id} className="group relative">
+                    <div key={image.id} className="group relative rounded-lg overflow-hidden border bg-background">
                       <div 
-                        className="aspect-square rounded-lg overflow-hidden border bg-background cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                        className="aspect-square cursor-pointer hover:opacity-90 transition-opacity"
                         onClick={() => loadSavedImage(image)}
                       >
                         <img
@@ -389,13 +519,63 @@ export default function FreeAIImageGenerator() {
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex flex-col justify-between p-2">
+                      
+                      {/* Info overlay on hover */}
+                      <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <p className="text-white text-xs line-clamp-2">{image.prompt}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-white/70 text-xs flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDate(image.created_at)}
-                          </span>
+                        <span className="text-white/70 text-xs flex items-center gap-1 mt-1">
+                          <Clock className="h-3 w-3" />
+                          {formatDate(image.created_at)}
+                        </span>
+                      </div>
+                      
+                      {/* Action buttons - always visible at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2">
+                        <div className="flex items-center justify-between gap-1">
+                          {/* Quick actions */}
+                          <div className="flex gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-white hover:bg-white/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                loadSavedImage(image);
+                              }}
+                              title="Redigera"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-white hover:bg-white/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                regenerateSavedImage(image);
+                              }}
+                              disabled={isGenerating}
+                              title="Generera ny version"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-amber-400 hover:bg-amber-500/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                loadSavedImage(image, false);
+                                fixSpellingInImage(image);
+                              }}
+                              disabled={isEditing}
+                              title="Fixa stavfel"
+                            >
+                              <Type className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          
+                          {/* Secondary actions */}
                           <div className="flex gap-1">
                             <Button
                               size="icon"
@@ -405,8 +585,9 @@ export default function FreeAIImageGenerator() {
                                 e.stopPropagation();
                                 handleDownload(image.image_url);
                               }}
+                              title="Ladda ner"
                             >
-                              <Download className="h-3 w-3" />
+                              <Download className="h-3.5 w-3.5" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -415,8 +596,9 @@ export default function FreeAIImageGenerator() {
                                   variant="ghost"
                                   className="h-7 w-7 text-red-400 hover:bg-red-500/20"
                                   onClick={(e) => e.stopPropagation()}
+                                  title="Radera"
                                 >
-                                  <Trash2 className="h-3 w-3" />
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
@@ -599,11 +781,45 @@ export default function FreeAIImageGenerator() {
               </div>
 
               {/* Edit image section */}
-              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                 <Label>Redigera bilden med AI</Label>
+                
+                {/* Quick fix buttons for common issues */}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => fixSpellingInImage()}
+                    disabled={isEditing}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {isEditing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Type className="h-4 w-4" />
+                    )}
+                    Fixa stavfel
+                  </Button>
+                  <Button
+                    onClick={removeTextFromImage}
+                    disabled={isEditing}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {isEditing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Eraser className="h-4 w-4" />
+                    )}
+                    Ta bort all text
+                  </Button>
+                </div>
+                
+                {/* Custom edit input */}
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Beskriv ändringen... T.ex. 'Lägg till mer orange färg' eller 'Gör det mörkare'"
+                    placeholder="Beskriv ändringen... T.ex. 'Ändra texten till TRÄNA HÅRT' eller 'Gör det mörkare'"
                     value={editPrompt}
                     onChange={(e) => setEditPrompt(e.target.value)}
                     className="flex-1"
@@ -616,10 +832,14 @@ export default function FreeAIImageGenerator() {
                     {isEditing ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <RefreshCw className="h-4 w-4" />
+                      <Wand2 className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
+                
+                <p className="text-xs text-muted-foreground">
+                  💡 Tips: För att ändra specifik text, skriv t.ex. "Ändra texten från 'FIT' till 'FITNESS'"
+                </p>
               </div>
 
               {/* Action buttons */}
