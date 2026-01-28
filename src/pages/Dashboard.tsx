@@ -2,9 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
-import { Dumbbell, LogOut, Shield, UserCircle } from 'lucide-react';
+import { Dumbbell, LogOut, Shield, UserCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
 import { InstallAppButton } from '@/components/InstallPrompt';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import SubscriptionButton from '@/components/SubscriptionButton';
@@ -17,6 +16,7 @@ import { PendingInvitationsPopup } from '@/components/PendingInvitationsPopup';
 import AdBanner from '@/components/AdBanner';
 import MotivationalNudge from '@/components/MotivationalNudge';
 import InviteFriendNudge from '@/components/InviteFriendNudge';
+import { AppShell } from '@/components/layout/AppShell';
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
@@ -35,15 +35,11 @@ export default function Dashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-[100dvh] bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AppShell loading loadingComponent={<Loader2 className="h-8 w-8 animate-spin text-primary" />} />;
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
+    <AppShell>
       {/* Welcome Guide for new users */}
       {user && <WelcomeGuide userId={user.id} />}
       
@@ -126,6 +122,6 @@ export default function Dashboard() {
       {/* Motivational Nudges */}
       {user && <MotivationalNudge />}
       {user && <InviteFriendNudge userId={user.id} />}
-    </div>
+    </AppShell>
   );
 }

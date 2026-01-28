@@ -11,6 +11,7 @@ import { StrengthProgressChart } from '@/components/StrengthProgressChart';
 import { WorkoutHistoryChart } from '@/components/WorkoutHistoryChart';
 import WeightHistoryChart from '@/components/WeightHistoryChart';
 import { CardioStatsChart } from '@/components/CardioStatsChart';
+import { AppShell } from '@/components/layout/AppShell';
 
 interface QuickStats {
   totalWorkouts: number;
@@ -67,11 +68,7 @@ export default function Statistics() {
   };
 
   if (loading || isLoading) {
-    return (
-      <div className="h-[100dvh] bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AppShell loading loadingComponent={<Loader2 className="h-8 w-8 animate-spin text-primary" />} />;
   }
 
   const quickStatCards = [
@@ -82,7 +79,7 @@ export default function Statistics() {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
+    <AppShell>
       {/* Compact Header */}
       <header className="border-b border-border bg-card shrink-0">
         <div className="px-3 py-2 md:px-4 md:py-3">
@@ -191,6 +188,6 @@ export default function Statistics() {
         {/* Bottom Ad Banner */}
         <AdBanner format="horizontal" placement="statistics_bottom" />
       </main>
-    </div>
+    </AppShell>
   );
 }

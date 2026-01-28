@@ -27,6 +27,7 @@ import WeightLogsList from '@/components/WeightLogsList';
 import AdBanner from '@/components/AdBanner';
 import PasswordChangeSection from '@/components/PasswordChangeSection';
 import ProgressPhotos from '@/components/ProgressPhotos';
+import { AppShell } from '@/components/layout/AppShell';
 import { motion } from 'framer-motion';
 
 interface Profile {
@@ -257,11 +258,7 @@ export default function Account() {
   };
 
   if (loading || isLoading) {
-    return (
-      <div className="h-[100dvh] bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AppShell loading loadingComponent={<Loader2 className="h-8 w-8 animate-spin text-primary" />} />;
   }
 
   const currentSection = accountSections.find(s => s.id === section);
@@ -360,7 +357,7 @@ export default function Account() {
   // If a section is selected, show that content
   if (section) {
     return (
-      <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
+      <AppShell>
         {/* Header */}
         <header className="border-b border-border bg-card shrink-0">
           <div className="px-3 py-2 md:px-4 md:py-3">
@@ -395,13 +392,13 @@ export default function Account() {
           {/* Bottom Ad Banner */}
           <AdBanner format="horizontal" placement="account_section_bottom" />
         </main>
-      </div>
+      </AppShell>
     );
   }
 
   // Main account section view
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
+    <AppShell>
       <WeightLogDialog
         open={showWeightDialog}
         onOpenChange={setShowWeightDialog}
@@ -537,6 +534,6 @@ export default function Account() {
           </div>
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }

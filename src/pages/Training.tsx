@@ -9,6 +9,7 @@ import CalendarSyncDialog from '@/components/CalendarSyncDialog';
 import WorkoutReminderSettings from '@/components/WorkoutReminderSettings';
 import StrengthBentoGrid from '@/components/training/StrengthBentoGrid';
 import AdBanner from '@/components/AdBanner';
+import { AppShell } from '@/components/layout/AppShell';
 import { motion } from 'framer-motion';
 
 export default function Training() {
@@ -38,11 +39,7 @@ export default function Training() {
   }, [tabParam, navigate]);
 
   if (loading) {
-    return (
-      <div className="h-[100dvh] bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AppShell loading loadingComponent={<Loader2 className="h-8 w-8 animate-spin text-primary" />} />;
   }
 
   const handleTabChange = (tab: string) => {
@@ -56,7 +53,7 @@ export default function Training() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
+    <AppShell>
       {/* Compact Header */}
       <header className="border-b border-border bg-card shrink-0">
         <div className="px-3 py-2 md:px-4 md:py-3">
@@ -154,6 +151,6 @@ export default function Training() {
           <AdBanner format="horizontal" placement="training_bottom" />
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }
