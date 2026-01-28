@@ -15,6 +15,8 @@ import WelcomeGuide from '@/components/WelcomeGuide';
 import { NewChallengePopup } from '@/components/NewChallengePopup';
 import { PendingInvitationsPopup } from '@/components/PendingInvitationsPopup';
 import AdBanner from '@/components/AdBanner';
+import MotivationalNudge from '@/components/MotivationalNudge';
+import InviteFriendNudge from '@/components/InviteFriendNudge';
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
@@ -120,6 +122,10 @@ export default function Dashboard() {
 
       {/* New Challenge Popup */}
       <NewChallengePopup />
+      
+      {/* Motivational Nudges */}
+      {user && <MotivationalNudge />}
+      {user && <InviteFriendNudge userId={user.id} />}
     </div>
   );
 }

@@ -114,10 +114,10 @@ export default function InviteFriendNudge({ userId }: InviteFriendNudgeProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-white text-sm">
-                  Träning är roligare med vänner!
+                  Träning är roligare med vänner! 💪
                 </p>
                 <p className="text-white/80 text-xs mt-1">
-                  Bjud in en vän och tävla om vem som tränar mest
+                  Bjud in en vän och tjäna <span className="font-bold">100 XP bonus</span> när de tränar!
                 </p>
                 <Button
                   size="sm"
