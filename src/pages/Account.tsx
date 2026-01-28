@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import { Scale, Watch, Shield, Lock } from 'lucide-react';
+import { Scale, Watch, Shield, Lock, Camera } from 'lucide-react';
 import { GarminConnectSettings } from '@/components/GarminConnectSettings';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { 
-  User, Camera, Loader2, ArrowLeft, Crown,
+  User, Loader2, ArrowLeft, Crown,
   LogOut, Settings, Sun, Moon, RefreshCw, Bell, Save
 } from 'lucide-react';
 import WeightLogDialog from '@/components/WeightLogDialog';
@@ -26,6 +26,7 @@ import WeightGoalCard from '@/components/WeightGoalCard';
 import WeightLogsList from '@/components/WeightLogsList';
 import AdBanner from '@/components/AdBanner';
 import PasswordChangeSection from '@/components/PasswordChangeSection';
+import ProgressPhotos from '@/components/ProgressPhotos';
 import { motion } from 'framer-motion';
 
 interface Profile {
@@ -53,6 +54,16 @@ const accountSections = [
     border: 'border-green-500/30 hover:border-green-500/60',
     iconColor: 'text-green-500',
     description: 'Logga & spåra vikt',
+    adminOnly: false
+  },
+  { 
+    id: 'progress', 
+    label: 'Progressbilder', 
+    icon: Camera, 
+    gradient: 'from-cyan-500/20 to-blue-500/20',
+    border: 'border-cyan-500/30 hover:border-cyan-500/60',
+    iconColor: 'text-cyan-500',
+    description: 'Följ din utveckling visuellt',
     adminOnly: false
   },
   { 
@@ -339,6 +350,8 @@ export default function Account() {
         return <GarminConnectSettings />;
       case 'password':
         return <PasswordChangeSection />;
+      case 'progress':
+        return <ProgressPhotos />;
       default:
         return null;
     }

@@ -1262,6 +1262,39 @@ export type Database = {
           },
         ]
       }
+      progress_photos: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          photo_date: string
+          photo_url: string
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          photo_date?: string
+          photo_url: string
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          photo_date?: string
+          photo_url?: string
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -1299,6 +1332,7 @@ export type Database = {
           invite_code: string
           invited_id: string
           inviter_id: string
+          xp_rewarded: boolean | null
         }
         Insert: {
           created_at?: string
@@ -1306,6 +1340,7 @@ export type Database = {
           invite_code: string
           invited_id: string
           inviter_id: string
+          xp_rewarded?: boolean | null
         }
         Update: {
           created_at?: string
@@ -1313,6 +1348,7 @@ export type Database = {
           invite_code?: string
           invited_id?: string
           inviter_id?: string
+          xp_rewarded?: boolean | null
         }
         Relationships: []
       }
