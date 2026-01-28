@@ -17,6 +17,7 @@ import { PoolChallenges } from '@/components/PoolChallenges';
 import { CommunityChallenges } from '@/components/CommunityChallenges';
 import AchievementsList from '@/components/AchievementsList';
 import { TeamsSection } from '@/components/teams/TeamsSection';
+import { AppShell } from '@/components/layout/AppShell';
 
 const socialCategories = [
   { 
@@ -97,11 +98,7 @@ export default function Social() {
   }, [user, loading, navigate]);
 
   if (loading || socialLoading) {
-    return (
-      <div className="h-[100dvh] bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AppShell loading loadingComponent={<Loader2 className="h-8 w-8 animate-spin text-primary" />} />;
   }
 
   const pendingChallenges = challenges.filter(c => c.status === 'pending');
@@ -172,7 +169,7 @@ export default function Social() {
   // If a category is selected, show that content
   if (category) {
     return (
-      <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
+      <AppShell>
         {/* Header */}
         <header className="border-b border-border bg-card shrink-0">
           <div className="px-3 py-2 md:px-4 md:py-3">
@@ -206,13 +203,13 @@ export default function Social() {
         <div className="shrink-0 px-3 pb-16 md:pb-3">
           <AdBanner format="mobile_banner" placement="social_bottom" showPremiumPrompt={false} />
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   // Main category selection view
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col overflow-x-hidden">
+    <AppShell>
       {/* Compact Header */}
       <header className="border-b border-border bg-card shrink-0">
         <div className="px-3 py-2 md:px-4 md:py-3">
@@ -293,6 +290,6 @@ export default function Social() {
           <AdBanner format="mobile_banner" placement="social_bottom" showPremiumPrompt={false} />
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }
