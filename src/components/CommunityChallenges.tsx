@@ -152,6 +152,13 @@ export function CommunityChallenges() {
           }, {} as Record<string, string | null>);
         }
 
+        // Helper function to get first name
+        const getFirstName = (name: string | null): string => {
+          if (!name || name === '') return 'Anonym';
+          const parts = name.trim().split(' ');
+          return parts[0];
+        };
+
         // Group participants by challenge
         const grouped: Record<string, Participant[]> = {};
         const myJoined = new Set<string>();
@@ -163,7 +170,10 @@ export function CommunityChallenges() {
           grouped[p.challenge_id].push({
             user_id: p.user_id,
             current_value: p.current_value,
-            display_name: profilesMap[p.user_id] || "Anonym",
+            // Show first name for others, full name for current user
+            display_name: p.user_id === user?.id 
+              ? (profilesMap[p.user_id] || "Anonym")
+              : getFirstName(profilesMap[p.user_id]),
           });
           
           if (p.user_id === user?.id) {
