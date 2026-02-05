@@ -2214,6 +2214,14 @@ export type Database = {
           winner_type: string
         }[]
       }
+      get_public_profile_first_names: {
+        Args: { user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          user_id: string
+        }[]
+      }
       get_streak_leaderboard: {
         Args: { limit_count?: number }
         Returns: {

@@ -107,10 +107,10 @@ export function CommunityChallenges() {
         .map(c => c.lottery_winner_id as string);
 
       if (lotteryWinnerIds.length > 0) {
-        const { data: winnerProfiles } = await supabase
-          .from("profiles")
-          .select("user_id, display_name, avatar_url")
-          .in("user_id", lotteryWinnerIds);
+        const { data: winnerProfiles, error: winnerProfilesError } = await supabase
+          .rpc("get_public_profile_first_names", { user_ids: lotteryWinnerIds });
+
+        if (winnerProfilesError) throw winnerProfilesError;
 
         const winnersMap: Record<string, LotteryWinnerInfo> = {};
         (winnerProfiles || []).forEach(p => {
@@ -136,28 +136,20 @@ export function CommunityChallenges() {
 
         if (participantsError) throw participantsError;
 
-        // Fetch profiles for participants
+        // Fetch display names for participants via a SECURITY DEFINER RPC (avoids profile RLS issues)
         const userIds = [...new Set(participantsData?.map(p => p.user_id) || [])];
         let profilesMap: Record<string, string | null> = {};
         
         if (userIds.length > 0) {
-          const { data: profilesData } = await supabase
-            .from("profiles")
-            .select("user_id, display_name")
-            .in("user_id", userIds);
+          const { data: profilesData, error: profilesError } = await supabase
+            .rpc("get_public_profile_first_names", { user_ids: userIds });
+          if (profilesError) throw profilesError;
           
           profilesMap = (profilesData || []).reduce((acc, p) => {
             acc[p.user_id] = p.display_name;
             return acc;
           }, {} as Record<string, string | null>);
         }
-
-        // Helper function to get first name
-        const getFirstName = (name: string | null): string => {
-          if (!name || name === '') return 'Anonym';
-          const parts = name.trim().split(' ');
-          return parts[0];
-        };
 
         // Group participants by challenge
         const grouped: Record<string, Participant[]> = {};
@@ -170,10 +162,8 @@ export function CommunityChallenges() {
           grouped[p.challenge_id].push({
             user_id: p.user_id,
             current_value: p.current_value,
-            // Show first name for others, full name for current user
-            display_name: p.user_id === user?.id 
-              ? (profilesMap[p.user_id] || "Anonym")
-              : getFirstName(profilesMap[p.user_id]),
+            // RPC already returns full name for me, first name for others
+            display_name: profilesMap[p.user_id] || "Anonym",
           });
           
           if (p.user_id === user?.id) {
