@@ -2110,6 +2110,14 @@ export type Database = {
           winner_user_id: string
         }[]
       }
+      get_community_challenge_participants: {
+        Args: { challenge_uuid: string }
+        Returns: {
+          current_value: number
+          display_name: string
+          user_id: string
+        }[]
+      }
       get_creator_stats: {
         Args: { creator_id: string }
         Returns: {
@@ -2118,6 +2126,7 @@ export type Database = {
           programs_count: number
         }[]
       }
+      get_first_name: { Args: { full_name: string }; Returns: string }
       get_followed_creators_programs: {
         Args: { limit_count?: number; p_user_id: string }
         Returns: {
