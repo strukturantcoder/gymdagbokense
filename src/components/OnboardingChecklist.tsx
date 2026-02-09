@@ -100,12 +100,7 @@ export default function OnboardingChecklist({ userId }: OnboardingChecklistProps
       title: 'Skapa ditt träningsprogram',
       description: 'Låt AI generera ett personligt program',
       icon: Dumbbell,
-      action: () => {
-        const generatorSection = document.getElementById('program-generator');
-        if (generatorSection) {
-          generatorSection.scrollIntoView({ behavior: 'smooth' });
-        }
-      },
+      action: () => navigate('/training'),
       actionLabel: 'Skapa program',
       completed: hasProgram,
     },
