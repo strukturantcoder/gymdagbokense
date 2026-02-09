@@ -29,6 +29,7 @@ import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import AdBanner from '@/components/AdBanner';
 import RestTimer from '@/components/RestTimer';
+import GenerateWorkoutDialog from '@/components/GenerateWorkoutDialog';
 
 interface Exercise {
   name: string;
@@ -86,6 +87,7 @@ export default function StrengthBentoGrid() {
   const [recentLogs, setRecentLogs] = useState<WorkoutLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProgramDialog, setShowProgramDialog] = useState(false);
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [selectedProgramId, setSelectedProgramId] = useState('');
   const [selectedDayIndex, setSelectedDayIndex] = useState('');
   const [startingWorkout, setStartingWorkout] = useState(false);
@@ -387,7 +389,7 @@ export default function StrengthBentoGrid() {
         >
           <Card 
             className="h-28 cursor-pointer bg-gradient-to-br from-gym-orange/20 to-gym-amber/10 border-gym-orange/30 hover:border-gym-orange/50 transition-all"
-            onClick={() => navigate('/workout-log', { state: { createProgram: true } })}
+            onClick={() => setShowGenerateDialog(true)}
           >
             <CardContent className="p-3 h-full flex flex-col justify-between">
               <div className="flex items-center justify-between">
@@ -530,7 +532,7 @@ export default function StrengthBentoGrid() {
                   variant="link" 
                   size="sm" 
                   className="text-sm mt-1"
-                  onClick={() => navigate('/workout-log', { state: { createProgram: true } })}
+                  onClick={() => setShowGenerateDialog(true)}
                 >
                   Skapa ditt första program
                 </Button>
@@ -717,6 +719,13 @@ export default function StrengthBentoGrid() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Generate Workout Dialog */}
+      <GenerateWorkoutDialog 
+        open={showGenerateDialog} 
+        onOpenChange={setShowGenerateDialog}
+        onProgramCreated={fetchData}
+      />
     </>
   );
 }
