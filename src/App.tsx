@@ -43,6 +43,7 @@ const PublicPrograms = lazy(() => import("./pages/PublicPrograms"));
 const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
 const WorkoutLog = lazy(() => import("./pages/WorkoutLog"));
 const CardioLog = lazy(() => import("./pages/CardioLog"));
+const LogoDownloads = lazy(() => import("./pages/LogoDownloads"));
 const queryClient = new QueryClient();
 
 // Minimal loading fallback
@@ -101,6 +102,7 @@ const AppContent = () => {
             <Route path="/programs" element={<PublicPrograms />} />
             <Route path="/public-programs" element={<PublicPrograms />} />
             <Route path="/creator/:creatorId" element={<CreatorProfile />} />
+            <Route path="/logo-downloads" element={<LogoDownloads />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
