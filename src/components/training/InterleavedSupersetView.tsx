@@ -16,6 +16,7 @@ import {
   Sparkles,
   Trophy
 } from 'lucide-react';
+import ExerciseInfo from '@/components/ExerciseInfo';
 
 interface SetDetail {
   reps: number;
@@ -200,9 +201,11 @@ export function InterleavedSupersetView({
                         {/* Exercise name */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm truncate">
-                              {exercise.exercise_name}
-                            </span>
+                            <ExerciseInfo exerciseName={exercise.exercise_name}>
+                              <span className="font-medium text-sm truncate">
+                                {exercise.exercise_name}
+                              </span>
+                            </ExerciseInfo>
                             {isNewPB && (
                               <Sparkles className="w-4 h-4 text-gym-orange shrink-0" />
                             )}
