@@ -65,6 +65,7 @@ import ShareToInstagramDialog from '@/components/ShareToInstagramDialog';
 import SharePRToInstagramDialog from '@/components/SharePRToInstagramDialog';
 import AdBanner from '@/components/AdBanner';
 import PostWorkoutAdPopup from '@/components/PostWorkoutAdPopup';
+import ExerciseInfo from '@/components/ExerciseInfo';
 import { SupersetGroup } from '@/components/training/SupersetGroup';
 import { CreateSupersetDialog } from '@/components/training/CreateSupersetDialog';
 import { InterleavedSupersetView } from '@/components/training/InterleavedSupersetView';
@@ -1461,7 +1462,9 @@ export default function WorkoutSession() {
                       <div className="flex items-center gap-2">
                         <Dumbbell className="w-4 h-4 text-muted-foreground" />
                         <SelectValue>
-                          <span className="text-lg font-display font-bold">{currentExercise.exercise_name}</span>
+                          <ExerciseInfo exerciseName={currentExercise.exercise_name}>
+                            <span className="text-lg font-display font-bold">{currentExercise.exercise_name}</span>
+                          </ExerciseInfo>
                         </SelectValue>
                       </div>
                     </SelectTrigger>
