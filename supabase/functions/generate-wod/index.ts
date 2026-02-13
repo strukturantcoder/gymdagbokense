@@ -69,7 +69,7 @@ Svara ENDAST med JSON i detta format:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: "Generera en ny WOD för idag. Var kreativ och variera övningarna!" }

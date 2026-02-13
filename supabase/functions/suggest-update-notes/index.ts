@@ -38,7 +38,7 @@ Svara ENDAST med en JSON-array av strängar, max 50 tecken per punkt. Exempel:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: "Du svarar alltid med giltig JSON utan markdown-formatering." },
           { role: "user", content: prompt },
