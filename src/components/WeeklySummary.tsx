@@ -26,7 +26,7 @@ export function WeeklySummary() {
       const weekStart = startOfWeek(now, { weekStartsOn: 1 }).toISOString();
       const weekEnd = endOfWeek(now, { weekStartsOn: 1 }).toISOString();
 
-      const [workoutRes, cardioRes, wodRes] = await Promise.all([
+      const [workoutRes, cardioRes, wodRes, garminCardioRes] = await Promise.all([
         supabase
           .from("workout_logs")
           .select("duration_minutes")
@@ -45,16 +45,26 @@ export function WeeklySummary() {
           .eq("user_id", user.id)
           .gte("completed_at", weekStart)
           .lte("completed_at", weekEnd),
+        // Garmin cardio not synced to cardio_logs
+        supabase
+          .from("garmin_activities")
+          .select("duration_seconds")
+          .eq("user_id", user.id)
+          .neq("activity_type", "strength")
+          .is("synced_to_cardio_log_id", null)
+          .gte("start_time", weekStart)
+          .lte("start_time", weekEnd),
       ]);
 
       const workoutMinutes = workoutRes.data?.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) || 0;
       const cardioMinutes = cardioRes.data?.reduce((sum, c) => sum + (c.duration_minutes || 0), 0) || 0;
+      const garminCardioMinutes = garminCardioRes.data?.reduce((sum, g) => sum + Math.round((g.duration_seconds || 0) / 60), 0) || 0;
 
       setStats({
         workoutCount: workoutRes.data?.length || 0,
-        cardioCount: cardioRes.data?.length || 0,
+        cardioCount: (cardioRes.data?.length || 0) + (garminCardioRes.data?.length || 0),
         wodCount: wodRes.data?.length || 0,
-        totalMinutes: workoutMinutes + cardioMinutes,
+        totalMinutes: workoutMinutes + cardioMinutes + garminCardioMinutes,
       });
       setLoading(false);
     };
