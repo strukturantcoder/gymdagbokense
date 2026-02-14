@@ -50,16 +50,26 @@ export default function Statistics() {
   const fetchQuickStats = async () => {
     setIsLoading(true);
     
-    const [workouts, cardio, wods, userStats] = await Promise.all([
+    const [workouts, cardio, wods, userStats, garminCardio, garminStrength] = await Promise.all([
       supabase.from('workout_logs').select('*', { count: 'exact', head: true }).eq('user_id', user!.id),
       supabase.from('cardio_logs').select('*', { count: 'exact', head: true }).eq('user_id', user!.id),
       supabase.from('wod_logs').select('*', { count: 'exact', head: true }).eq('user_id', user!.id),
       supabase.from('user_stats').select('total_minutes, current_streak').eq('user_id', user!.id).single(),
+      // Garmin cardio activities NOT already synced to cardio_logs
+      supabase.from('garmin_activities').select('*', { count: 'exact', head: true })
+        .eq('user_id', user!.id)
+        .neq('activity_type', 'strength')
+        .is('synced_to_cardio_log_id', null),
+      // Garmin strength activities NOT already synced to workout_logs
+      supabase.from('garmin_activities').select('*', { count: 'exact', head: true })
+        .eq('user_id', user!.id)
+        .eq('activity_type', 'strength')
+        .is('synced_to_workout_log_id', null),
     ]);
 
     setStats({
-      totalWorkouts: workouts.count || 0,
-      totalCardio: cardio.count || 0,
+      totalWorkouts: (workouts.count || 0) + (garminStrength.count || 0),
+      totalCardio: (cardio.count || 0) + (garminCardio.count || 0),
       totalWods: wods.count || 0,
       totalMinutes: userStats.data?.total_minutes || 0,
       currentStreak: userStats.data?.current_streak || 0,
