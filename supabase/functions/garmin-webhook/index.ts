@@ -133,11 +133,12 @@ Deno.serve(async (req) => {
 
         // If it's a cardio activity and not already synced to cardio_logs, create one
         if (mapped.category === "cardio" && !cardioLogId && durationMinutes > 0) {
+          const distanceKm = distanceMeters ? Number((distanceMeters / 1000).toFixed(2)) : null;
           const cardioLogData = {
             user_id: userId,
             activity_type: mapped.type,
             duration_minutes: durationMinutes,
-            distance_km: distanceMeters ? Number((distanceMeters / 1000).toFixed(2)) : null,
+            distance_km: distanceKm,
             calories_burned: calories || null,
             completed_at: startTime,
             notes: `Synkad från Garmin: ${activityName}`,
@@ -151,6 +152,40 @@ Deno.serve(async (req) => {
 
           if (!cardioError && newCardioLog) {
             cardioLogId = newCardioLog.id;
+            console.log("Created cardio log from webhook:", cardioLogId);
+
+            // Award XP for cardio: 2 XP per minute + 10 XP per km
+            const xpEarned = Math.min(300, durationMinutes * 2 + (distanceKm ? Math.round(distanceKm * 10) : 0));
+
+            const { data: currentStats } = await supabase
+              .from("user_stats")
+              .select("total_xp, total_cardio_sessions, total_cardio_minutes, total_cardio_distance_km, total_minutes")
+              .eq("user_id", userId)
+              .maybeSingle();
+
+            if (currentStats) {
+              await supabase
+                .from("user_stats")
+                .update({
+                  total_xp: (currentStats.total_xp || 0) + xpEarned,
+                  total_cardio_sessions: (currentStats.total_cardio_sessions || 0) + 1,
+                  total_cardio_minutes: (currentStats.total_cardio_minutes || 0) + durationMinutes,
+                  total_cardio_distance_km: Number(((currentStats.total_cardio_distance_km || 0) + (distanceKm || 0)).toFixed(2)),
+                  total_minutes: (currentStats.total_minutes || 0) + durationMinutes,
+                })
+                .eq("user_id", userId);
+            } else {
+              await supabase
+                .from("user_stats")
+                .insert({
+                  user_id: userId,
+                  total_xp: xpEarned,
+                  total_cardio_sessions: 1,
+                  total_cardio_minutes: durationMinutes,
+                  total_cardio_distance_km: distanceKm || 0,
+                  total_minutes: durationMinutes,
+                });
+            }
           }
         }
 
