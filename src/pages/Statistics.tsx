@@ -5,13 +5,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dumbbell, ArrowLeft, Loader2, Footprints, Zap, Scale, BarChart3, TrendingUp, Activity, Timer } from 'lucide-react';
+import { Dumbbell, ArrowLeft, Loader2, Footprints, Zap, Scale, BarChart3, TrendingUp, Activity, Timer, Watch } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
 import { StrengthProgressChart } from '@/components/StrengthProgressChart';
 import { WorkoutHistoryChart } from '@/components/WorkoutHistoryChart';
 import WeightHistoryChart from '@/components/WeightHistoryChart';
 import { CardioStatsChart } from '@/components/CardioStatsChart';
 import { AppShell } from '@/components/layout/AppShell';
+import { GarminStatsChart } from '@/components/GarminStatsChart';
 
 interface QuickStats {
   totalWorkouts: number;
@@ -121,7 +122,7 @@ export default function Statistics() {
 
         {/* Tabs for different stat views */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 h-9">
+          <TabsList className="grid w-full grid-cols-5 h-9">
             <TabsTrigger value="overview" className="text-xs px-1">
               <Activity className="w-3 h-3 mr-1" />
               Översikt
@@ -133,6 +134,10 @@ export default function Statistics() {
             <TabsTrigger value="cardio" className="text-xs px-1">
               <Footprints className="w-3 h-3 mr-1" />
               Kondition
+            </TabsTrigger>
+            <TabsTrigger value="garmin" className="text-xs px-1">
+              <Watch className="w-3 h-3 mr-1" />
+              Garmin
             </TabsTrigger>
             <TabsTrigger value="weight" className="text-xs px-1">
               <Scale className="w-3 h-3 mr-1" />
@@ -175,6 +180,10 @@ export default function Statistics() {
 
           <TabsContent value="cardio" className="mt-3">
             <CardioStatsChart />
+          </TabsContent>
+
+          <TabsContent value="garmin" className="mt-3">
+            <GarminStatsChart />
           </TabsContent>
 
           <TabsContent value="weight" className="mt-3">
