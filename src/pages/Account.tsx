@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import { Scale, Watch, Shield, Lock, Camera } from 'lucide-react';
+import { Scale, Watch, Shield, Lock, Camera, Trash2 } from 'lucide-react';
 import { GarminConnectSettings } from '@/components/GarminConnectSettings';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -142,6 +143,7 @@ export default function Account() {
   const [showWeightDialog, setShowWeightDialog] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Profile form state
   const [displayName, setDisplayName] = useState('');
@@ -199,6 +201,30 @@ export default function Account() {
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setIsDeleting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error('No session');
+
+      const { error } = await supabase.functions.invoke('delete-user-account', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (error) throw error;
+
+      toast.success('Ditt konto har raderats');
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Kunde inte radera kontot. Försök igen.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleForceUpdate = async () => {
@@ -524,6 +550,35 @@ export default function Account() {
             )}
             {isClearing ? 'Uppdaterar...' : 'Rensa cache & uppdatera'}
           </Button>
+
+          {/* Delete Account */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Radera konto
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Radera konto permanent?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Detta kommer att permanent radera ditt konto och all din data, inklusive träningsloggar, progressbilder och statistik. Denna åtgärd kan inte ångras.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                  Radera permanent
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Bottom Ad Banner - after cache button */}
           <AdBanner format="mobile_banner" placement="account_bottom" showPremiumPrompt={false} />

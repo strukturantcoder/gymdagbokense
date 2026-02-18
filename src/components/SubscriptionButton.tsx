@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Crown, Loader2, Settings } from "lucide-react";
+import { Crown, Loader2, Settings, ExternalLink } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Capacitor } from "@capacitor/core";
 
 interface SubscriptionButtonProps {
   variant?: "default" | "compact";
@@ -103,6 +104,9 @@ const SubscriptionButton = ({ variant = "default", className = "" }: Subscriptio
     );
   }
 
+  // Hide purchase buttons on native iOS (App Store guidelines 3.1.1)
+  const isNativeIos = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+
   if (isPremium) {
     return (
       <Button 
@@ -117,6 +121,20 @@ const SubscriptionButton = ({ variant = "default", className = "" }: Subscriptio
           <Settings className="w-4 h-4 mr-2" />
         )}
         Hantera Premium
+      </Button>
+    );
+  }
+
+  // On native iOS, show "upgrade via web" instead of Stripe checkout
+  if (isNativeIos) {
+    return (
+      <Button 
+        variant="outline"
+        onClick={() => window.open('https://gymdagboken.se', '_blank')}
+        className={className}
+      >
+        <ExternalLink className="w-4 h-4 mr-2" />
+        Uppgradera via gymdagboken.se
       </Button>
     );
   }
