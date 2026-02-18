@@ -79,14 +79,28 @@ export default function ProgressPhotos() {
   }, [fetchPhotos]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    try {
+      const file = e.target.files?.[0];
+      if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          toast.error('Vänligen välj en bildfil');
+          return;
+        }
+        setPhotoFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPhotoPreview(reader.result as string);
+        };
+        reader.onerror = () => {
+          toast.error('Kunde inte läsa bilden');
+          setPhotoFile(null);
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      console.error('Error handling file:', error);
+      toast.error('Något gick fel vid bildvalet');
     }
   };
 
@@ -281,7 +295,8 @@ export default function ProgressPhotos() {
                             <span className="text-sm text-muted-foreground">Klicka för att välja bild</span>
                             <input 
                               type="file" 
-                              accept="image/*" 
+                              accept="image/*"
+                              capture="environment"
                               className="hidden" 
                               onChange={handleFileChange}
                             />
