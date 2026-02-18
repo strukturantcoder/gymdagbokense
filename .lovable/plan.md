@@ -1,55 +1,104 @@
 
 
-# Övningsinstruktioner med video och bilder
+# Lösningsplan: Apple App Store-avvisning
 
-## Sammanfattning
-Uppgradera den befintliga `ExerciseInfo`-komponenten till att inkludera YouTube-videolänkar och illustrativa bilder for varje övning. Gör den synlig som ett litet frageticken-ikon overallt dar ovningsnamn visas -- inklusive under aktiva pass (WorkoutSession) dar den idag saknas.
+Apple har identifierat **5 problem** som måste lösas. Här är en sammanfattning och plan:
 
-## Vad som finns idag
-- En `ExerciseInfo`-komponent med en hardkodad databas av ca 30 ovningar (pa svenska)
-- Varje ovning har: beskrivning, muskelgrupper, tips
-- Komponenten visas redan i `WorkoutLog`, `WorkoutLogContent`, och `SortableExercise`
-- Den visas INTE i `WorkoutSession` (den aktiva pass-vyn) -- detta ar det storsta gapet
+---
 
-## Plan
+## 1. Sign in with Apple (Guideline 4.8)
 
-### 1. Utoka ovningsdatabasen med YouTube-lankar
-Lagg till ett `videoUrl`-falt och ett `imageSearch`-falt (eller statisk bild-URL) till varje ovning i databasen:
+**Problem:** Appen erbjuder Google-inloggning men saknar "Sign in with Apple" som alternativ.
 
-```text
-"bankpress": {
-  description: "...",
-  muscles: "...",
-  tips: [...],
-  videoUrl: "https://www.youtube.com/watch?v=rT7DgCr-3pg"
-}
-```
+**Lösning:** Lägga till en "Logga in med Apple"-knapp på inloggningssidan (Auth.tsx). Lovable Cloud stödjer Apple-inloggning.
 
-YouTube-lankar valjs manuellt -- bra svenska eller valproducerade engelska instruktionsvideor for varje ovning. For ovningar som inte har en matchning i databasen visas en fallback-sokning: en lank till YouTube-sok pa ovningsnamnet.
+**Steg:**
+- Aktivera Apple som OAuth-provider via Lovable Cloud
+- Lägga till Apple-inloggningsknapp i Auth.tsx bredvid Google-knappen
+- Använda `lovable.auth.signInWithOAuth("apple", ...)` (inte Supabase-klienten direkt)
 
-### 2. Uppdatera ExerciseInfo-dialogens UI
-- Lagg till en "Se video"-knapp/lank som oppnar YouTube-videon i ny flik
-- Visa videons thumbnail som forhandsgranskning (YouTube oembed: `https://img.youtube.com/vi/{VIDEO_ID}/hqdefault.jpg`)
-- Behall befintlig information (beskrivning, muskler, tips) under videon
-- For ovningar som inte finns i databasen: visa en enkel "Sok pa YouTube"-lank istallet for att gömma ikonen helt
+---
 
-### 3. Lagg till ExerciseInfo i WorkoutSession
-Det storsta gapet: under aktiva pass visas ovningsnamnet men utan nagot frageticken. Ander:
-- Lagg till `ExerciseInfo`-wrappern runt ovningsnamnet i single-exercise-vyn (rad ~1464)
-- Lagg till den i `InterleavedSupersetView` for superset-ovningar (rad ~169 i den komponenten)
+## 2. Age Rating i App Store Connect (Guideline 2.3.6)
 
-### 4. Fallback for okanda ovningar
-Idag: om ovningen inte finns i databasen returneras `null` och ingen ikon visas. Andra till:
-- Visa alltid frageticken-ikonen
-- For okanda ovningar: visa en enkel dialog med en "Sok pa YouTube"-lank (`https://www.youtube.com/results?search_query={ovningsnamn}+teknik`)
+**Problem:** Ni har valt "In-App Controls" (Parental Controls / Age Assurance) i Age Rating men appen har inga sådana funktioner.
+
+**Lösning:** Ingen kodändring behövs. Gå till **App Store Connect → App Information → Age Rating** och ändra "Parental Controls" och "Age Assurance" till **"None"**.
+
+---
+
+## 3. In-App Purchase / Premium (Guideline 3.1.1)
+
+**Problem:** Premium-prenumerationen köps via Stripe (extern betalning) men erbjuds inte via Apples In-App Purchase.
+
+**Lösning - två alternativ:**
+
+- **Alternativ A (enklast):** Dölj Premium-köpknappen i iOS-appen helt. Användare som köpt Premium via webben kan fortfarande använda sina förmåner. Apple tillåter att innehåll köpt utanför appen kan nyttjas (Guideline 3.1.3(b) Multiplatform Services).
+- **Alternativ B (komplett):** Implementera Apples StoreKit/In-App Purchase. Detta kräver native Xcode-kod (Swift), setup i App Store Connect och en server-side verifieringslogik. Betydligt mer arbete.
+
+**Rekommendation:** Alternativ A - dölj köp-knappar/Stripe-länkar i iOS-appen. Detektera plattform med Capacitor och visa ett meddelande som "Uppgradera via gymdagboken.se".
+
+---
+
+## 4. Radera konto (Guideline 5.1.1(v))
+
+**Problem:** Appen saknar funktion för att radera sitt konto.
+
+**Lösning:** Lägga till en "Radera konto"-knapp på kontosidan med:
+- Bekräftelsedialog (förhindra oavsiktlig radering)
+- Edge function som raderar användarens data och konto
+- Utloggning och redirect efter radering
+
+**Steg:**
+- Skapa edge function `delete-user-account` som raderar profil, data och auth-användare
+- Lägga till knapp + bekräftelsedialog i Account.tsx
+
+---
+
+## 5. Crash vid kamera/foto (Guideline 2.1)
+
+**Problem:** Appen kraschar när reviewer försöker ta ett foto (iPad Air M3).
+
+**Lösning:** Progressbilder-funktionen använder en vanlig fil-input (`<input type="file">`). På iPad/iOS kan detta trigga kameran. Lägga till felhantering och kontrollera att kamera-åtkomst hanteras korrekt i Capacitor-appen.
+
+**Steg:**
+- Lägga till `accept="image/*"` på fil-inputen
+- Wrappa filhantering i try-catch
+- Eventuellt använda Capacitor Camera-plugin istället för vanlig fil-input för bättre native-stöd
+- Testa på iPad innan ny submission
+
+---
+
+## Sammanfattning - vad som kan göras i Lovable vs App Store Connect
+
+| Problem | Var löses det? |
+|---------|---------------|
+| Sign in with Apple | Lovable (kodändring) |
+| Age Rating | App Store Connect (inställning) |
+| In-App Purchase | Lovable (dölj köpknappar på iOS) |
+| Radera konto | Lovable (kodändring + edge function) |
+| Kamera-krasch | Lovable (kodändring + testa native) |
+
+---
 
 ## Tekniska detaljer
 
-### Filer som andras
-1. **`src/components/ExerciseInfo.tsx`** -- Utoka datamodellen med `videoUrl`, uppdatera dialogen med videothumbnail och lankknapp, lagg till fallback for okanda ovningar
-2. **`src/pages/WorkoutSession.tsx`** -- Importera och anvand `ExerciseInfo` runt ovningsnamnet i pass-vyn
-3. **`src/components/training/InterleavedSupersetView.tsx`** -- Wrappa ovningsnamnet i `ExerciseInfo`
+### Sign in with Apple
+- Konfigureras via Lovable Cloud auth-inställningar
+- Använder `lovable.auth.signInWithOAuth("apple", { redirect_uri: window.location.origin })`
+- Knapp placeras under Google-knappen i Auth.tsx
 
-### Inga nya beroenden behovs
-YouTube-thumbnails laddas via standard img-taggar. Lankar oppnas i ny flik. Ingen YouTube API-nyckel kravs.
+### Dölj Stripe på iOS
+- Detektera plattform: `import { Capacitor } from '@capacitor/core'; const isNative = Capacitor.isNativePlatform();`
+- I SubscriptionButton.tsx: om `isNative && platform === 'ios'`, visa "Uppgradera via webben" istället för Stripe-checkout
+
+### Radera konto - Edge function
+- Tar emot autentiserad request
+- Raderar användarens data från alla tabeller
+- Använder Supabase Admin API för att radera auth-användaren
+- Returnerar success → frontend loggar ut och redirectar
+
+### Kamera-fix
+- Byt till `accept="image/*"` och lägg till error boundary runt fotouppladdning
+- Överväg `@capacitor/camera` plugin för bättre native-upplevelse
 
