@@ -58,7 +58,7 @@ interface DashboardBentoGridProps {
   className?: string;
 }
 
-type WidgetId = 'goals' | 'level' | 'streak' | 'strength' | 'cardio' | 'wod' | 'stats' | 'social' | 'account' | 'weight' | 'calendar';
+type WidgetId = 'goals' | 'level' | 'streak' | 'strength' | 'cardio' | 'wod' | 'stats' | 'social' | 'account' | 'weight' | 'calendar' | 'nutrition' | 'coach' | 'recovery' | 'mobility';
 
 interface WidgetConfig {
   id: WidgetId;
