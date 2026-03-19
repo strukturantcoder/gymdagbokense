@@ -19,11 +19,16 @@ import {
   Scale,
   Target,
   Calendar,
-  GripVertical
+  GripVertical,
+  Apple,
+  Bot,
+  Moon,
+  StretchHorizontal
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import GoalOnboardingDialog from './GoalOnboardingDialog';
 import CompactGoalCard from './CompactGoalCard';
+import RecoveryWidget from './RecoveryWidget';
 import {
   Dialog,
   DialogContent,
@@ -54,7 +59,7 @@ interface DashboardBentoGridProps {
   className?: string;
 }
 
-type WidgetId = 'goals' | 'level' | 'streak' | 'strength' | 'cardio' | 'wod' | 'stats' | 'social' | 'account' | 'weight' | 'calendar';
+type WidgetId = 'goals' | 'level' | 'streak' | 'strength' | 'cardio' | 'wod' | 'stats' | 'social' | 'account' | 'weight' | 'calendar' | 'nutrition' | 'coach' | 'recovery' | 'mobility';
 
 interface WidgetConfig {
   id: WidgetId;
@@ -75,6 +80,10 @@ const AVAILABLE_WIDGETS: WidgetConfig[] = [
   { id: 'account', label: 'Konto', icon: <User className="w-4 h-4" />, defaultEnabled: true },
   { id: 'weight', label: 'Vikt', icon: <Scale className="w-4 h-4" />, defaultEnabled: false },
   { id: 'calendar', label: 'Kalender', icon: <Calendar className="w-4 h-4" />, defaultEnabled: false },
+  { id: 'nutrition', label: 'Kost', icon: <Apple className="w-4 h-4" />, defaultEnabled: true },
+  { id: 'recovery', label: 'Återhämtning', icon: <Moon className="w-4 h-4" />, defaultEnabled: true },
+  { id: 'coach', label: 'AI Coach', icon: <Bot className="w-4 h-4" />, defaultEnabled: true },
+  { id: 'mobility', label: 'Mobilitet', icon: <StretchHorizontal className="w-4 h-4" />, defaultEnabled: false },
 ];
 
 const STORAGE_KEY = 'dashboard-widgets-order';
@@ -230,8 +239,8 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
         }
         return prev.filter(id => id !== widgetId);
       }
-      if (prev.length >= 9) {
-        toast.error('Max 9 widgets får plats');
+      if (prev.length >= 12) {
+        toast.error('Max 12 widgets får plats');
         return prev;
       }
       return [...prev, widgetId];
@@ -406,6 +415,53 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
             <CardContent className="p-2.5 h-full flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-500" />
               <span className="text-sm font-medium">Kalender</span>
+            </CardContent>
+          </Card>
+        );
+      case 'nutrition':
+        return (
+          <Card 
+            className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-lime-500/10 to-green-500/10 border-lime-500/20 hover:border-lime-500/40 transition-all"
+            onClick={() => !isEditing && navigate('/nutrition')}
+          >
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
+              <Apple className="w-5 h-5 text-lime-500" />
+              <div>
+                <p className="text-base font-semibold leading-none">Kost</p>
+                <p className="text-xs text-muted-foreground">Näring</p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      case 'recovery':
+        return <RecoveryWidget />;
+      case 'coach':
+        return (
+          <Card 
+            className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20 hover:border-violet-500/40 transition-all"
+            onClick={() => !isEditing && navigate('/coach')}
+          >
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
+              <Bot className="w-5 h-5 text-violet-500" />
+              <div>
+                <p className="text-base font-semibold leading-none">AI Coach</p>
+                <p className="text-xs text-muted-foreground">Fråga mig</p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      case 'mobility':
+        return (
+          <Card 
+            className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border-teal-500/20 hover:border-teal-500/40 transition-all"
+            onClick={() => !isEditing && navigate('/training?tab=mobility')}
+          >
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
+              <StretchHorizontal className="w-5 h-5 text-teal-500" />
+              <div>
+                <p className="text-base font-semibold leading-none">Mobilitet</p>
+                <p className="text-xs text-muted-foreground">Stretching</p>
+              </div>
             </CardContent>
           </Card>
         );

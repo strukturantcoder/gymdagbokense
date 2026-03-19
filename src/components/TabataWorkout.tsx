@@ -74,7 +74,7 @@ export default function TabataWorkout() {
   const [editExercises, setEditExercises] = useState<string[]>([]);
   const [newExercise, setNewExercise] = useState('');
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioRef = useRef<AudioContext | null>(null);
 
   const playBeep = useCallback((frequency: number = 800, duration: number = 200) => {

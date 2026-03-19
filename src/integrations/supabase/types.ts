@@ -441,6 +441,30 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          messages: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          messages?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          messages?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       community_challenge_participants: {
         Row: {
           challenge_id: string
@@ -557,6 +581,39 @@ export type Database = {
           message?: string
           name?: string
           subject?: string
+        }
+        Relationships: []
+      }
+      daily_nutrition_goals: {
+        Row: {
+          calorie_target: number
+          carb_target: number
+          created_at: string
+          fat_target: number
+          id: string
+          protein_target: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calorie_target?: number
+          carb_target?: number
+          created_at?: string
+          fat_target?: number
+          id?: string
+          protein_target?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calorie_target?: number
+          carb_target?: number
+          created_at?: string
+          fat_target?: number
+          id?: string
+          protein_target?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -898,6 +955,78 @@ export type Database = {
           id?: string
           user_id?: string
           uses_count?: number
+        }
+        Relationships: []
+      }
+      meal_logs: {
+        Row: {
+          calories: number | null
+          carbs_g: number | null
+          created_at: string
+          description: string
+          fat_g: number | null
+          id: string
+          logged_at: string
+          meal_type: string
+          protein_g: number | null
+          user_id: string
+        }
+        Insert: {
+          calories?: number | null
+          carbs_g?: number | null
+          created_at?: string
+          description: string
+          fat_g?: number | null
+          id?: string
+          logged_at?: string
+          meal_type?: string
+          protein_g?: number | null
+          user_id: string
+        }
+        Update: {
+          calories?: number | null
+          carbs_g?: number | null
+          created_at?: string
+          description?: string
+          fat_g?: number | null
+          id?: string
+          logged_at?: string
+          meal_type?: string
+          protein_g?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mobility_routines: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_minutes: number
+          exercises: Json
+          id: string
+          routine_name: string
+          target_areas: string[]
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          exercises?: Json
+          id?: string
+          routine_name: string
+          target_areas?: string[]
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          exercises?: Json
+          id?: string
+          routine_name?: string
+          target_areas?: string[]
+          user_id?: string
         }
         Relationships: []
       }
@@ -1321,6 +1450,42 @@ export type Database = {
           id?: string
           p256dh?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      recovery_logs: {
+        Row: {
+          created_at: string
+          energy_level: number | null
+          id: string
+          logged_at: string
+          muscle_soreness: number | null
+          notes: string | null
+          sleep_hours: number | null
+          sleep_quality: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          energy_level?: number | null
+          id?: string
+          logged_at?: string
+          muscle_soreness?: number | null
+          notes?: string | null
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          energy_level?: number | null
+          id?: string
+          logged_at?: string
+          muscle_soreness?: number | null
+          notes?: string | null
+          sleep_hours?: number | null
+          sleep_quality?: number | null
           user_id?: string
         }
         Relationships: []

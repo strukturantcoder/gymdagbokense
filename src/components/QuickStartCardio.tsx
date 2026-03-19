@@ -76,7 +76,7 @@ export default function QuickStartCardio({ userId, onSessionComplete }: QuickSta
   } | null>(null);
   const [savedDuration, setSavedDuration] = useState(0);
   const [savedActivityLabel, setSavedActivityLabel] = useState('');
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { isTracking, hasPermission, error: gpsError, stats: gpsStats, resetStats, clearPersistedData } = useGpsTracking(
     activeSession !== null && !isPaused && gpsEnabled,

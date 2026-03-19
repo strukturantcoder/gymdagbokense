@@ -44,6 +44,8 @@ const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
 const WorkoutLog = lazy(() => import("./pages/WorkoutLog"));
 const CardioLog = lazy(() => import("./pages/CardioLog"));
 const LogoDownloads = lazy(() => import("./pages/LogoDownloads"));
+const Nutrition = lazy(() => import("./pages/Nutrition"));
+const Coach = lazy(() => import("./pages/Coach"));
 const queryClient = new QueryClient();
 
 // Minimal loading fallback
@@ -54,7 +56,7 @@ const PageLoader = () => (
 );
 
 // Pages that should show bottom nav
-const pagesWithBottomNav = ["/dashboard", "/training", "/training/crossfit", "/stats", "/social", "/account", "/workout-log", "/cardio-log", "/social/friends", "/social/teams", "/social/challenges", "/social/pool", "/social/community", "/social/achievements", "/stats/strength", "/stats/cardio", "/stats/crossfit", "/stats/weight", "/account/profile", "/account/notifications", "/account/garmin"];
+const pagesWithBottomNav = ["/dashboard", "/training", "/training/crossfit", "/stats", "/social", "/account", "/workout-log", "/cardio-log", "/social/friends", "/social/teams", "/social/challenges", "/social/pool", "/social/community", "/social/achievements", "/stats/strength", "/stats/cardio", "/stats/crossfit", "/stats/weight", "/account/profile", "/account/notifications", "/account/garmin", "/nutrition", "/coach"];
 
 const AppContent = () => {
   const location = useLocation();
@@ -103,6 +105,8 @@ const AppContent = () => {
             <Route path="/public-programs" element={<PublicPrograms />} />
             <Route path="/creator/:creatorId" element={<CreatorProfile />} />
             <Route path="/logo-downloads" element={<LogoDownloads />} />
+            <Route path="/nutrition" element={<Nutrition />} />
+            <Route path="/coach" element={<Coach />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
