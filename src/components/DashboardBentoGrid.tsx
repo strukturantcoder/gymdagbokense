@@ -239,8 +239,8 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
         }
         return prev.filter(id => id !== widgetId);
       }
-      if (prev.length >= 9) {
-        toast.error('Max 9 widgets får plats');
+      if (prev.length >= 12) {
+        toast.error('Max 12 widgets får plats');
         return prev;
       }
       return [...prev, widgetId];
