@@ -44,6 +44,8 @@ const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
 const WorkoutLog = lazy(() => import("./pages/WorkoutLog"));
 const CardioLog = lazy(() => import("./pages/CardioLog"));
 const LogoDownloads = lazy(() => import("./pages/LogoDownloads"));
+const Nutrition = lazy(() => import("./pages/Nutrition"));
+const Coach = lazy(() => import("./pages/Coach"));
 const queryClient = new QueryClient();
 
 // Minimal loading fallback
