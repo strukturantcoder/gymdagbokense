@@ -56,7 +56,7 @@ const PageLoader = () => (
 );
 
 // Pages that should show bottom nav
-const pagesWithBottomNav = ["/dashboard", "/training", "/training/crossfit", "/stats", "/social", "/account", "/workout-log", "/cardio-log", "/social/friends", "/social/teams", "/social/challenges", "/social/pool", "/social/community", "/social/achievements", "/stats/strength", "/stats/cardio", "/stats/crossfit", "/stats/weight", "/account/profile", "/account/notifications", "/account/garmin"];
+const pagesWithBottomNav = ["/dashboard", "/training", "/training/crossfit", "/stats", "/social", "/account", "/workout-log", "/cardio-log", "/social/friends", "/social/teams", "/social/challenges", "/social/pool", "/social/community", "/social/achievements", "/stats/strength", "/stats/cardio", "/stats/crossfit", "/stats/weight", "/account/profile", "/account/notifications", "/account/garmin", "/nutrition", "/coach"];
 
 const AppContent = () => {
   const location = useLocation();
