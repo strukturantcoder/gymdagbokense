@@ -28,6 +28,7 @@ import {
 import { motion } from 'framer-motion';
 import GoalOnboardingDialog from './GoalOnboardingDialog';
 import CompactGoalCard from './CompactGoalCard';
+import RecoveryWidget from './RecoveryWidget';
 import {
   Dialog,
   DialogContent,
