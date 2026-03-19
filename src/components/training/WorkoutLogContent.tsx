@@ -208,7 +208,7 @@ export default function WorkoutLogContent() {
 
   // Workout timer effect
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     
     if (isLogging && workoutStartTime) {
       interval = setInterval(() => {
