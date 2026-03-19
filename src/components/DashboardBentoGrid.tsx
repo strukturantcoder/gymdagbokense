@@ -418,6 +418,53 @@ export default function DashboardBentoGrid({ className }: DashboardBentoGridProp
             </CardContent>
           </Card>
         );
+      case 'nutrition':
+        return (
+          <Card 
+            className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-lime-500/10 to-green-500/10 border-lime-500/20 hover:border-lime-500/40 transition-all"
+            onClick={() => !isEditing && navigate('/nutrition')}
+          >
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
+              <Apple className="w-5 h-5 text-lime-500" />
+              <div>
+                <p className="text-base font-semibold leading-none">Kost</p>
+                <p className="text-xs text-muted-foreground">Näring</p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      case 'recovery':
+        return <RecoveryWidget />;
+      case 'coach':
+        return (
+          <Card 
+            className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20 hover:border-violet-500/40 transition-all"
+            onClick={() => !isEditing && navigate('/coach')}
+          >
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
+              <Bot className="w-5 h-5 text-violet-500" />
+              <div>
+                <p className="text-base font-semibold leading-none">AI Coach</p>
+                <p className="text-xs text-muted-foreground">Fråga mig</p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      case 'mobility':
+        return (
+          <Card 
+            className="h-full overflow-hidden cursor-pointer bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border-teal-500/20 hover:border-teal-500/40 transition-all"
+            onClick={() => !isEditing && navigate('/training?tab=mobility')}
+          >
+            <CardContent className="p-2.5 h-full flex flex-col justify-between">
+              <StretchHorizontal className="w-5 h-5 text-teal-500" />
+              <div>
+                <p className="text-base font-semibold leading-none">Mobilitet</p>
+                <p className="text-xs text-muted-foreground">Stretching</p>
+              </div>
+            </CardContent>
+          </Card>
+        );
       default:
         return null;
     }
