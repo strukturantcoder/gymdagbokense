@@ -79,6 +79,10 @@ const AVAILABLE_WIDGETS: WidgetConfig[] = [
   { id: 'account', label: 'Konto', icon: <User className="w-4 h-4" />, defaultEnabled: true },
   { id: 'weight', label: 'Vikt', icon: <Scale className="w-4 h-4" />, defaultEnabled: false },
   { id: 'calendar', label: 'Kalender', icon: <Calendar className="w-4 h-4" />, defaultEnabled: false },
+  { id: 'nutrition', label: 'Kost', icon: <Apple className="w-4 h-4" />, defaultEnabled: true },
+  { id: 'recovery', label: 'Återhämtning', icon: <Moon className="w-4 h-4" />, defaultEnabled: true },
+  { id: 'coach', label: 'AI Coach', icon: <Bot className="w-4 h-4" />, defaultEnabled: true },
+  { id: 'mobility', label: 'Mobilitet', icon: <StretchHorizontal className="w-4 h-4" />, defaultEnabled: false },
 ];
 
 const STORAGE_KEY = 'dashboard-widgets-order';
