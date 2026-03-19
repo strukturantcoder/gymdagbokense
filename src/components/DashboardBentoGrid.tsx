@@ -19,7 +19,11 @@ import {
   Scale,
   Target,
   Calendar,
-  GripVertical
+  GripVertical,
+  Apple,
+  Bot,
+  Moon,
+  StretchHorizontal
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import GoalOnboardingDialog from './GoalOnboardingDialog';
