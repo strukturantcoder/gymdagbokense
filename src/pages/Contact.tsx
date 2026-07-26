@@ -158,6 +158,12 @@ export default function Contact() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border text-sm text-muted-foreground">
+                  Glömt lösenord?{' '}
+                  <a href="/auth?reset=true" className="text-primary hover:underline font-medium">
+                    Återställ det här
+                  </a>
+                </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
