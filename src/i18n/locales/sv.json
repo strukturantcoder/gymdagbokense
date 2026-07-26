@@ -205,7 +205,21 @@
     "emailAlreadyRegistered": "E-postadressen är redan registrerad",
     "invalidCredentials": "Fel e-post eller lösenord",
     "googleError": "Kunde inte logga in med Google",
-    "genericError": "Något gick fel, försök igen"
+    "genericError": "Något gick fel, försök igen",
+    "forgotPassword": "Glömt lösenord?",
+    "resetTitle": "Återställ lösenord",
+    "resetDescription": "Fyll i din e-postadress så skickar vi en länk för att skapa ett nytt lösenord.",
+    "sendResetLink": "Skicka återställningslänk",
+    "resetLinkSent": "Om adressen finns hos oss har vi skickat ett mail med en återställningslänk. Kolla även skräpposten.",
+    "backToLogin": "← Tillbaka till inloggning",
+    "newPassword": "Nytt lösenord",
+    "confirmPassword": "Bekräfta nytt lösenord",
+    "passwordsDontMatch": "Lösenorden matchar inte",
+    "savePassword": "Spara nytt lösenord",
+    "passwordUpdated": "Lösenordet är uppdaterat!",
+    "invalidResetLink": "Länken är ogiltig eller har gått ut. Begär en ny återställningslänk.",
+    "requestNewLink": "Begär ny länk",
+    "checkingLink": "Kontrollerar länk..."
   },
   "dashboard": {
     "title": "Dashboard",
