@@ -16,6 +16,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Lazy load route components to reduce initial bundle size
 const Auth = lazy(() => import("./pages/Auth"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Training = lazy(() => import("./pages/Training"));
 const Crossfit = lazy(() => import("./pages/Crossfit"));
@@ -70,6 +71,7 @@ const AppContent = () => {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/training" element={<Training />} />
             <Route path="/training/crossfit" element={<Crossfit />} />
