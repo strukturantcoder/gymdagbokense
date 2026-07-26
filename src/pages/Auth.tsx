@@ -242,6 +242,8 @@ export default function Auth() {
               </p>
             )}
           </div>
+          </>
+          )}
         </div>
         <div className="text-center mt-6"><button onClick={() => navigate('/')} className="text-muted-foreground hover:text-foreground transition-colors">{t('auth.backToHome')}</button></div>
       </motion.div>
