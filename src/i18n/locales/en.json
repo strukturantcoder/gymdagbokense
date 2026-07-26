@@ -205,7 +205,21 @@
     "emailAlreadyRegistered": "Email is already registered",
     "invalidCredentials": "Wrong email or password",
     "googleError": "Could not log in with Google",
-    "genericError": "Something went wrong, please try again"
+    "genericError": "Something went wrong, please try again",
+    "forgotPassword": "Forgot password?",
+    "resetTitle": "Reset password",
+    "resetDescription": "Enter your email and we'll send you a link to create a new password.",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "If the address exists, we've sent an email with a reset link. Check your spam folder too.",
+    "backToLogin": "← Back to login",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordsDontMatch": "Passwords don't match",
+    "savePassword": "Save new password",
+    "passwordUpdated": "Password updated!",
+    "invalidResetLink": "The link is invalid or has expired. Request a new reset link.",
+    "requestNewLink": "Request new link",
+    "checkingLink": "Checking link..."
   },
   "dashboard": {
     "title": "Dashboard",
