@@ -16,6 +16,8 @@ import { lovable } from '@/integrations/lovable/index';
 export default function Auth() {
   const { t } = useTranslation();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isReset, setIsReset] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,6 +30,7 @@ export default function Auth() {
 
   useEffect(() => {
     const ref = searchParams.get('ref');
+    if (searchParams.get('reset') === 'true') setIsReset(true);
     if (ref) {
       setReferralCode(ref);
       setIsSignUp(true);
@@ -93,6 +96,24 @@ export default function Auth() {
       if (error) toast.error(t('auth.appleError') || 'Kunde inte logga in med Apple');
     } catch {
       toast.error(t('auth.genericError'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const validation = z.object({ email: z.string().email(t('auth.invalidEmail')) }).safeParse({ email });
+    if (!validation.success) { toast.error(validation.error.errors[0].message); return; }
+    setIsLoading(true);
+    try {
+      await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      setResetSent(true);
+      toast.success(t('auth.resetLinkSent'));
+    } catch {
+      setResetSent(true);
     } finally {
       setIsLoading(false);
     }
