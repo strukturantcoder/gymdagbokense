@@ -1249,6 +1249,10 @@ export function AdminStats() {
               <Flame className="h-4 w-4 text-orange-500" />
               Streak-fördelning
             </CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+            </CardTitle>
             <CardDescription>Hur användarna fördelar sig på streaks</CardDescription>
           </CardHeader>
           <CardContent>
