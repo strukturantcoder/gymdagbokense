@@ -166,7 +166,8 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "cookies": "Cookies",
-    "copyright": "© {{year}} Gymdagboken. All rights reserved."
+    "copyright": "© {{year}} Gymdagboken. All rights reserved.",
+    "aboutAds": "About ads"
   },
   "auth": {
     "createAccount": "Create account",

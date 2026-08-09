@@ -27,6 +27,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Cookies = lazy(() => import("./pages/Cookies"));
+const AboutAds = lazy(() => import("./pages/AboutAds"));
 const Blog = lazy(() => import("./pages/Blog"));
 const AdminChallenges = lazy(() => import("./pages/AdminChallenges"));
 const AdminInstagramImages = lazy(() => import("./pages/AdminInstagramImages"));
@@ -86,6 +87,7 @@ const AppContent = () => {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/cookies" element={<Cookies />} />
+            <Route path="/om-annonser" element={<AboutAds />} />
             <Route path="/blogg" element={<Blog />} />
             <Route path="/blogg/:slug" element={<Blog />} />
             <Route path="/admin" element={<Admin />} />
