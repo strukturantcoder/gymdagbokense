@@ -449,6 +449,10 @@ Deno.serve(async (req) => {
         streaks: streakDistribution,
         gender: genderDistribution,
       },
+      funnel: {
+        steps: funnelSteps,
+        cohorts,
+      },
       charts: {
         signupsByDay: Object.entries(signupsByDay).map(([date, count]) => ({ date, count })),
         workoutsByDay: Object.entries(workoutsByDay).map(([date, count]) => ({ date, count })),
