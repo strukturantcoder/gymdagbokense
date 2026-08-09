@@ -52,18 +52,6 @@ export default function Coach() {
     }
   };
 
-  const fetchUserContext = async () => {
-    if (!user) return "";
-    const [statsRes, workoutsRes, goalsRes] = await Promise.all([
-      supabase.from("user_stats").select("*").eq("user_id", user.id).maybeSingle(),
-      supabase.from("workout_logs").select("workout_day, completed_at, duration_minutes").eq("user_id", user.id).order("completed_at", { ascending: false }).limit(5),
-      supabase.from("user_goals").select("title, goal_type, current_value, target_value, status").eq("user_id", user.id).eq("status", "active").limit(5),
-    ]);
-    return `Användarens statistik: ${JSON.stringify(statsRes.data || {})}
-Senaste 5 pass: ${JSON.stringify(workoutsRes.data || [])}
-Aktiva mål: ${JSON.stringify(goalsRes.data || [])}`;
-  };
-
   const sendMessage = async () => {
     if (!input.trim() || !user || loading) return;
 
@@ -74,23 +62,15 @@ Aktiva mål: ${JSON.stringify(goalsRes.data || [])}`;
     setLoading(true);
 
     try {
-      const context = await fetchUserContext();
-
       const { data, error } = await supabase.functions.invoke("analyze-training", {
         body: {
-          messages: updatedMessages.map((m) => ({ role: m.role, content: m.content })),
-          systemPrompt: `Du är en personlig AI-tränare för Gymdagboken-appen. Svara alltid på svenska.
-Du har tillgång till användarens träningsdata:
-${context}
-
-Var uppmuntrande, konkret och ge praktiska råd. Håll svaren korta och relevanta.
-Om användaren frågar om kost, ge generella råd men nämn att de kan använda Kostspårningen i appen.
-Om du inte vet svaret, var ärlig om det.`,
+          message: userMsg.content,
+          history: messages.slice(-20).map((m) => ({ role: m.role, content: m.content })),
         },
       });
       if (error) throw error;
 
-      const assistantContent = data?.analysis || data?.choices?.[0]?.message?.content || "Jag kunde inte svara just nu, försök igen!";
+      const assistantContent = data?.response || "Jag kunde inte svara just nu, försök igen!";
       const assistantMsg: Message = {
         role: "assistant",
         content: assistantContent,
