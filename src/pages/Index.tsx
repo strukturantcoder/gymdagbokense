@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import SocialProofBanner from "@/components/SocialProofBanner";
 import AdBanner from "@/components/AdBanner";
 import Footer from "@/components/Footer";
 
@@ -12,7 +11,6 @@ import Footer from "@/components/Footer";
 // Lazy load below-fold components to reduce initial bundle size
 const Features = lazy(() => import("@/components/Features"));
 const HowItWorks = lazy(() => import("@/components/HowItWorks"));
-const TestimonialSection = lazy(() => import("@/components/TestimonialSection"));
 const StatisticsShowcase = lazy(() => import("@/components/StatisticsShowcase"));
 const SocialShowcase = lazy(() => import("@/components/SocialShowcase"));
 const Pricing = lazy(() => import("@/components/Pricing"));
@@ -40,9 +38,6 @@ const Index = () => {
       <main>
         <Hero />
         
-        {/* Social proof immediately after hero */}
-        <SocialProofBanner />
-        
         {/* Leaderboard ad after social proof */}
         <div className="container px-4 py-8">
           <AdBanner format="leaderboard" placement="landing_leaderboard" />
@@ -63,10 +58,6 @@ const Index = () => {
         
         <LazySection>
           <StatisticsShowcase />
-        </LazySection>
-        
-        <LazySection>
-          <TestimonialSection />
         </LazySection>
         
         <LazySection>

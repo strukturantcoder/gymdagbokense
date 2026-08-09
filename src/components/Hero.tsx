@@ -230,27 +230,6 @@ const Hero = () => {
             </Button>
           </motion.div>
 
-          {/* Social proof */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.9 }}
-            className="mt-10 flex flex-col items-center gap-2"
-          >
-            <div className="flex -space-x-2">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-8 h-8 rounded-full bg-gradient-to-br from-gym-orange/80 to-primary/60 border-2 border-background flex items-center justify-center text-[10px] font-bold text-white"
-                >
-                  {String.fromCharCode(65 + i)}
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Tusentals användare har redan skapat sina träningsprogram
-            </p>
-          </motion.div>
         </div>
       </div>
 
