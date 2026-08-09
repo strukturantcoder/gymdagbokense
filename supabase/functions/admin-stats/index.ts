@@ -287,6 +287,55 @@ Deno.serve(async (req) => {
     const { data: streakData } = await supabaseAdmin
       .from("user_stats")
       .select("current_streak");
+
+    // ===== ACTIVATION FUNNEL =====
+    // Log counts per user (strength + cardio)
+    const logCountByUser = new Map<string, number>();
+    for (const row of [...(usersWithWorkouts || []), ...(usersWithCardio || [])]) {
+      logCountByUser.set(row.user_id, (logCountByUser.get(row.user_id) || 0) + 1);
+    }
+
+    let loggedOnce = 0;
+    let loggedTwice = 0;
+    logCountByUser.forEach((count) => {
+      if (count >= 1) loggedOnce++;
+      if (count >= 2) loggedTwice++;
+    });
+
+    const funnelSteps = [
+      { key: "registered", label: "Registrerade", count: totalUserCount },
+      { key: "program", label: "Skapat program", count: usersWithProgramsCount },
+      { key: "first_log", label: "Loggat pass 1", count: loggedOnce },
+      { key: "second_log", label: "Loggat pass 2", count: loggedTwice },
+      { key: "active_week", label: "Aktiv senaste 7 dagarna", count: activeLastWeek.size },
+    ].map((step) => ({
+      ...step,
+      percentage: totalUserCount > 0 ? Math.round((step.count / totalUserCount) * 100) : 0,
+    }));
+
+    // Cohorts by signup week (last 8 weeks)
+    const weekKey = (d: Date) => {
+      const monday = new Date(d);
+      const day = (monday.getUTCDay() + 6) % 7;
+      monday.setUTCDate(monday.getUTCDate() - day);
+      return monday.toISOString().split("T")[0];
+    };
+    const cohortMap = new Map<string, { signups: number; activated: number; retained: number }>();
+    const eightWeeksAgo = new Date(now.getTime() - 56 * 24 * 60 * 60 * 1000);
+    (allProfiles || []).forEach((p) => {
+      const created = new Date(p.created_at);
+      if (created < eightWeeksAgo) return;
+      const key = weekKey(created);
+      const entry = cohortMap.get(key) || { signups: 0, activated: 0, retained: 0 };
+      entry.signups++;
+      const logs = logCountByUser.get(p.user_id) || 0;
+      if (logs >= 1) entry.activated++;
+      if (logs >= 2) entry.retained++;
+      cohortMap.set(key, entry);
+    });
+    const cohorts = Array.from(cohortMap.entries())
+      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+      .map(([week, v]) => ({ week, ...v }));
     
     let streakDistribution = { noStreak: 0, streak1_7: 0, streak8_30: 0, streak30plus: 0 };
     streakData?.forEach(s => {
@@ -399,6 +448,10 @@ Deno.serve(async (req) => {
       distributions: {
         streaks: streakDistribution,
         gender: genderDistribution,
+      },
+      funnel: {
+        steps: funnelSteps,
+        cohorts,
       },
       charts: {
         signupsByDay: Object.entries(signupsByDay).map(([date, count]) => ({ date, count })),

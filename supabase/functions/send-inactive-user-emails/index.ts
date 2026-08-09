@@ -87,9 +87,39 @@ const handler = async (req: Request): Promise<Response> => {
 
     const alreadySentSet = new Set((previouslySent || []).map(r => r.email));
 
+    // Email fatigue guard: stop nagging users who have never logged a single
+    // workout after 3 reminders — they are unlikely to convert and are a
+    // spam-complaint risk.
+    const { data: allReminders } = await supabaseAdmin
+      .from("email_logs")
+      .select("email")
+      .eq("email_type", "inactive_user_reminder")
+      .eq("status", "sent");
+
+    const reminderCounts = new Map<string, number>();
+    (allReminders || []).forEach((r) => {
+      reminderCounts.set(r.email, (reminderCounts.get(r.email) || 0) + 1);
+    });
+
+    const { data: everWorkout } = await supabaseAdmin.from("workout_logs").select("user_id");
+    const { data: everCardio } = await supabaseAdmin.from("cardio_logs").select("user_id");
+    const everTrainedSet = new Set([
+      ...(everWorkout?.map(u => u.user_id) || []),
+      ...(everCardio?.map(u => u.user_id) || []),
+    ]);
+
+    // Users who opted out of reminder emails entirely
+    const { data: optedOutPrefs } = await supabaseAdmin
+      .from("notification_preferences")
+      .select("user_id, workout_reminders")
+      .eq("workout_reminders", false);
+    const optedOutSet = new Set((optedOutPrefs || []).map(p => p.user_id));
+
     const emailResults: { email: string; success: boolean; error?: string }[] = [];
     const emailSubject = "🏆 Missa inte januaritävlingen – vinn proteinpulver!";
     let skippedAlreadySent = 0;
+    let skippedFatigue = 0;
+    let skippedOptedOut = 0;
 
     for (const profile of inactiveProfiles) {
       const authUser = authData.users.find(u => u.id === profile.user_id);
@@ -101,6 +131,16 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (alreadySentSet.has(authUser.email)) {
         skippedAlreadySent++;
+        continue;
+      }
+
+      if (optedOutSet.has(profile.user_id)) {
+        skippedOptedOut++;
+        continue;
+      }
+
+      if (!everTrainedSet.has(profile.user_id) && (reminderCounts.get(authUser.email) || 0) >= 3) {
+        skippedFatigue++;
         continue;
       }
 
@@ -209,13 +249,15 @@ const handler = async (req: Request): Promise<Response> => {
     const successCount = emailResults.filter((r) => r.success).length;
     const failCount = emailResults.filter((r) => !r.success).length;
 
-    console.log(`Email sending complete: ${successCount} sent, ${failCount} failed (skipped ${skippedAlreadySent} already-sent)`);
+    console.log(`Email sending complete: ${successCount} sent, ${failCount} failed (skipped ${skippedAlreadySent} already-sent, ${skippedFatigue} fatigue, ${skippedOptedOut} opted-out)`);
 
     return new Response(
       JSON.stringify({
         success: true,
         totalInactive: inactiveProfiles.length,
         skippedAlreadySent,
+        skippedFatigue,
+        skippedOptedOut,
         emailsSent: successCount,
         emailsFailed: failCount,
         results: emailResults

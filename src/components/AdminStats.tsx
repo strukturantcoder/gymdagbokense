@@ -74,6 +74,10 @@ interface AdminStatsData {
     signupsByDay: { date: string; count: number }[];
     workoutsByDay: { date: string; count: number }[];
   };
+  funnel?: {
+    steps: { key: string; label: string; count: number; percentage: number }[];
+    cohorts: { week: string; signups: number; activated: number; retained: number }[];
+  };
 }
 
 interface UserSearchResult {
@@ -1236,6 +1240,70 @@ export function AdminStats() {
           ))}
         </div>
       </div>
+
+      {/* Activation funnel */}
+      {stats.funnel && (
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Aktiveringstratt
+          </h2>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Registrering till aktiv användare</CardTitle>
+              <CardDescription>Andel av alla registrerade som nått varje steg</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {stats.funnel.steps.map((step) => (
+                  <div key={step.key} className="flex items-center gap-3">
+                    <div className="w-40 shrink-0 text-sm font-medium">{step.label}</div>
+                    <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${Math.max(step.percentage, 1)}%` }}
+                      />
+                    </div>
+                    <div className="w-24 text-sm text-right">
+                      {formatNumber(step.count)} ({step.percentage}%)
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {stats.funnel.cohorts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold mb-2">Per registreringsvecka (8 veckor)</h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Vecka</TableHead>
+                        <TableHead>Nya</TableHead>
+                        <TableHead>Loggat pass 1</TableHead>
+                        <TableHead>Loggat pass 2</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stats.funnel.cohorts.map((c) => (
+                        <TableRow key={c.week}>
+                          <TableCell>{format(parseISO(c.week), "d MMM", { locale: sv })}</TableCell>
+                          <TableCell>{c.signups}</TableCell>
+                          <TableCell>
+                            {c.activated} ({c.signups > 0 ? Math.round((c.activated / c.signups) * 100) : 0}%)
+                          </TableCell>
+                          <TableCell>
+                            {c.retained} ({c.signups > 0 ? Math.round((c.retained / c.signups) * 100) : 0}%)
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Distributions */}
       <div className="grid md:grid-cols-2 gap-4">
