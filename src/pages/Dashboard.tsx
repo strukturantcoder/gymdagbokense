@@ -17,11 +17,15 @@ import AdBanner from '@/components/AdBanner';
 import MotivationalNudge from '@/components/MotivationalNudge';
 import InviteFriendNudge from '@/components/InviteFriendNudge';
 import { AppShell } from '@/components/layout/AppShell';
+import FirstWorkoutHero from '@/components/FirstWorkoutHero';
+import NextWorkoutPrompt from '@/components/NextWorkoutPrompt';
+import { useActivationStatus } from '@/hooks/useActivationStatus';
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
+  const { loading: activationLoading, hasLoggedWorkout, logCount, refresh } = useActivationStatus();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -100,15 +104,24 @@ export default function Dashboard() {
 
       {/* Main content - scrollable */}
       <main className="flex-1 flex flex-col px-2 py-1.5 md:px-4 md:py-2 pb-16 md:pb-2 overflow-y-auto">
-        {/* Daily Streak Bonus - very compact */}
-        <div className="shrink-0 mb-1.5">
-          <DailyStreakBonus />
-        </div>
+        {!activationLoading && !hasLoggedWorkout ? (
+          /* New user: single focused call to action until the first workout is logged */
+          <div className="shrink-0">
+            <FirstWorkoutHero onLogged={refresh} />
+          </div>
+        ) : (
+          <>
+            {/* Daily Streak Bonus - very compact */}
+            <div className="shrink-0 mb-1.5">
+              <DailyStreakBonus />
+            </div>
 
-        {/* Bento Grid */}
-        <div className="shrink-0">
-          <DashboardBentoGrid />
-        </div>
+            {/* Bento Grid */}
+            <div className="shrink-0">
+              <DashboardBentoGrid />
+            </div>
+          </>
+        )}
 
         {/* Ad Banner at bottom */}
         <div className="shrink-0 mt-1.5">
@@ -122,6 +135,9 @@ export default function Dashboard() {
       {/* Motivational Nudges */}
       {user && <MotivationalNudge />}
       {user && <InviteFriendNudge userId={user.id} />}
+
+      {/* Ask for next workout right after the first one is logged */}
+      {user && !activationLoading && hasLoggedWorkout && <NextWorkoutPrompt logCount={logCount} />}
     </AppShell>
   );
 }
