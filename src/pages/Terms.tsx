@@ -71,7 +71,8 @@ export default function Terms() {
           <section className="space-y-4">
             <h2 className="text-2xl font-display font-semibold text-foreground">5. Prenumerationer och betalningar</h2>
             <p>
-              Gymdagboken erbjuder både gratis och premiumfunktioner. För premiumtjänster gäller:
+              Alla funktioner i Gymdagboken är gratis. Prenumerationen Premium ger enbart en
+              reklamfri upplevelse och låser inte upp några extra funktioner. För prenumerationen gäller:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Betalning sker i förskott för vald prenumerationsperiod</li>
