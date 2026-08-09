@@ -74,6 +74,10 @@ interface AdminStatsData {
     signupsByDay: { date: string; count: number }[];
     workoutsByDay: { date: string; count: number }[];
   };
+  funnel?: {
+    steps: { key: string; label: string; count: number; percentage: number }[];
+    cohorts: { week: string; signups: number; activated: number; retained: number }[];
+  };
 }
 
 interface UserSearchResult {
