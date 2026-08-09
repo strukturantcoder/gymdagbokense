@@ -166,7 +166,8 @@
     "privacy": "Integritetspolicy",
     "terms": "Användarvillkor",
     "cookies": "Cookies",
-    "copyright": "© {{year}} Gymdagboken. Alla rättigheter förbehållna."
+    "copyright": "© {{year}} Gymdagboken. Alla rättigheter förbehållna.",
+    "aboutAds": "Om annonser"
   },
   "auth": {
     "createAccount": "Skapa konto",
