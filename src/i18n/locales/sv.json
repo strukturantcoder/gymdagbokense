@@ -101,34 +101,30 @@
   "pricing": {
     "title": "ENKLA",
     "titleHighlight": "PRISER",
-    "subtitle": "Börja gratis och uppgradera när du är redo att ta bort reklamen och låsa upp alla funktioner.",
+    "subtitle": "Alla funktioner är gratis. Premium tar bara bort reklamen.",
     "perMonth": "kr/mån",
     "popular": "POPULÄRAST",
     "free": {
       "name": "Gratis",
       "price": "0",
-      "description": "Perfekt för att komma igång",
+      "description": "Allt du behöver – utan kostnad",
       "cta": "Skapa konto",
-      "feature1": "Grundläggande träningslogg",
-      "feature2": "AI-genererade program (3/mån)",
-      "feature3": "Enkel statistik",
-      "feature4": "Mobilapp",
-      "feature5": "Reklam visas",
-      "feature6": "Avancerade grafer",
-      "feature7": "Export av data"
+      "feature1": "Obegränsad träningslogg",
+      "feature2": "Obegränsade AI-program",
+      "feature3": "All statistik & grafer",
+      "feature4": "Utmaningar, lag & Garmin",
+      "feature5": "Export av all data",
+      "feature6": "Mobilapp",
+      "feature7": "Reklam visas"
     },
     "premium": {
       "name": "Premium",
       "price": "19",
-      "description": "För den seriösa atleten",
+      "description": "Samma app – helt utan reklam",
       "cta": "Bli Premium",
-      "feature1": "Obegränsad träningslogg",
-      "feature2": "Obegränsade AI-program",
-      "feature3": "Avancerad statistik & grafer",
-      "feature4": "Mobilapp utan reklam",
-      "feature5": "Ingen reklam",
-      "feature6": "Export av all data",
-      "feature7": "Prioriterad support"
+      "feature1": "Allt i Gratis",
+      "feature2": "Helt reklamfritt",
+      "feature3": "Stöttar utvecklingen av appen"
     }
   },
   "faq": {

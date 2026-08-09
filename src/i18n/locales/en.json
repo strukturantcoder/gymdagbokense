@@ -101,34 +101,30 @@
   "pricing": {
     "title": "SIMPLE",
     "titleHighlight": "PRICING",
-    "subtitle": "Start for free and upgrade when you're ready to remove ads and unlock all features.",
+    "subtitle": "Every feature is free. Premium only removes the ads.",
     "perMonth": "/month",
     "popular": "MOST POPULAR",
     "free": {
       "name": "Free",
       "price": "0",
-      "description": "Perfect to get started",
+      "description": "Everything you need – at no cost",
       "cta": "Create account",
-      "feature1": "Basic workout log",
-      "feature2": "AI-generated programs (3/month)",
-      "feature3": "Simple statistics",
-      "feature4": "Mobile app",
-      "feature5": "Ads displayed",
-      "feature6": "Advanced graphs",
-      "feature7": "Data export"
+      "feature1": "Unlimited workout log",
+      "feature2": "Unlimited AI programs",
+      "feature3": "All statistics & graphs",
+      "feature4": "Challenges, teams & Garmin",
+      "feature5": "Export all your data",
+      "feature6": "Mobile app",
+      "feature7": "Ads displayed"
     },
     "premium": {
       "name": "Premium",
       "price": "19 SEK",
-      "description": "For the serious athlete",
+      "description": "Same app – completely ad-free",
       "cta": "Go Premium",
-      "feature1": "Unlimited workout log",
-      "feature2": "Unlimited AI programs",
-      "feature3": "Advanced statistics & graphs",
-      "feature4": "Ad-free mobile app",
-      "feature5": "No ads",
-      "feature6": "Export all data",
-      "feature7": "Priority support"
+      "feature1": "Everything in Free",
+      "feature2": "Completely ad-free",
+      "feature3": "Supports development of the app"
     }
   },
   "faq": {
