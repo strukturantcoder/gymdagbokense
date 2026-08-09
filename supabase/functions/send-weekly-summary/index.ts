@@ -265,6 +265,17 @@ const handler = async (req: Request): Promise<Response> => {
         };
 
         const displayName = profile.display_name || "träningsvän";
+
+        // Don't send an empty summary to users who haven't trained at all.
+        // Inactive users get the dedicated activation/reactivation emails instead.
+        const hasAnyActivity =
+          stats.workouts + stats.cardioSessions + previousStats.workouts + previousStats.cardioSessions > 0;
+        if (!hasAnyActivity && !testEmail) {
+          console.log(`Skipping ${authUser.email} - no activity in the last two weeks`);
+          results.push({ email: authUser.email, success: true, skipped: true });
+          continue;
+        }
+
         const aiMessage = await generateAIMessage(stats, previousStats, displayName);
 
         // Calculate comparison indicators
