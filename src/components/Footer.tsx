@@ -17,6 +17,7 @@ const Footer = () => {
     ],
     legal: [
       { labelKey: "footer.privacy", href: "/privacy" },
+      { labelKey: "footer.aboutAds", href: "/om-annonser" },
       { labelKey: "footer.terms", href: "/terms" },
       { labelKey: "footer.cookies", href: "/cookies" },
     ],
