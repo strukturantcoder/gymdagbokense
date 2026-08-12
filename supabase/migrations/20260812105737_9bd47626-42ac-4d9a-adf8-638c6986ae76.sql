@@ -1,0 +1,1 @@
+GRANT SELECT ON public.ad_statistics TO authenticated;
