@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { Scale, Watch, Shield, Lock, Camera, Trash2 } from 'lucide-react';
 import { GarminConnectSettings } from '@/components/GarminConnectSettings';
@@ -136,6 +136,7 @@ export default function Account() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { section } = useParams<{ section?: string }>();
+  const [searchParams] = useSearchParams();
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -154,6 +155,13 @@ export default function Account() {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
+  // Garmin OAuth callback lands on /account — forward to /account/garmin
+  useEffect(() => {
+    if (!section && searchParams.get('garmin_callback')) {
+      navigate(`/account/garmin?${searchParams.toString()}`, { replace: true });
+    }
+  }, [section, searchParams, navigate]);
 
   useEffect(() => {
     if (user) {
