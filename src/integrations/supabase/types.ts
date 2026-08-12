@@ -2436,6 +2436,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_challenge_participant: {
+        Args: { _challenge_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_team_member: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
       join_team_via_invite_link: {
         Args: { invite_code: string }
         Returns: Json
