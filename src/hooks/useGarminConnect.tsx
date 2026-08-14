@@ -36,6 +36,7 @@ export function useGarminConnect() {
   const [isLoading, setIsLoading] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isBackfilling, setIsBackfilling] = useState(false);
   const isCompletingRef = useRef(false);
 
   const fetchConnection = useCallback(async () => {
@@ -176,6 +177,51 @@ export function useGarminConnect() {
     [session?.access_token, toast, fetchActivities, fetchConnection]
   );
 
+  // Ask Garmin to (re)deliver historical activities for a date range.
+  // Garmin's pull endpoint only returns data uploaded while the connection was
+  // active, so historic gaps must be requested via the backfill endpoint.
+  const requestBackfill = useCallback(
+    async (startDate: string, endDate: string, options?: { silent?: boolean }) => {
+      if (!session?.access_token) return false;
+
+      setIsBackfilling(true);
+      try {
+        const response = await supabase.functions.invoke("garmin-backfill", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: { startDate, endDate },
+        });
+
+        if (response.error) throw new Error(response.error.message);
+
+        if (!options?.silent) {
+          toast({
+            title: "Historik begärd",
+            description:
+              response.data?.message ||
+              "Garmin skickar dina tidigare aktiviteter inom några minuter.",
+          });
+        }
+
+        // Pull whatever is already available right away
+        await syncActivities(startDate, endDate);
+        return true;
+      } catch (error) {
+        console.error("Error requesting Garmin backfill:", error);
+        if (!options?.silent) {
+          toast({
+            title: "Kunde inte hämta historik",
+            description: "Försök igen om en stund.",
+            variant: "destructive",
+          });
+        }
+        return false;
+      } finally {
+        setIsBackfilling(false);
+      }
+    },
+    [session?.access_token, toast, syncActivities]
+  );
+
   // OAuth2 callback - receives code and state
   const completeConnect = useCallback(
     async (code: string, state: string) => {
@@ -211,7 +257,16 @@ export function useGarminConnect() {
         });
 
         await fetchConnection();
-        await syncActivities();
+
+        // Backfill the last 90 days so activities recorded while the connection
+        // was missing/broken are imported too, then pull what's available now.
+        const today = new Date();
+        const start = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+        await requestBackfill(
+          start.toISOString().split("T")[0],
+          today.toISOString().split("T")[0],
+          { silent: true }
+        );
 
         return true;
       } catch (error) {
@@ -228,7 +283,7 @@ export function useGarminConnect() {
         isCompletingRef.current = false;
       }
     },
-    [session?.access_token, toast, fetchConnection, syncActivities]
+    [session?.access_token, toast, fetchConnection, requestBackfill]
   );
 
   const disconnect = async (deleteActivities = false) => {
@@ -272,10 +327,12 @@ export function useGarminConnect() {
     isLoading,
     isConnecting,
     isSyncing,
+    isBackfilling,
     isConnected: !!connection,
     startConnect,
     completeConnect,
     syncActivities,
+    requestBackfill,
     disconnect,
     fetchActivities,
     fetchConnection,
