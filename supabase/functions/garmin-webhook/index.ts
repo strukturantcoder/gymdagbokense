@@ -131,6 +131,27 @@ Deno.serve(async (req) => {
         let cardioLogId: string | null = existingActivity?.synced_to_cardio_log_id || null;
         let workoutLogId: string | null = existingActivity?.synced_to_workout_log_id || null;
 
+        // Idempotency guard: avoid duplicate logs when a manual re-sync and the
+        // webhook deliver the same activity.
+        if (!cardioLogId && mapped.category === "cardio") {
+          const { data: dupCardio } = await supabase
+            .from("cardio_logs")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("completed_at", startTime)
+            .maybeSingle();
+          if (dupCardio) cardioLogId = dupCardio.id;
+        }
+        if (!workoutLogId && mapped.category === "strength") {
+          const { data: dupWorkout } = await supabase
+            .from("workout_logs")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("completed_at", startTime)
+            .maybeSingle();
+          if (dupWorkout) workoutLogId = dupWorkout.id;
+        }
+
         // If it's a cardio activity and not already synced to cardio_logs, create one
         if (mapped.category === "cardio" && !cardioLogId && durationMinutes > 0) {
           const cardioLogData = {

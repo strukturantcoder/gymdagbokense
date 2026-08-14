@@ -15,7 +15,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { RefreshCw, Link2, Unlink, Loader2, Clock, Activity, Flame, Heart, Settings2, CheckCircle2, XCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RefreshCw, Link2, Unlink, Loader2, Clock, Activity, Flame, Heart, Settings2, CheckCircle2, XCircle, History } from "lucide-react";
 import { useGarminConnect } from "@/hooks/useGarminConnect";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +52,10 @@ export function GarminConnectSettings() {
   const hasHandledCallback = useRef(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResults, setTestResults] = useState<TestResults | null>(null);
+  const today = new Date().toISOString().split("T")[0];
+  const defaultStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const [rangeStart, setRangeStart] = useState(defaultStart);
+  const [rangeEnd, setRangeEnd] = useState(today);
 
   const {
     connection,
@@ -57,10 +63,12 @@ export function GarminConnectSettings() {
     isLoading,
     isConnecting,
     isSyncing,
+    isBackfilling,
     isConnected,
     startConnect,
     completeConnect,
     syncActivities,
+    requestBackfill,
     disconnect,
   } = useGarminConnect();
 
@@ -273,6 +281,56 @@ export function GarminConnectSettings() {
             </div>
 
             {/* Recent Activities */}
+            <Separator />
+            <div className="space-y-3">
+              <div>
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  Hämta om period
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Saknas pass? Välj period och hämta om historiken från Garmin. Redan
+                  importerade pass dubbleras inte.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="garmin-range-start" className="text-xs">Från</Label>
+                  <Input
+                    id="garmin-range-start"
+                    type="date"
+                    max={rangeEnd}
+                    value={rangeStart}
+                    onChange={(e) => setRangeStart(e.target.value)}
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="garmin-range-end" className="text-xs">Till</Label>
+                  <Input
+                    id="garmin-range-end"
+                    type="date"
+                    min={rangeStart}
+                    max={today}
+                    value={rangeEnd}
+                    onChange={(e) => setRangeEnd(e.target.value)}
+                  />
+                </div>
+                <Button
+                  variant="secondary"
+                  onClick={() => requestBackfill(rangeStart, rangeEnd)}
+                  disabled={isBackfilling || isSyncing || !rangeStart || !rangeEnd}
+                  className="w-full sm:w-auto"
+                >
+                  {isBackfilling ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <History className="h-4 w-4 mr-2" />
+                  )}
+                  Hämta om
+                </Button>
+              </div>
+            </div>
+
             <Separator />
             <div className="space-y-2">
               <h4 className="text-sm font-medium">Senaste aktiviteter</h4>

@@ -137,3 +137,6 @@ verify_jwt = false
 
 [functions.ensure-community-challenge]
 verify_jwt = false
+
+[functions.garmin-backfill]
+verify_jwt = false
