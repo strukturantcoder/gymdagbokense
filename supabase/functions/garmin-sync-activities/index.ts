@@ -301,6 +301,21 @@ Deno.serve(async (req) => {
 
       // Sync to cardio_logs for cardio activities
       if (isCardioActivity(garminType) && !cardioLogId) {
+        // Idempotency guard: a log for this exact Garmin session may already exist
+        // (e.g. created by the webhook, or by an earlier partially-failed sync)
+        const { data: existingCardioLog } = await supabase
+          .from("cardio_logs")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("completed_at", startTime)
+          .maybeSingle();
+
+        if (existingCardioLog) {
+          cardioLogId = existingCardioLog.id;
+        }
+      }
+
+      if (isCardioActivity(garminType) && !cardioLogId) {
         // Build detailed notes with Garmin data
         const notesParts: string[] = [`Synkad från Garmin: ${activityName}`];
         if (activity.averageHeartRateInBeatsPerMinute) {
@@ -377,6 +392,19 @@ Deno.serve(async (req) => {
       }
 
       // Sync to workout_logs for strength activities
+      if (isStrengthActivity(garminType) && !workoutLogId) {
+        const { data: existingWorkoutLog } = await supabase
+          .from("workout_logs")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("completed_at", startTime)
+          .maybeSingle();
+
+        if (existingWorkoutLog) {
+          workoutLogId = existingWorkoutLog.id;
+        }
+      }
+
       if (isStrengthActivity(garminType) && !workoutLogId) {
         // Build detailed notes with Garmin data
         const notesParts: string[] = [`Synkad från Garmin: ${activityName}`];
