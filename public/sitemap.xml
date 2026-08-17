@@ -21,7 +21,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://gymdagboken.se/blogg/traningskläder-som-forbattrar-din-prestation</loc>
+    <loc>https://gymdagboken.se/blogg/traningsklader-som-forbattrar-din-prestation</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -39,6 +39,41 @@
     <loc>https://gymdagboken.se/blogg/styrketraning-for-nyborjare</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gymdagboken.se/blogg/traningsdagbok-varfor-och-vad-du-ska-skriva-ner</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gymdagboken.se/blogg/progressiv-overbelastning-oka-belastningen</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gymdagboken.se/blogg/set-och-reps-for-muskeltillvaxt</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gymdagboken.se/blogg/push-pull-ben-tredagarssplit</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gymdagboken.se/blogg/vilodagar-och-aterhamtning</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gymdagboken.se/blogg/rpe-och-rir-styr-intensiteten</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gymdagboken.se/programs</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://gymdagboken.se/contact</loc>
