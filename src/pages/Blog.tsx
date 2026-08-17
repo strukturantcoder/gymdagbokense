@@ -466,7 +466,7 @@ Det tredje är att jaga en snygg kurva i stället för att träna. Om du börjar
 Alla tre fungerar. Papper är enklast att komma igång med och sämst att söka i. Kalkylblad är flexibelt men klumpigt att fylla i mellan set. En app är mest praktisk i själva gymmet, framför allt för att den kan visa dig förra passets siffror direkt när du väljer övning, och för att den kan räkna ihop volym och personliga rekord åt dig.
 
 Poängen är inte formatet. Poängen är att du efter tre månader ska kunna svara på frågan om du blivit starkare, med siffror i stället för en känsla. Vill du ha det utan att bygga ett eget kalkylblad kan du [skapa ett konto i Gymdagboken](/auth) och logga första passet direkt.
-    \`
+    `
   },
   {
     slug: 'progressiv-overbelastning-oka-belastningen',
@@ -478,7 +478,7 @@ Poängen är inte formatet. Poängen är att du efter tre månader ska kunna sva
     date: '2025-01-15',
     metaDescription: 'Progressiv överbelastning förklarad i praktiken: när du ska öka vikten, hur mycket, vilka alternativ som finns och vad du gör när utvecklingen stannar.',
     keywords: ['progressiv överbelastning', 'öka vikten', 'styrketräning', 'progression', 'bli starkare'],
-    content: \`
+    content: `
 ## Vad principen egentligen säger
 
 Progressiv överbelastning betyder att kroppen behöver ett gradvis ökande krav för att fortsätta anpassa sig. Tränar du exakt likadant, med samma vikter och samma repetitioner, i sex månader, kommer utvecklingen att plana ut. Det är den mest grundläggande principen i styrketräning och samtidigt den som oftast tillämpas slarvigt.
@@ -547,7 +547,7 @@ Att inte skriva ner något är det tredje, och det största. Progressiv överbel
 Titta över en åttaveckorsperiod. Har vikten eller repetitionerna i dina huvudövningar rört sig uppåt, om än lite? Har du kunnat hålla tekniken? Har du kunnat träna nästan alla planerade pass? Om svaret är ja på de tre är upplägget i grunden rätt, även om enskilda veckor känns trögare.
 
 Allt det bygger på siffror du sparat. [Skapa ett konto](/auth) och logga varje set med vikt och repetitioner, så har du underlaget nästa gång du står och funderar på om du ska öka.
-    \`
+    `
   },
   {
     slug: 'set-och-reps-for-muskeltillvaxt',
@@ -559,7 +559,7 @@ Allt det bygger på siffror du sparat. [Skapa ett konto](/auth) och logga varje 
     date: '2025-01-22',
     metaDescription: 'Så lägger du upp set och repetitioner för muskeltillväxt: rimlig veckovolym per muskelgrupp, repetitionsintervall och hur du fördelar arbetet över veckan.',
     keywords: ['set och reps', 'muskeltillväxt', 'träningsvolym', 'hypertrofi', 'antal set'],
-    content: \`
+    content: `
 ## Tre saker som styr upplägget
 
 När folk pratar om set och reps blandas oftast tre olika frågor ihop: hur mycket totalt arbete du gör, hur tungt du gör det, och hur ofta. De hänger ihop, men det är lättare att bestämma dem var för sig.
@@ -614,7 +614,7 @@ Att inte veta sin egen volym är det fjärde, och det underskattas. Väldigt få
 Du ska kunna genomföra veckans pass utan att känna dig nedkörd, du ska ha någon form av utveckling i vikt eller repetitioner över ett par månader, och muskelömheten ska klinga av innan nästa gång du tränar samma område. Om du är konstant trött, sover sämre och tappar prestation är volymen troligen för hög i förhållande till din återhämtning. Mer om det i [vilodagar och återhämtning](/blogg/vilodagar-och-aterhamtning).
 
 Att hålla reda på set per muskelgrupp och vecka i huvudet går inte i längden. [Skapa ett konto](/auth) och logga passen, så räknas volymen ihop åt dig och du ser direkt om rygg fått hälften så mycket som bröst i tre månader.
-    \`
+    `
   },
   {
     slug: 'push-pull-ben-tredagarssplit',
@@ -626,7 +626,7 @@ Att hålla reda på set per muskelgrupp och vecka i huvudet går inte i längden
     date: '2025-01-29',
     metaDescription: 'Push pull ben förklarat: hur du delar upp passen, vilka övningar som ingår, hur ofta du kör och hur du anpassar splitet till tre eller sex dagar i veckan.',
     keywords: ['push pull ben', 'ppl', 'träningssplit', 'tredagarssplit', 'träningsprogram'],
-    content: \`
+    content: `
 ## Idén bakom splitet
 
 Push pull ben delar upp kroppen efter rörelse i stället för efter muskelgrupp. Ett tryckpass tränar bröst, axlar och triceps, som ändå arbetar tillsammans i alla pressövningar. Ett dragpass tränar rygg, bakre axel och biceps, som arbetar tillsammans i alla drag. Ett benpass tränar underkroppen.
@@ -696,7 +696,7 @@ Att inte hålla ordning på vad du gjorde förra gången är det tredje. Med sex
 Du klarar att genomföra passen som planerat de flesta veckor, du ser en långsam ökning i vikt eller repetitioner i huvudövningarna, och du är inte så trött att träningen börjar konkurrera med resten av livet. Om något av det inte stämmer är det oftast antalet dagar, inte splitet i sig, som behöver justeras.
 
 Ett rullande upplägg med sex olika pass är svårt att hålla i huvudet. [Skapa ett konto](/auth), lägg in ditt push pull ben-program och få förra passets vikter framme när du står vid stången.
-    \`
+    `
   },
   {
     slug: 'vilodagar-och-aterhamtning',
@@ -708,7 +708,7 @@ Ett rullande upplägg med sex olika pass är svårt att hålla i huvudet. [Skapa
     date: '2025-02-05',
     metaDescription: 'Hur ofta bör du träna och hur många vilodagar behöver du? Om återhämtning, sömn, muskelömhet och tecken på att träningsmängden är för hög.',
     keywords: ['vilodagar', 'återhämtning', 'hur ofta träna', 'överträning', 'muskelömhet'],
-    content: \`
+    content: `
 ## Anpassningen sker mellan passen
 
 Träningen är stimulansen. Anpassningen, alltså det som gör dig starkare, sker under tiden däremellan. Det är en gammal och ganska självklar formulering, men den får konsekvenser som många hoppar över: mer träning är bara bättre så länge du hinner återhämta dig från den.
@@ -768,7 +768,7 @@ Vid smärta som håller i sig, är skarp eller påverkar vardagen bör du söka 
 Du orkar genomföra de pass du planerat de flesta veckor. Du är trött efter passen men inte utslagen dagen efter. Vikterna rör sig långsamt uppåt över ett par månader. Du ser fram emot att träna oftare än du inte gör det.
 
 Det där är svårt att bedöma i efterhand utan anteckningar. Loggar du varje pass med vikter och repetitioner ser du direkt om prestationen fallit tre veckor i rad, eller om det bara var ett tungt pass. [Skapa ett konto](/auth) så har du underlaget nästa gång du funderar på om du behöver en lättare vecka.
-    \`
+    `
   },
   {
     slug: 'rpe-och-rir-styr-intensiteten',
@@ -780,7 +780,7 @@ Det där är svårt att bedöma i efterhand utan anteckningar. Loggar du varje p
     date: '2025-02-12',
     metaDescription: 'RPE och RIR förklarat: vad skalorna betyder, hur du bedömer ett set, hur du använder dem för att styra vikten och vanliga fel när man börjar.',
     keywords: ['rpe', 'rir', 'träningsintensitet', 'reps i reserv', 'ansträngningsgrad'],
-    content: \`
+    content: `
 ## Två sätt att beskriva samma sak
 
 RIR står för reps in reserve, alltså hur många repetitioner du hade kvar när du avslutade setet. RIR 2 betyder att du hade kunnat göra två till med bibehållen teknik.
@@ -836,7 +836,7 @@ Att inte skilja på teknisk och verklig utmattning är det fjärde. Repetitioner
 Din bedömning ska bli mer träffsäker med tiden. Ett tecken på att du är på rätt spår är att du kan förutsäga hur många repetitioner du får på en given vikt innan du gör setet, och sedan hamna nära. Ett annat är att repetitionerna inte rasar dramatiskt mellan första och sista arbetssetet.
 
 Marginalen är en uppgift som är värdelös om den inte sparas. [Skapa ett konto](/auth) och skriv ner vikt, repetitioner och hur nära utmattning varje set låg, så ser du över tid om du faktiskt tränar tyngre eller bara tränar likadant.
-    \`
+    `
   }
 ];
 
