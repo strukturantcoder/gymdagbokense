@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
@@ -33,6 +34,11 @@ const Index = () => {
   }, [user, loading, navigate]);
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
+      <Helmet>
+        <title>Gymdagboken - Bästa träningsdagboken med AI | Gratis träningsapp</title>
+        <meta name="description" content="Sveriges smartaste träningsdagbok med AI-genererade träningsprogram. Logga styrketräning, kondition och CrossFit. Spåra personliga rekord och tävla mot vänner. 100% gratis att börja!" />
+        <link rel="canonical" href="https://gymdagboken.se/" />
+      </Helmet>
       <Header />
       
       <main>
