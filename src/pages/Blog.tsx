@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Calendar, Clock, User, ChevronRight, Dumbbell, Mountain, Shirt, Apple, Activity, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, User, ChevronRight, Dumbbell, Mountain, Shirt, Apple, Activity, ExternalLink, BookOpen, TrendingUp, Layers, Repeat, Moon, Gauge } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +41,7 @@ const getAffiliateBoxes = (slug: string): AffiliateBox[] => {
           cta: 'Se utbudet på Bodystore →'
         }
       ];
-    case 'traningskläder-som-forbattrar-din-prestation':
+    case 'traningsklader-som-forbattrar-din-prestation':
       return [
         {
           name: 'About You',
@@ -176,7 +177,7 @@ Fokusera först på protein och kreatin - de har starkast vetenskapligt stöd. L
     `
   },
   {
-    slug: 'traningskläder-som-forbattrar-din-prestation',
+    slug: 'traningsklader-som-forbattrar-din-prestation',
     title: 'Träningskläder som förbättrar din prestation',
     description: 'Rätt träningskläder kan göra stor skillnad för din komfort och prestation. Här är vad du bör tänka på.',
     category: 'Utrustning',
@@ -840,13 +841,28 @@ Marginalen är en uppgift som är värdelös om den inte sparas. [Skapa ett kont
   }
 ];
 
+// Old slugs (with non-ascii characters) kept alive so existing links don't break
+const legacySlugRedirects: Record<string, string> = {
+  'traningskläder-som-forbattrar-din-prestation': 'traningsklader-som-forbattrar-din-prestation',
+};
+
 export default function Blog() {
   const { slug } = useParams();
   const navigate = useNavigate();
 
+  const decodedSlug = slug ? decodeURIComponent(slug) : undefined;
+  const redirectTarget = decodedSlug ? legacySlugRedirects[decodedSlug] : undefined;
+
+  useEffect(() => {
+    if (redirectTarget) {
+      navigate(`/blogg/${redirectTarget}`, { replace: true });
+    }
+  }, [redirectTarget, navigate]);
+
   // If slug is provided, show single blog post
   if (slug) {
-    const post = blogPosts.find(p => p.slug === slug);
+    if (redirectTarget) return null;
+    const post = blogPosts.find(p => p.slug === decodedSlug);
     
     if (!post) {
       return (
@@ -868,7 +884,30 @@ export default function Blog() {
           <meta property="og:title" content={post.title} />
           <meta property="og:description" content={post.metaDescription} />
           <meta property="og:type" content="article" />
+          <meta property="og:url" content={`https://gymdagboken.se/blogg/${post.slug}`} />
           <link rel="canonical" href={`https://gymdagboken.se/blogg/${post.slug}`} />
+          <script type="application/ld+json">
+            {JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BlogPosting',
+              headline: post.title,
+              description: post.metaDescription,
+              datePublished: post.date,
+              dateModified: post.date,
+              inLanguage: 'sv-SE',
+              keywords: post.keywords.join(', '),
+              mainEntityOfPage: {
+                '@type': 'WebPage',
+                '@id': `https://gymdagboken.se/blogg/${post.slug}`,
+              },
+              author: { '@type': 'Organization', name: 'Gymdagboken' },
+              publisher: {
+                '@type': 'Organization',
+                name: 'Gymdagboken',
+                url: 'https://gymdagboken.se',
+              },
+            })}
+          </script>
         </Helmet>
 
         <div className="min-h-screen bg-background overflow-x-hidden">
@@ -907,6 +946,7 @@ export default function Blog() {
                 className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-display prose-h2:text-2xl prose-h3:text-xl prose-a:text-primary"
                 dangerouslySetInnerHTML={{ 
                   __html: post.content
+                    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
                     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
                     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
                     .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
