@@ -115,10 +115,8 @@ const AdBanner = ({
     };
   }, [ads]);
 
-  // Track impression when ad is displayed (only for authenticated users)
+  // Track impression when ad is displayed (anonymous visitors get user_id null)
   useEffect(() => {
-    if (!user?.id) return;
-
     if (selectedAd && !impressionTracked.current && !selectedAd.id.startsWith("tradedoubler")) {
       impressionTracked.current = true;
       supabase
@@ -126,7 +124,7 @@ const AdBanner = ({
         .insert({
           ad_id: selectedAd.id,
           event_type: "impression",
-          user_id: user.id,
+          user_id: user?.id ?? null,
         })
         .then(({ error }) => {
           if (error) console.error("Error tracking impression:", error);
@@ -134,17 +132,15 @@ const AdBanner = ({
     }
   }, [selectedAd, user?.id]);
 
-  // Track click (only for authenticated users)
+  // Track click (anonymous visitors get user_id null)
   const trackClick = async () => {
-    if (!user?.id) return;
-
     if (selectedAd && !selectedAd.id.startsWith("tradedoubler")) {
       const { error } = await supabase
         .from("ad_stats")
         .insert({
           ad_id: selectedAd.id,
           event_type: "click",
-          user_id: user.id,
+          user_id: user?.id ?? null,
         });
 
       if (error) console.error("Error tracking click:", error);
