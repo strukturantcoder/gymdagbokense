@@ -48,6 +48,10 @@ const CardioLog = lazy(() => import("./pages/CardioLog"));
 const LogoDownloads = lazy(() => import("./pages/LogoDownloads"));
 const Nutrition = lazy(() => import("./pages/Nutrition"));
 const Coach = lazy(() => import("./pages/Coach"));
+import Exercises from "./pages/Exercises";
+import ExerciseDetail from "./pages/ExerciseDetail";
+import Rehab from "./pages/Rehab";
+import RehabDetail from "./pages/RehabDetail";
 const queryClient = new QueryClient();
 
 // Minimal loading fallback
@@ -111,6 +115,10 @@ const AppContent = () => {
             <Route path="/logo-downloads" element={<LogoDownloads />} />
             <Route path="/nutrition" element={<Nutrition />} />
             <Route path="/coach" element={<Coach />} />
+            <Route path="/ovningar" element={<Exercises />} />
+            <Route path="/ovningar/:slug" element={<ExerciseDetail />} />
+            <Route path="/rehab" element={<Rehab />} />
+            <Route path="/rehab/:slug" element={<RehabDetail />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
