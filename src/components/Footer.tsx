@@ -14,6 +14,8 @@ const Footer = () => {
     ],
     resources: [
       { label: "Träningsblogg", href: "/blogg", isRoute: true },
+      { label: "Övningsbank", href: "/ovningar", isRoute: true },
+      { label: "Rehab och krämpor", href: "/rehab", isRoute: true },
     ],
     legal: [
       { labelKey: "footer.privacy", href: "/privacy" },
