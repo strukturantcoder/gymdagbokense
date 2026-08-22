@@ -754,6 +754,57 @@ export type Database = {
           },
         ]
       }
+      exercises: {
+        Row: {
+          category: string | null
+          created_at: string
+          equipment: string | null
+          id: string
+          intro: string | null
+          is_published: boolean
+          level: string | null
+          mistakes: Json | null
+          muscles: string[] | null
+          name: string
+          slug: string
+          steps: string[] | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          equipment?: string | null
+          id?: string
+          intro?: string | null
+          is_published?: boolean
+          level?: string | null
+          mistakes?: Json | null
+          muscles?: string[] | null
+          name: string
+          slug: string
+          steps?: string[] | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          equipment?: string | null
+          id?: string
+          intro?: string | null
+          is_published?: boolean
+          level?: string | null
+          mistakes?: Json | null
+          muscles?: string[] | null
+          name?: string
+          slug?: string
+          steps?: string[] | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           created_at: string
@@ -1514,6 +1565,51 @@ export type Database = {
           invited_id?: string
           inviter_id?: string
           xp_rewarded?: boolean | null
+        }
+        Relationships: []
+      }
+      rehab_protocols: {
+        Row: {
+          avoid_until_better: string[] | null
+          background: string | null
+          created_at: string
+          exercises: Json | null
+          id: string
+          intro: string | null
+          is_published: boolean
+          name: string
+          seek_care_if: string[] | null
+          slug: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          avoid_until_better?: string[] | null
+          background?: string | null
+          created_at?: string
+          exercises?: Json | null
+          id?: string
+          intro?: string | null
+          is_published?: boolean
+          name: string
+          seek_care_if?: string[] | null
+          slug: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          avoid_until_better?: string[] | null
+          background?: string | null
+          created_at?: string
+          exercises?: Json | null
+          id?: string
+          intro?: string | null
+          is_published?: boolean
+          name?: string
+          seek_care_if?: string[] | null
+          slug?: string
+          tags?: string[] | null
+          updated_at?: string
         }
         Relationships: []
       }
