@@ -132,20 +132,60 @@ const AdBanner = ({
     }
   }, [selectedAd, user?.id]);
 
-  // Track click (anonymous visitors get user_id null)
-  const trackClick = async () => {
-    if (selectedAd && !selectedAd.id.startsWith("tradedoubler")) {
-      const { error } = await supabase
-        .from("ad_stats")
-        .insert({
-          ad_id: selectedAd.id,
-          event_type: "click",
-          user_id: user?.id ?? null,
-        });
+  // Track click. The browser is navigating away right after this, so a normal
+  // async request is often dropped (especially in the mobile app shell).
+  // Use sendBeacon against the REST endpoint, with keepalive fetch as fallback.
+  const trackClick = () => {
+    if (!selectedAd || selectedAd.id.startsWith("tradedoubler")) return;
 
-      if (error) console.error("Error tracking click:", error);
+    const restUrl = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/ad_stats`;
+    const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const payload = {
+      ad_id: selectedAd.id,
+      event_type: "click",
+      user_id: user?.id ?? null,
+    };
+    const body = JSON.stringify(payload);
+
+    // Signed-in inserts need the user's JWT, so those go via keepalive fetch.
+    if (user?.id) {
+      supabase.auth.getSession().then(({ data }) => {
+        const token = data.session?.access_token;
+        fetch(`${restUrl}?apikey=${apiKey}`, {
+          method: "POST",
+          keepalive: true,
+          headers: {
+            "Content-Type": "application/json",
+            apikey: apiKey,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Prefer: "return=minimal",
+          },
+          body,
+        }).catch((err) => console.error("Error tracking click:", err));
+      });
+      return;
+    }
+
+    const beaconUrl = `${restUrl}?apikey=${apiKey}`;
+    const sent =
+      typeof navigator !== "undefined" &&
+      typeof navigator.sendBeacon === "function" &&
+      navigator.sendBeacon(beaconUrl, new Blob([body], { type: "application/json" }));
+
+    if (!sent) {
+      fetch(beaconUrl, {
+        method: "POST",
+        keepalive: true,
+        headers: {
+          "Content-Type": "application/json",
+          apikey: apiKey,
+          Prefer: "return=minimal",
+        },
+        body,
+      }).catch((err) => console.error("Error tracking click:", err));
     }
   };
+
   
   // Don't show ads for premium users
   if (isPremium) {
