@@ -90,13 +90,10 @@ export default defineConfig(({ mode }) => ({
               }
             }
           },
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: "NetworkOnly", // Never cache Supabase responses
-            options: {
-              cacheName: "supabase-cache"
-            }
-          },
+          // Supabase requests are intentionally not matched here: a NetworkOnly
+          // rule gives no caching benefit but routes them through workbox, which
+          // returns 503 when it can't produce a response (e.g. during SW updates).
+
           {
             // Images - stale while revalidate
             urlPattern: ({ request }) => request.destination === 'image',
