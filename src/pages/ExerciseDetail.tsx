@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AdBanner from "@/components/AdBanner";
 import LibraryCTA from "@/components/library/LibraryCTA";
+import EquipmentOffers from "@/components/library/EquipmentOffers";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { truncateAtWord } from "@/lib/seo";
@@ -185,6 +186,8 @@ const ExerciseDetail = () => {
             ))}
           </div>
         </section>
+
+        <EquipmentOffers equipment={exercise.equipment} />
 
         <div className="mb-10">
           <AdBanner format="horizontal" placement="exercise_detail" />
