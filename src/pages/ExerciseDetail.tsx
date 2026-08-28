@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AdBanner from "@/components/AdBanner";
+import Seo from "@/components/Seo";
 import LibraryCTA from "@/components/library/LibraryCTA";
 import EquipmentOffers from "@/components/library/EquipmentOffers";
 import { Button } from "@/components/ui/button";
@@ -91,10 +91,7 @@ const ExerciseDetail = () => {
   if (!exercise) {
     return (
       <div className="min-h-screen bg-background">
-        <Helmet>
-          <title>Övningen hittades inte | Gymdagboken</title>
-          <meta name="robots" content="noindex" />
-        </Helmet>
+        <Seo title="Övningen hittades inte | Gymdagboken" noindex />
         <Header />
         <main className="container px-4 py-16">
           <h1 className="font-display text-3xl font-bold mb-4">Övningen hittades inte</h1>
@@ -131,16 +128,13 @@ const ExerciseDetail = () => {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      <Helmet>
-        <title>{title}</title>
-        <meta name="description" content={description} />
-        <link rel="canonical" href={url} />
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
-        <meta property="og:type" content="article" />
-        <meta property="og:url" content={url} />
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
-      </Helmet>
+      <Seo
+        title={title}
+        description={description}
+        canonical={url}
+        ogType="article"
+        jsonLd={jsonLd}
+      />
       <Header />
 
       <main className="container px-4 py-12 max-w-3xl">

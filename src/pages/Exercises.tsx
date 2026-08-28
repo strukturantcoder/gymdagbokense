@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AdBanner from "@/components/AdBanner";
+import Seo from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -46,21 +46,12 @@ const Exercises = () => {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      <Helmet>
-        <title>Övningsbank – teknik och vanliga fel för gymövningar | Gymdagboken</title>
-        <meta
-          name="description"
-          content="Övningsbank med teknik, vanliga fel och tips för de vanligaste gymövningarna. Filtrera på ben, överkropp, bål och helkropp."
-        />
-        <link rel="canonical" href="https://gymdagboken.se/ovningar" />
-        <meta property="og:title" content="Övningsbank | Gymdagboken" />
-        <meta
-          property="og:description"
-          content="Teknik, vanliga fel och tips för de vanligaste gymövningarna."
-        />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://gymdagboken.se/ovningar" />
-      </Helmet>
+      <Seo
+        title="Övningsbank – teknik och vanliga fel för gymövningar | Gymdagboken"
+        description="Övningsbank med teknik, vanliga fel och tips för de vanligaste gymövningarna. Filtrera på ben, överkropp, bål och helkropp."
+        canonical="https://gymdagboken.se/ovningar"
+        ogType="website"
+      />
       <Header />
 
       <main className="container px-4 py-12">
