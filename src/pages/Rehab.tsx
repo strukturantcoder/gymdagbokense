@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Seo from "@/components/Seo";
 import { supabase } from "@/integrations/supabase/client";
 import { truncateAtWord } from "@/lib/seo";
 
@@ -30,21 +30,12 @@ const Rehab = () => {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      <Helmet>
-        <title>Rehab och krämpor – övningar och råd vid vanlig träningsvärk | Gymdagboken</title>
-        <meta
-          name="description"
-          content="Vanliga krämpor hos dig som tränar: vad det brukar handla om, vilka övningar som hjälper, vad du bör undvika och när du ska söka vård."
-        />
-        <link rel="canonical" href="https://gymdagboken.se/rehab" />
-        <meta property="og:title" content="Rehab och krämpor | Gymdagboken" />
-        <meta
-          property="og:description"
-          content="Övningar och råd vid vanliga krämpor hos dig som tränar."
-        />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://gymdagboken.se/rehab" />
-      </Helmet>
+      <Seo
+        title="Rehab och krämpor – övningar och råd vid vanlig träningsvärk | Gymdagboken"
+        description="Vanliga krämpor hos dig som tränar: vad det brukar handla om, vilka övningar som hjälper, vad du bör undvika och när du ska söka vård."
+        canonical="https://gymdagboken.se/rehab"
+        ogType="website"
+      />
       <Header />
 
       <main className="container px-4 py-12">
