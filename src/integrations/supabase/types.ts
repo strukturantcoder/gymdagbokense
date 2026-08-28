@@ -92,6 +92,8 @@ export type Database = {
           image_url: string
           is_active: boolean
           link: string
+          link_text: string | null
+          match_keywords: string[] | null
           name: string
           placement: string | null
           updated_at: string
@@ -104,6 +106,8 @@ export type Database = {
           image_url: string
           is_active?: boolean
           link: string
+          link_text?: string | null
+          match_keywords?: string[] | null
           name: string
           placement?: string | null
           updated_at?: string
@@ -116,6 +120,8 @@ export type Database = {
           image_url?: string
           is_active?: boolean
           link?: string
+          link_text?: string | null
+          match_keywords?: string[] | null
           name?: string
           placement?: string | null
           updated_at?: string
