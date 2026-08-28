@@ -122,18 +122,10 @@ const AdBanner = ({
   useEffect(() => {
     if (selectedAd && !impressionTracked.current && !selectedAd.id.startsWith("tradedoubler")) {
       impressionTracked.current = true;
-      supabase
-        .from("ad_stats")
-        .insert({
-          ad_id: selectedAd.id,
-          event_type: "impression",
-          user_id: user?.id ?? null,
-        })
-        .then(({ error }) => {
-          if (error) console.error("Error tracking impression:", error);
-        });
+      trackAdEvent(selectedAd.id, "impression", user?.id ?? null);
     }
   }, [selectedAd, user?.id]);
+
 
   // Track click. The browser is navigating away right after this, so a normal
   // async request is often dropped (especially in the mobile app shell).
