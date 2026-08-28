@@ -7,8 +7,9 @@ const apiKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 /**
  * Track an ad event reliably, even when the browser is navigating away.
- * Uses sendBeacon for anonymous visitors and keepalive fetch with the JWT
- * for signed-in users (their inserts need the user's token).
+ * Uses fetch with keepalive for everyone; signed-in users additionally send
+ * their JWT. sendBeacon is intentionally not used: it cannot set headers and
+ * fails the CORS preflight against the REST endpoint (silently dropped).
  */
 export const trackAdEvent = (
   adId: string,
@@ -22,39 +23,28 @@ export const trackAdEvent = (
     user_id: userId ?? null,
   });
 
-  if (userId) {
-    supabase.auth.getSession().then(({ data }) => {
-      const token = data.session?.access_token;
-      fetch(url, {
-        method: "POST",
-        keepalive: true,
-        headers: {
-          "Content-Type": "application/json",
-          apikey: apiKey(),
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          Prefer: "return=minimal",
-        },
-        body,
-      }).catch((err) => console.error(`Error tracking ${eventType}:`, err));
-    });
-    return;
-  }
-
-  const sent =
-    typeof navigator !== "undefined" &&
-    typeof navigator.sendBeacon === "function" &&
-    navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
-
-  if (!sent) {
+  const send = (token?: string) => {
     fetch(url, {
       method: "POST",
       keepalive: true,
       headers: {
         "Content-Type": "application/json",
         apikey: apiKey(),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         Prefer: "return=minimal",
       },
       body,
     }).catch((err) => console.error(`Error tracking ${eventType}:`, err));
+  };
+
+  if (userId) {
+    supabase.auth
+      .getSession()
+      .then(({ data }) => send(data.session?.access_token))
+      .catch(() => send());
+    return;
   }
+
+  send();
 };
+
