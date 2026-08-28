@@ -65,7 +65,9 @@ const AdBanner = ({
         let query = supabase
           .from("ads")
           .select("id, name, image_url, link, alt_text, format, placement")
-          .eq("is_active", true);
+          .eq("is_active", true)
+          // Equipment links have no image and are rendered by EquipmentOffers
+          .neq("format", "equipment_link");
 
         // Filter by placement if specified
         if (placement) {
