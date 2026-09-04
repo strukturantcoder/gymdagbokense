@@ -26,13 +26,23 @@ export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { loading: activationLoading, hasLoggedWorkout, logCount, refresh } = useActivationStatus();
+  const [autoStartFirstWorkout, setAutoStartFirstWorkout] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('start') === 'forsta-passet') {
+      setAutoStartFirstWorkout(true);
+      navigate('/dashboard', { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
 
   const handleSignOut = async () => {
     await signOut();
