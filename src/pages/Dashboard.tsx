@@ -118,7 +118,7 @@ export default function Dashboard() {
         {!activationLoading && !hasLoggedWorkout ? (
           /* New user: single focused call to action until the first workout is logged */
           <div className="shrink-0">
-            <FirstWorkoutHero onLogged={refresh} />
+            <FirstWorkoutHero onLogged={refresh} autoStart={autoStartFirstWorkout} />
           </div>
         ) : (
           <>
