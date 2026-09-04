@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Dumbbell, LogOut, Shield, UserCircle, Loader2 } from 'lucide-react';
@@ -25,13 +26,23 @@ export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { loading: activationLoading, hasLoggedWorkout, logCount, refresh } = useActivationStatus();
+  const [autoStartFirstWorkout, setAutoStartFirstWorkout] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('start') === 'forsta-passet') {
+      setAutoStartFirstWorkout(true);
+      navigate('/dashboard', { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
 
   const handleSignOut = async () => {
     await signOut();
@@ -107,7 +118,7 @@ export default function Dashboard() {
         {!activationLoading && !hasLoggedWorkout ? (
           /* New user: single focused call to action until the first workout is logged */
           <div className="shrink-0">
-            <FirstWorkoutHero onLogged={refresh} />
+            <FirstWorkoutHero onLogged={refresh} autoStart={autoStartFirstWorkout} />
           </div>
         ) : (
           <>

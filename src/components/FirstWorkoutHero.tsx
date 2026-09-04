@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,12 +36,22 @@ const STARTER_WORKOUT: GeneratedWorkout = {
 
 interface FirstWorkoutHeroProps {
   onLogged?: () => void;
+  autoStart?: boolean;
 }
 
-export default function FirstWorkoutHero({ onLogged }: FirstWorkoutHeroProps) {
+export default function FirstWorkoutHero({ onLogged, autoStart }: FirstWorkoutHeroProps) {
   const navigate = useNavigate();
   const [showSpontaneous, setShowSpontaneous] = useState(false);
   const [activeWorkout, setActiveWorkout] = useState<GeneratedWorkout | null>(null);
+  const autoStarted = useRef(false);
+
+  useEffect(() => {
+    if (autoStart && !autoStarted.current) {
+      autoStarted.current = true;
+      setActiveWorkout(STARTER_WORKOUT);
+    }
+  }, [autoStart]);
+
 
   return (
     <>
