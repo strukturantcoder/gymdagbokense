@@ -121,6 +121,10 @@ verify_jwt = false
 [functions.send-goal-reminders]
 verify_jwt = false
 
+[functions.send-activation-emails]
+verify_jwt = false
+
+
 [functions.suggest-goals]
 verify_jwt = true
 
