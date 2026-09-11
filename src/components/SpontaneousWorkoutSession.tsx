@@ -141,9 +141,27 @@ export default function SpontaneousWorkoutSession({ workout, onClose }: Spontane
 
   const handleComplete = async () => {
     if (!user) {
-      toast.error("Du måste vara inloggad");
+      // Signed-out visitor: keep the workout locally, an account saves it later.
+      const durationMinutes = Math.round(elapsedSeconds / 60);
+      savePendingWorkout({
+        name: workout.name,
+        focus: workout.focus,
+        durationMinutes,
+        timestamp: new Date().toISOString(),
+        exercises: exerciseLogs
+          .filter((log) => log.sets.some((s) => s.completed))
+          .map((log) => ({
+            name: log.exercise.name,
+            sets: log.sets
+              .filter((s) => s.completed)
+              .map((s) => ({ reps: s.reps, weight: s.weight })),
+          })),
+      });
+      setShowExitDialog(false);
+      setShowGuestDialog(true);
       return;
     }
+
 
     setIsSaving(true);
     try {
