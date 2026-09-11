@@ -21,6 +21,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import FirstWorkoutHero from '@/components/FirstWorkoutHero';
 import NextWorkoutPrompt from '@/components/NextWorkoutPrompt';
 import { useActivationStatus } from '@/hooks/useActivationStatus';
+import { usePendingWorkoutSync } from '@/hooks/usePendingWorkoutSync';
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
