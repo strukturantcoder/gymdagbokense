@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { savePendingWorkout } from "@/lib/pendingWorkout";
 import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
@@ -78,6 +79,7 @@ export default function SpontaneousWorkoutSession({ workout, onClose }: Spontane
   const [isPaused, setIsPaused] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showCompletedDialog, setShowCompletedDialog] = useState(false);
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -141,9 +143,27 @@ export default function SpontaneousWorkoutSession({ workout, onClose }: Spontane
 
   const handleComplete = async () => {
     if (!user) {
-      toast.error("Du måste vara inloggad");
+      // Signed-out visitor: keep the workout locally, an account saves it later.
+      const durationMinutes = Math.round(elapsedSeconds / 60);
+      savePendingWorkout({
+        name: workout.name,
+        focus: workout.focus,
+        durationMinutes,
+        timestamp: new Date().toISOString(),
+        exercises: exerciseLogs
+          .filter((log) => log.sets.some((s) => s.completed))
+          .map((log) => ({
+            name: log.exercise.name,
+            sets: log.sets
+              .filter((s) => s.completed)
+              .map((s) => ({ reps: s.reps, weight: s.weight })),
+          })),
+      });
+      setShowExitDialog(false);
+      setShowGuestDialog(true);
       return;
     }
+
 
     setIsSaving(true);
     try {
@@ -447,6 +467,34 @@ export default function SpontaneousWorkoutSession({ workout, onClose }: Spontane
             </Button>
             <AlertDialogAction onClick={onClose}>
               Klar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Completed dialog for signed-out visitors */}
+      <AlertDialog open={showGuestDialog} onOpenChange={setShowGuestDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gym-orange to-amber-500 flex items-center justify-center">
+                <Trophy className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <AlertDialogTitle className="text-center">Passet är klart</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              Du genomförde {completedSets} sets på {formatTime(elapsedSeconds)}. För att spara
+              passet i din dagbok behöver du ett konto. Skapar du ett nu läggs passet in
+              automatiskt.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={onClose}>
+              Inte nu
+            </Button>
+            <AlertDialogAction onClick={() => navigate('/auth')}>
+              Skapa konto och spara passet
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

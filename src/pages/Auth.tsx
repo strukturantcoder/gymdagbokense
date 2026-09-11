@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Dumbbell, Mail, Lock, User, Gift, HelpCircle, Apple } from 'lucide-react';
 import LanguageSelector from '@/components/LanguageSelector';
 import { lovable } from '@/integrations/lovable/index';
+import { hasPendingWorkout } from '@/lib/pendingWorkout';
 
 export default function Auth() {
   const { t } = useTranslation();
@@ -27,6 +28,7 @@ export default function Auth() {
   const { user, signUp, signIn } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [pendingWorkout] = useState(() => hasPendingWorkout());
 
   useEffect(() => {
     const ref = searchParams.get('ref');
@@ -165,6 +167,11 @@ export default function Auth() {
             <div className="bg-primary p-3 rounded-xl"><Dumbbell className="h-8 w-8 text-primary-foreground" /></div>
             <span className="text-2xl font-display font-bold text-foreground tracking-tight">GYMDAGBOKEN</span>
           </div>
+          {pendingWorkout && !isReset && (
+            <p className="mb-6 text-sm text-center text-muted-foreground bg-primary/10 border border-primary/20 rounded-lg p-3">
+              Ditt pass är klart – skapa ett konto så sparas det i din dagbok.
+            </p>
+          )}
           <h1 className="text-xl font-semibold text-center text-foreground mb-6">{isReset ? t('auth.resetTitle') : isSignUp ? t('auth.createAccount') : t('auth.login')}</h1>
           {isReset ? (
             <div className="space-y-4">

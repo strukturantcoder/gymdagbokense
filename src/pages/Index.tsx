@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import AdBanner from "@/components/AdBanner";
 import Footer from "@/components/Footer";
+import GuestStarterWorkout from "@/components/GuestStarterWorkout";
 
 // Force module refresh
 
@@ -45,6 +46,9 @@ const Index = () => {
       
       <main>
         <Hero />
+
+        {!loading && !user && <GuestStarterWorkout />}
+        
         
         {/* Leaderboard ad after social proof */}
         <div className="container px-4 py-8">

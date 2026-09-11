@@ -21,6 +21,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import FirstWorkoutHero from '@/components/FirstWorkoutHero';
 import NextWorkoutPrompt from '@/components/NextWorkoutPrompt';
 import { useActivationStatus } from '@/hooks/useActivationStatus';
+import { usePendingWorkoutSync } from '@/hooks/usePendingWorkoutSync';
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
@@ -29,6 +30,10 @@ export default function Dashboard() {
   const [searchParams] = useSearchParams();
   const { loading: activationLoading, hasLoggedWorkout, logCount, refresh } = useActivationStatus();
   const [autoStartFirstWorkout, setAutoStartFirstWorkout] = useState(false);
+
+  // Save a workout that was logged before the account existed
+  usePendingWorkoutSync(refresh);
+
 
   useEffect(() => {
     if (searchParams.get('start') === 'forsta-passet') {
