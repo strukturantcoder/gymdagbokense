@@ -7,32 +7,7 @@ import { Play, Sparkles, Dumbbell, Clock, ChevronRight } from 'lucide-react';
 import SpontaneousWorkout from './SpontaneousWorkout';
 import SpontaneousWorkoutSession from './SpontaneousWorkoutSession';
 
-interface GeneratedWorkout {
-  name: string;
-  focus: string;
-  estimatedDuration: number;
-  exercises: {
-    name: string;
-    sets: number;
-    reps: string;
-    rest: string;
-    notes?: string;
-    supersetGroup?: number | null;
-  }[];
-}
-
-/** Ready-to-run 10 minute starter workout — no equipment, no setup. */
-const STARTER_WORKOUT: GeneratedWorkout = {
-  name: 'Ditt första pass',
-  focus: 'Helkropp',
-  estimatedDuration: 10,
-  exercises: [
-    { name: 'Knäböj (kroppsvikt)', sets: 3, reps: '12', rest: '45 sek', notes: 'Håll ryggen rak och gå så djupt du kan.' },
-    { name: 'Armhävningar', sets: 3, reps: '8-12', rest: '45 sek', notes: 'Gå på knä om det behövs.' },
-    { name: 'Utfall', sets: 3, reps: '10 per ben', rest: '45 sek' },
-    { name: 'Planka', sets: 3, reps: '30 sek', rest: '30 sek', notes: 'Spänn magen, håll höften i linje.' },
-  ],
-};
+import { STARTER_WORKOUT, type StarterWorkout as GeneratedWorkout } from '@/data/starterWorkout';
 
 interface FirstWorkoutHeroProps {
   onLogged?: () => void;
