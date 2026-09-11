@@ -31,6 +31,10 @@ export default function Dashboard() {
   const { loading: activationLoading, hasLoggedWorkout, logCount, refresh } = useActivationStatus();
   const [autoStartFirstWorkout, setAutoStartFirstWorkout] = useState(false);
 
+  // Save a workout that was logged before the account existed
+  usePendingWorkoutSync(refresh);
+
+
   useEffect(() => {
     if (searchParams.get('start') === 'forsta-passet') {
       setAutoStartFirstWorkout(true);
