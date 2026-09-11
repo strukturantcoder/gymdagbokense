@@ -471,6 +471,34 @@ export default function SpontaneousWorkoutSession({ workout, onClose }: Spontane
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Completed dialog for signed-out visitors */}
+      <AlertDialog open={showGuestDialog} onOpenChange={setShowGuestDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gym-orange to-amber-500 flex items-center justify-center">
+                <Trophy className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <AlertDialogTitle className="text-center">Passet är klart</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              Du genomförde {completedSets} sets på {formatTime(elapsedSeconds)}. För att spara
+              passet i din dagbok behöver du ett konto. Skapar du ett nu läggs passet in
+              automatiskt.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={onClose}>
+              Inte nu
+            </Button>
+            <AlertDialogAction onClick={() => navigate('/auth')}>
+              Skapa konto och spara passet
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 }
