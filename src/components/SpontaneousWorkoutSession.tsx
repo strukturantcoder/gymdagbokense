@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { savePendingWorkout } from "@/lib/pendingWorkout";
 import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
@@ -78,6 +79,7 @@ export default function SpontaneousWorkoutSession({ workout, onClose }: Spontane
   const [isPaused, setIsPaused] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showCompletedDialog, setShowCompletedDialog] = useState(false);
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
