@@ -26,7 +26,13 @@ interface Exercise {
   steps: string[] | null;
   mistakes: unknown;
   intro: string | null;
+  seo_description: string | null;
 }
+
+const listSv = (items: string[]) => {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} och ${items[items.length - 1]}`;
+};
 
 interface RelatedExercise {
   slug: string;
@@ -50,7 +56,9 @@ const ExerciseDetail = () => {
     const load = async () => {
       const { data } = await supabase
         .from("exercises")
-        .select("slug, name, category, muscles, equipment, level, steps, mistakes, intro")
+        .select(
+          "slug, name, category, muscles, equipment, level, steps, mistakes, intro, seo_description",
+        )
         .eq("slug", slug ?? "")
         .eq("is_published", true)
         .maybeSingle();

@@ -23,6 +23,7 @@ interface Protocol {
   exercises: unknown;
   avoid_until_better: string[] | null;
   intro: string | null;
+  seo_description: string | null;
 }
 
 const RehabDetail = () => {
@@ -37,7 +38,9 @@ const RehabDetail = () => {
 
     supabase
       .from("rehab_protocols")
-      .select("slug, name, background, seek_care_if, exercises, avoid_until_better, intro")
+      .select(
+        "slug, name, background, seek_care_if, exercises, avoid_until_better, intro, seo_description",
+      )
       .eq("slug", slug ?? "")
       .eq("is_published", true)
       .maybeSingle()
