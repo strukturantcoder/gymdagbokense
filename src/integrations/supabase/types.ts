@@ -772,6 +772,7 @@ export type Database = {
           mistakes: Json | null
           muscles: string[] | null
           name: string
+          seo_description: string | null
           slug: string
           steps: string[] | null
           tags: string[] | null
@@ -788,6 +789,7 @@ export type Database = {
           mistakes?: Json | null
           muscles?: string[] | null
           name: string
+          seo_description?: string | null
           slug: string
           steps?: string[] | null
           tags?: string[] | null
@@ -804,6 +806,7 @@ export type Database = {
           mistakes?: Json | null
           muscles?: string[] | null
           name?: string
+          seo_description?: string | null
           slug?: string
           steps?: string[] | null
           tags?: string[] | null
@@ -1585,6 +1588,7 @@ export type Database = {
           is_published: boolean
           name: string
           seek_care_if: string[] | null
+          seo_description: string | null
           slug: string
           tags: string[] | null
           updated_at: string
@@ -1599,6 +1603,7 @@ export type Database = {
           is_published?: boolean
           name: string
           seek_care_if?: string[] | null
+          seo_description?: string | null
           slug: string
           tags?: string[] | null
           updated_at?: string
@@ -1613,6 +1618,7 @@ export type Database = {
           is_published?: boolean
           name?: string
           seek_care_if?: string[] | null
+          seo_description?: string | null
           slug?: string
           tags?: string[] | null
           updated_at?: string
