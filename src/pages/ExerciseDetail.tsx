@@ -26,7 +26,13 @@ interface Exercise {
   steps: string[] | null;
   mistakes: unknown;
   intro: string | null;
+  seo_description: string | null;
 }
+
+const listSv = (items: string[]) => {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} och ${items[items.length - 1]}`;
+};
 
 interface RelatedExercise {
   slug: string;
@@ -50,7 +56,9 @@ const ExerciseDetail = () => {
     const load = async () => {
       const { data } = await supabase
         .from("exercises")
-        .select("slug, name, category, muscles, equipment, level, steps, mistakes, intro")
+        .select(
+          "slug, name, category, muscles, equipment, level, steps, mistakes, intro, seo_description",
+        )
         .eq("slug", slug ?? "")
         .eq("is_published", true)
         .maybeSingle();
@@ -107,7 +115,17 @@ const ExerciseDetail = () => {
     );
   }
 
-  const description = truncateAtWord(exercise.intro, 155);
+  const muscleList = listSv((exercise.muscles ?? []).filter(Boolean));
+  const fallbackDescription = [
+    muscleList ? `${exercise.name} tränar ${muscleList}.` : "",
+    "Så gör du steg för steg, vilka fel som är vanligast och hur du rättar dem.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const description = truncateAtWord(
+    exercise.seo_description?.trim() ? exercise.seo_description : fallbackDescription,
+    155,
+  );
   const url = `https://gymdagboken.se/ovningar/${exercise.slug}`;
   const title = `${exercise.name} – teknik, vanliga fel och tips | Gymdagboken`;
   const steps = exercise.steps ?? [];

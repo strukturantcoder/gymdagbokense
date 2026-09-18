@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Helmet } from 'react-helmet-async';
+import Seo from '@/components/Seo';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar, Clock, User, ChevronRight, Dumbbell, Mountain, Shirt, Apple, Activity, ExternalLink, BookOpen, TrendingUp, Layers, Repeat, Moon, Gauge } from 'lucide-react';
@@ -877,38 +877,32 @@ export default function Blog() {
 
     return (
       <>
-        <Helmet>
-          <title>{post.title} | Gymdagboken</title>
-          <meta name="description" content={post.metaDescription} />
-          <meta name="keywords" content={post.keywords.join(', ')} />
-          <meta property="og:title" content={post.title} />
-          <meta property="og:description" content={post.metaDescription} />
-          <meta property="og:type" content="article" />
-          <meta property="og:url" content={`https://gymdagboken.se/blogg/${post.slug}`} />
-          <link rel="canonical" href={`https://gymdagboken.se/blogg/${post.slug}`} />
-          <script type="application/ld+json">
-            {JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'BlogPosting',
-              headline: post.title,
-              description: post.metaDescription,
-              datePublished: post.date,
-              dateModified: post.date,
-              inLanguage: 'sv-SE',
-              keywords: post.keywords.join(', '),
-              mainEntityOfPage: {
-                '@type': 'WebPage',
-                '@id': `https://gymdagboken.se/blogg/${post.slug}`,
-              },
-              author: { '@type': 'Organization', name: 'Gymdagboken' },
-              publisher: {
-                '@type': 'Organization',
-                name: 'Gymdagboken',
-                url: 'https://gymdagboken.se',
-              },
-            })}
-          </script>
-        </Helmet>
+        <Seo
+          title={`${post.title} | Gymdagboken`}
+          description={post.metaDescription}
+          canonical={`https://gymdagboken.se/blogg/${post.slug}`}
+          ogType="article"
+          jsonLd={{
+            '@context': 'https://schema.org',
+            '@type': 'BlogPosting',
+            headline: post.title,
+            description: post.metaDescription,
+            datePublished: post.date,
+            dateModified: post.date,
+            inLanguage: 'sv-SE',
+            keywords: post.keywords.join(', '),
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': `https://gymdagboken.se/blogg/${post.slug}`,
+            },
+            author: { '@type': 'Organization', name: 'Gymdagboken' },
+            publisher: {
+              '@type': 'Organization',
+              name: 'Gymdagboken',
+              url: 'https://gymdagboken.se',
+            },
+          }}
+        />
 
         <div className="min-h-screen bg-background overflow-x-hidden">
           <header className="border-b border-border bg-card">
@@ -983,12 +977,11 @@ export default function Blog() {
   // Blog listing page
   return (
     <>
-      <Helmet>
-        <title>Träningsblogg | Gymdagboken - Tips & Guider för träning</title>
-        <meta name="description" content="Läs våra artiklar om styrketräning, kosttillskott, träningskläder och mer. Expertråd för att förbättra din träning och hälsa." />
-        <meta name="keywords" content="träningsblogg, styrketräning, kosttillskott, träningsprogram, gymtips, fitness" />
-        <link rel="canonical" href="https://gymdagboken.se/blogg" />
-      </Helmet>
+      <Seo
+        title="Träningsblogg | Gymdagboken – tips och guider för träning"
+        description="Läs våra artiklar om styrketräning, kosttillskott, träningskläder och mer. Expertråd för att förbättra din träning och hälsa."
+        canonical="https://gymdagboken.se/blogg"
+      />
 
       <div className="min-h-screen bg-background overflow-x-hidden">
         <header className="border-b border-border bg-card">
