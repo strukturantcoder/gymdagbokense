@@ -115,7 +115,17 @@ const ExerciseDetail = () => {
     );
   }
 
-  const description = truncateAtWord(exercise.intro, 155);
+  const muscleList = listSv((exercise.muscles ?? []).filter(Boolean));
+  const fallbackDescription = [
+    muscleList ? `${exercise.name} tränar ${muscleList}.` : "",
+    "Så gör du steg för steg, vilka fel som är vanligast och hur du rättar dem.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const description = truncateAtWord(
+    exercise.seo_description?.trim() ? exercise.seo_description : fallbackDescription,
+    155,
+  );
   const url = `https://gymdagboken.se/ovningar/${exercise.slug}`;
   const title = `${exercise.name} – teknik, vanliga fel och tips | Gymdagboken`;
   const steps = exercise.steps ?? [];

@@ -85,7 +85,12 @@ const RehabDetail = () => {
     );
   }
 
-  const description = truncateAtWord(protocol.intro, 155);
+  const description = truncateAtWord(
+    protocol.seo_description?.trim()
+      ? protocol.seo_description
+      : `${protocol.name}: vad det brukar handla om, övningar med dosering, vad du bör undvika och när du ska söka vård.`,
+    155,
+  );
   const url = `https://gymdagboken.se/rehab/${protocol.slug}`;
   const title = `${protocol.name} – övningar och råd | Gymdagboken`;
   const exercises = Array.isArray(protocol.exercises)
